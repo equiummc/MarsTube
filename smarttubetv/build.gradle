@@ -30,15 +30,10 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
-// The first letter of the flavor name must be in uppercase
-if (new File("${projectDir}/google-services.json").exists() && (getGradle().getStartParameter().getTaskRequests().toString().contains("Stbeta") ||
-        getGradle().getStartParameter().getTaskRequests().toString().contains("Ststable"))) {
-    // Google Services Gradle plugin (transforms google-services.json file)
-    apply plugin: 'com.google.gms.google-services'
-
-    // Apply the Crashlytics Gradle plugin
-    apply plugin: 'com.google.firebase.crashlytics'
-}
+// MARS_FORK_FIREBASE_DISABLED: This fork has a distinct Android applicationId.
+// The upstream google-services.json is not registered for de.equiummc.mars.smarttube.
+// Never apply upstream Google Services/Crashlytics plugins in our fork.
+// An upstream merge must preserve this guard; no private Firebase config is required.
 
 android {
     // FIX: Default interface methods are only supported starting with Android N (--min-api 24)
@@ -242,9 +237,7 @@ dependencies {
         transitive = true
     }
 
-    ststableImplementation('com.google.firebase:firebase-crashlytics:' + firebaseCrashlyticsVersion) {
-        transitive = true
-    }
+    // MARS_FORK_STABLE_CRASHLYTICS_DISABLED: no upstream Firebase SDK in our stable APK.
 
     // debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.14'
 

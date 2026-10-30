@@ -48,6 +48,31 @@ def package_mod(s):
     return s
 change('smarttubetv/build.gradle', package_mod)
 
+# Our stable applicationId is not registered in the original Firebase project.
+# Fail closed: no upstream Firebase plugin, Google Services JSON processing
+# or Crashlytics SDK in our own stable APK. Keep this on every upstream merge.
+def mars_firebase_off(s):
+    old_plugin = '''// The first letter of the flavor name must be in uppercase
+if (new File("${projectDir}/google-services.json").exists() && (getGradle().getStartParameter().getTaskRequests().toString().contains("Stbeta") ||
+        getGradle().getStartParameter().getTaskRequests().toString().contains("Ststable"))) {
+    // Google Services Gradle plugin (transforms google-services.json file)
+    apply plugin: 'com.google.gms.google-services'
+
+    // Apply the Crashlytics Gradle plugin
+    apply plugin: 'com.google.firebase.crashlytics'
+}'''
+    new_plugin = '''// MARS_FORK_FIREBASE_DISABLED: This fork has a distinct Android applicationId.
+// The upstream google-services.json is not registered for de.equiummc.mars.smarttube.
+// Never apply upstream Google Services/Crashlytics plugins in our fork.
+// An upstream merge must preserve this guard; no private Firebase config is required.'''
+    s = replace_once(s, old_plugin, new_plugin, 'Google Services plugin block')
+    old_sdk = '''    ststableImplementation('com.google.firebase:firebase-crashlytics:' + firebaseCrashlyticsVersion) {
+        transitive = true
+    }'''
+    new_sdk = '''    // MARS_FORK_STABLE_CRASHLYTICS_DISABLED: no upstream Firebase SDK in our stable APK.'''
+    return replace_once(s, old_sdk, new_sdk, 'stable Firebase Crashlytics SDK')
+change('smarttubetv/build.gradle', mars_firebase_off)
+
 # Developer signing material must never enter the public fork.
 def secrets_ignore(s):
     additions = ['keystore.properties', '*.jks', '*.keystore']
