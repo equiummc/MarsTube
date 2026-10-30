@@ -1,6 +1,7 @@
 package com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers;
 
 import android.os.Build.VERSION;
+import com.liskovsoft.smartyoutubetv2.common.exoplayer.other.PlaybackStartupMetrics;
 
 import com.liskovsoft.mediaserviceinterfaces.MediaItemService;
 import com.liskovsoft.mediaserviceinterfaces.ServiceManager;
@@ -77,6 +78,7 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
+        PlaybackStartupMetrics.videoSelected(item.videoId);
         item.isShuffled = false;
 
         if (!item.fromQueue && !item.belongsToPlaybackQueue()) {
@@ -257,9 +259,14 @@ public class VideoLoaderController extends BasePlayerController {
 
         ServiceManager service = YouTubeServiceManager.instance();
         MediaItemService mediaItemManager = service.getMediaItemService();
+        PlaybackStartupMetrics.formatRequested(video.videoId);
         mFormatInfoAction = mediaItemManager.getFormatInfoObserve(video.videoId)
-                .subscribe(this::processFormatInfo,
+                .subscribe(formatInfo -> {
+                    PlaybackStartupMetrics.formatResolved(video.videoId);
+                    processFormatInfo(formatInfo);
+                },
                            error -> {
+                               PlaybackStartupMetrics.failure(video.videoId, "format", error.getClass().getSimpleName());
                                getPlayer().showProgressBar(false);
                                mErrorFixerController.runFormatErrorAction(error);
                            });
