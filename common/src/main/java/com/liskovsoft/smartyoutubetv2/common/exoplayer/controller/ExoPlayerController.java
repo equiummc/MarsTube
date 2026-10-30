@@ -16,6 +16,7 @@ import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.sabr.SabrMediaSource;
 import com.google.android.exoplayer2.source.sabr.manifest.SabrManifest;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.video.VideoListener;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.liskovsoft.mediaserviceinterfaces.data.MediaItemFormatInfo;
@@ -25,6 +26,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.listener.PlayerEventListener;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.LiveStateProvider;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.ExoMediaSourceFactory;
+import com.liskovsoft.smartyoutubetv2.common.exoplayer.other.PlaybackStartupMetrics;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.errors.TrackErrorFixer;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.other.VolumeBooster;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.selector.ExoFormatItem;
@@ -42,7 +44,7 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
-public class ExoPlayerController implements Player.EventListener, LiveStateProvider {
+public class ExoPlayerController implements Player.EventListener, VideoListener, LiveStateProvider {
     private static final String TAG = ExoPlayerController.class.getSimpleName();
     /** How far from the live edge (in segments) the playback is considered to be on the edge */
     private static final int SABR_LIVE_EDGE_TOLERANCE_SEGMENTS = 4;
@@ -177,6 +179,10 @@ public class ExoPlayerController implements Player.EventListener, LiveStateProvi
         mTrackSelectorManager.invalidate();
         mOnSourceChanged = true;
         mEventListener.onSourceChanged(getVideo());
+        Video video = getVideo();
+        if (video != null) {
+            PlaybackStartupMetrics.sourcePrepared(video.videoId, mediaSource.getClass().getSimpleName());
+        }
         mPlayer.prepare(mediaSource);
     }
 
@@ -279,6 +285,7 @@ public class ExoPlayerController implements Player.EventListener, LiveStateProvi
     public void setPlayer(SimpleExoPlayer player) {
         mPlayer = player;
         player.addListener(this);
+        player.addVideoListener(this);
     }
 
     //@Override
@@ -398,6 +405,10 @@ public class ExoPlayerController implements Player.EventListener, LiveStateProvi
     @Override
     public void onPlayerError(ExoPlaybackException error) {
         Log.e(TAG, "onPlayerError: " + error);
+        Video video = getVideo();
+        if (video != null) {
+            PlaybackStartupMetrics.failure(video.videoId, "player", error.getClass().getSimpleName());
+        }
 
         // NOTE: Player is released at this point. So, there is no sense to restore the playback here.
 
@@ -416,6 +427,13 @@ public class ExoPlayerController implements Player.EventListener, LiveStateProvi
         boolean isPausePressed = Player.STATE_READY == playbackState && !playWhenReady;
         boolean isPlaybackEnded = Player.STATE_ENDED == playbackState && playWhenReady;
         boolean isBuffering = Player.STATE_BUFFERING == playbackState && playWhenReady;
+
+        if (isPlayPressed) {
+            Video video = getVideo();
+            if (video != null) {
+                PlaybackStartupMetrics.playerReady(video.videoId);
+            }
+        }
 
         if (Player.STATE_READY == playbackState && mSabrLiveStartPending) {
             seekToSabrLiveStart();
@@ -439,6 +457,14 @@ public class ExoPlayerController implements Player.EventListener, LiveStateProvi
 
         if (getPositionMs() < getDurationMs()) {
             mIsEnded = false;
+        }
+    }
+
+    @Override
+    public void onRenderedFirstFrame() {
+        Video video = getVideo();
+        if (video != null) {
+            PlaybackStartupMetrics.firstFrame(video.videoId);
         }
     }
 
@@ -570,6 +596,7 @@ public class ExoPlayerController implements Player.EventListener, LiveStateProvi
 
         try {
             mPlayer.removeListener(this);
+            mPlayer.removeVideoListener(this);
             mPlayer.stop(true); // Cause input lags due to high cpu load?
             mPlayer.clearVideoSurface();
             mPlayer.release();
