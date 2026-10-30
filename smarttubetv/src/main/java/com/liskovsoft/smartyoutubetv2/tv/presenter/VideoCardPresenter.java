@@ -155,6 +155,9 @@ public class VideoCardPresenter extends LongClickPresenter {
                 .load(ClickbaitRemover.updateThumbnail(video, mThumbQuality))
                 //.placeholder(mDefaultCardImage)
                 .apply(ViewUtil.glideOptions())
+                // Static video thumbnails should reuse Glide's bounded memory cache.
+                // The generic options disable it for animated previews.
+                .skipMemoryCache(false)
                 // improve image compression on low end devices
                 .override(mWidth, mHeight)
                 // com.liskovsoft.smartyoutubetv2.tv.util.CacheGlideModule
@@ -167,6 +170,9 @@ public class VideoCardPresenter extends LongClickPresenter {
                         .load(video.cardImageUrl) // always working
                         //.placeholder(mDefaultCardImage)
                         .apply(ViewUtil.glideOptions())
+                        .skipMemoryCache(false)
+                        .override(mWidth, mHeight)
+                        .diskCacheStrategy(VERSION.SDK_INT > 21 ? DiskCacheStrategy.ALL : DiskCacheStrategy.NONE)
                         .listener(mErrorListener)
                         .error(R.drawable.card_placeholder) // R.color.lb_grey
                 )
