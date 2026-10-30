@@ -17,6 +17,9 @@ public class ComplexImageCardView extends ImageCardView {
     private Handler mHandler;
     private boolean mIsCardTextAutoScrollEnabled;
     private boolean mIsBadgeEnabled;
+    // Avoid repeat layouts when a recycled video card keeps its image dimensions.
+    private int mLastMainImageWidth = -1;
+    private int mLastMainImageHeight = -1;
 
     public ComplexImageCardView(Context context) {
         super(context);
@@ -198,7 +201,13 @@ public class ComplexImageCardView extends ImageCardView {
      */
     @Override
     public void setMainImageDimensions(int width, int height) {
+        if (mLastMainImageWidth == width && mLastMainImageHeight == height) {
+            return;
+        }
+
         super.setMainImageDimensions(width, height);
         mComplexImageView.setMainImageDimensions(width, height);
+        mLastMainImageWidth = width;
+        mLastMainImageHeight = height;
     }
 }
