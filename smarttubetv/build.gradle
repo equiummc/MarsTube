@@ -104,6 +104,10 @@ android {
 
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
+            } else {
+                // Local performance release: reuse the installed debug certificate.
+                // Keeps adb install -r possible without deleting user data.
+                signingConfig signingConfigs.debug
             }
         }
         // Use same key for release and debug for testing
