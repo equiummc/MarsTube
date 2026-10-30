@@ -83,14 +83,22 @@ change('.gitignore', secrets_ignore)
 def text_mod(s):
     s = replace_once(s,
         '<string translatable="false" name="app_name"><![CDATA[SmartTube]]></string>',
-        '<string translatable="false" name="app_name"><![CDATA[Mars SmartTube]]></string>',
+        '<string translatable="false" name="app_name"><![CDATA[MarsTube]]></string>',
         'app label')
     s = replace_once(s,
         '<string translatable="false" name="browse_title"><![CDATA[SmartTube]]></string>',
-        '<string translatable="false" name="browse_title"><![CDATA[Mars SmartTube]]></string>',
+        '<string translatable="false" name="browse_title"><![CDATA[MarsTube]]></string>',
         'browse label')
     return s
 change('smarttubetv/src/main/res/values/strings.xml', text_mod)
+change('smarttubetv/src/ststable/res/values/strings.xml', text_mod)
+
+# Keep upstream flavors unchanged, rename only the Mars stable APK output.
+def apk_brand(s):
+    return replace_once(s, '            def project = "SmartTube"',
+                        '            def project = variant.flavorName == "ststable" ? "MarsTube" : "SmartTube"',
+                        'Mars stable APK file name')
+change('smarttubetv/build.gradle', apk_brand)
 
 # Mutate only real color resources; no wholesale theme replacement, keeping merges manageable.
 def theme(s):

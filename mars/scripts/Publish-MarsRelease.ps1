@@ -1,4 +1,4 @@
-param([string]$Owner = 'equiummc', [string]$ReleaseNotes = 'Mars SmartTube Stabilitaets- und Designupdate')
+param([string]$Owner = 'equiummc', [string]$ReleaseNotes = 'MarsTube Stabilitaets- und Designupdate')
 $ErrorActionPreference = 'Stop'
 $root = (git rev-parse --show-toplevel).Trim()
 if (-not $root) { throw 'Nicht im Mars-Repo.' }
@@ -20,22 +20,22 @@ if (-not $apksigner) { throw 'apksigner nicht gefunden: Android SDK Build Tools 
 & $apksigner.FullName verify --verbose $apk
 if ($LASTEXITCODE -ne 0) { throw 'APK-Signatur ungültig.' }
 $tag = 'mars-v' + $code
-$releaseAsset = Join-Path $env:TEMP 'mars-smarttube-stable-universal.apk'
+$releaseAsset = Join-Path $env:TEMP 'marstube-stable-universal.apk'
 Copy-Item $apk $releaseAsset -Force
 $full = "$Owner/mars-smarttube"
 Write-Host "Veroeffentliche signierte APK als $tag"
-& gh release create $tag $releaseAsset --repo $full --title "Mars SmartTube $version" --notes $ReleaseNotes
+& gh release create $tag $releaseAsset --repo $full --title "MarsTube $version" --notes $ReleaseNotes
 if ($LASTEXITCODE -ne 0) { throw 'GitHub Release fehlgeschlagen.' }
 # AppVersionChecker expects "package" and versionName -> versionCode changelog.
 $stable = 'mars/updates/stable.json'
 $feed = Get-Content $stable -Raw | ConvertFrom-Json
-$feed.package.downloadUrl = "https://github.com/$full/releases/download/$tag/mars-smarttube-stable-universal.apk"
+$feed.package.downloadUrl = "https://github.com/$full/releases/download/$tag/marstube-stable-universal.apk"
 $entry = [pscustomobject]@{versionCode=[int]$code;changelog=@($ReleaseNotes)}
 $feed | Add-Member -NotePropertyName $version -NotePropertyValue $entry -Force
 $feedJson = $feed | ConvertTo-Json -Depth 8
 [System.IO.File]::WriteAllText((Join-Path $root $stable), $feedJson, (New-Object System.Text.UTF8Encoding($false)))
 & git add $stable
-& git commit -m "release: Mars SmartTube $version update feed"
+& git commit -m "release: MarsTube $version update feed"
 if ($LASTEXITCODE -ne 0) { throw 'Feed Commit fehlgeschlagen.' }
 & git push origin mars/stable
 if ($LASTEXITCODE -ne 0) { throw 'Feed Push fehlgeschlagen.' }
@@ -51,10 +51,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Feed konnte nicht auf master gespiegelt werden
 & git add 'mars/updates/stable.json'
 & git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
-    & git commit -m "release: public Mars SmartTube update feed $version"
+    & git commit -m "release: public MarsTube update feed $version"
     if ($LASTEXITCODE -ne 0) { throw 'Feed Commit auf master fehlgeschlagen.' }
     & git push origin master
     if ($LASTEXITCODE -ne 0) { throw 'Feed Push auf master fehlgeschlagen.' }
 }
 & git switch mars/stable
-Write-Host "Mars SmartTube $version signiert; Release und oeffentlicher Update-Feed veroeffentlicht."
+Write-Host "MarsTube $version signiert; Release und oeffentlicher Update-Feed veroeffentlicht."

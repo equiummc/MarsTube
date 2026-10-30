@@ -1,8 +1,8 @@
-# Mars SmartTube – Shadow Fork (Entwicklungsgrundgerüst)
+# MarsTube – Shadow Fork (Entwicklungsgrundgerüst)
 
 Quelle: `https://github.com/yuliskov/SmartTube` (MIT für das Hauptprojekt; Submodule haben eigene Lizenzen).
 
-**Ziel:** SmartTube mit eigenem Package `de.equiummc.mars.smarttube`, Mars TV Dark Theme und einem deutlich sichtbaren Update-Hinweis. Die Update-Rubrik bleibt angepinnt und die App zeigt beim Start einen Update-Dialog, sobald der eingebaute Downloader eine neue eigene Version erkennt. Die App verwendet ausschließlich **eigene** Update-URLs statt Original-SmartTube-APK-Dateien. Die Android-Paketinstallation muss vom Nutzer bestätigt werden.
+**Ziel:** MarsTube als eigenständige, auf SmartTube basierende App mit eigenem Package `de.equiummc.mars.smarttube`, Mars TV Dark Theme und einem deutlich sichtbaren Update-Hinweis. Die Update-Rubrik bleibt angepinnt und die App zeigt beim Start einen Update-Dialog, sobald der eingebaute Downloader eine neue eigene Version erkennt. Die App verwendet ausschließlich **eigene** Update-URLs statt Original-SmartTube-APK-Dateien. Die Android-Paketinstallation muss vom Nutzer bestätigt werden.
 
 ## Entwicklungsstatus
 
