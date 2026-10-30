@@ -109,7 +109,7 @@ public class ExoPlayerInitializer {
         // Default values
         int minBufferMs = 30_000;
         int maxBufferMs = 30_000;
-        int bufferForPlaybackMs = 2_500;
+        int bufferForPlaybackMs = 1_000; // MarsTube startup latency A/B test; keep rebuffer threshold unchanged
         int bufferForPlaybackAfterRebufferMs = 5_000;
 
         switch (mPlayerData.getVideoBufferType()) {
