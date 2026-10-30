@@ -64,10 +64,10 @@ public class AppUpdatePresenter extends BasePresenter<Void> implements AppUpdate
         if (mIsForceCheck) {
             LoadingManager.showLoading(getContext(), false);
             showUpdateDialog(versionName, changelog, apkPath);
-        } else if (GeneralData.instance(getContext()).isOldUpdateNotificationsEnabled()) {
-            showUpdateDialog(versionName, changelog, apkPath);
         } else {
+            // MARS: show update action persistently and a visible installation dialog.
             pinUpdateSection(versionName, changelog, apkPath);
+            showUpdateDialog(versionName, changelog, apkPath);
         }
     }
 
