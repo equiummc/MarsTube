@@ -1,0 +1,38 @@
+name: SmartTube Stable upstream monitor
+on:
+  schedule:
+    - cron: '15 7 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect new upstream stable release and create review issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(gh api repos/yuliskov/SmartTube/releases/latest --jq '.tag_name')"
+          if [[ -z "$current" ]]; then exit 1; fi
+          title="[Mars Upstream] SmartTube stable $current pruefen"
+          if gh issue list --state all --limit 100 --json title --jq '.[].title' | grep -Fxq "$title"; then
+            echo "Already tracked: $current"
+            exit 0
+          fi
+          cat > /tmp/update-review.md <<EOF
+          Neue offizielle stabile SmartTube-Version **$current** erkannt.
+
+          https://github.com/yuliskov/SmartTube/releases/tag/$current
+
+          To-do: Quellcode/Diff und Sicherheitsmeldungen pruefen; Updates gegen
+          mars/stable zusammenfuehren, Mars-Overlay-Tests ausfuehren, Build
+          pruefen, an Thomson und Fire TV testen, dann erst signiert veroeffentlichen.
+
+          Kein automatisches Merge, keine ungepruefte APK auf Endgeraeten.
+          EOF
+          gh issue create --title "$title" --body-file /tmp/update-review.md
