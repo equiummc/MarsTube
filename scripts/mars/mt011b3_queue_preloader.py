@@ -88,17 +88,7 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
                     if (getPlayer() != null) getPlayer().cancelPreloadedShort();
                 });
             };"""),
-("enqueue after format info ready",
-"""                        mShortPrefetchedInfo = info;
-                        Log.i("MarsTubePerf", "MT-008 prefetch_ready elapsed_ms=" +""",
-"""                        mShortPrefetchedInfo = info;
-                        Video playingShort = getVideo();
-                        if (playingShort != null && playingShort.isShorts &&
-                                !info.isLive() && info.containsSabrFormats() &&
-                                !info.containsDashFormats() && getPlayer() != null) {
-                            getPlayer().preloadNextSabrShort(mShortPrefetchId, info);
-                        }
-                        Log.i("MarsTubePerf", "MT-008 prefetch_ready elapsed_ms=" +""")
+
 ])
 
 patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/exoplayer/ExoMediaSourceFactory.java",[
@@ -448,35 +438,14 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/exoplayer/cont
         Log.e(TAG, "onPlayerError: " + error);""")
 ])
 
-# MT-011B4: enable metadata warmup whenever media preload was deliberately enabled.
-# Keep the two switches independent and default-off for older installations.
+# MT-011B8: metadata-only scheduling and first-next SABR candidate are now
+# owned by the checked-in VideoLoaderController. Overlay only the separate
+# warmup-on-player-restart site not yet in the checked-in source.
 patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java",[
-("schedule warmup on loaded",
-"""        if (video != null && video.isShorts &&
-                getPlayerTweaksData().isMarsShortPrefetchEnabled()) {""",
-"""        if (video != null && video.isShorts &&
-                (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
-                 getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {"""),
-("allow warmup reuse for media preload",
-"""        boolean matchingPrefetch = getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
-                video.isShorts""",
-"""        boolean matchingPrefetch = (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
-                getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) &&
-                video.isShorts"""),
 ("schedule metadata warmup",
 """        if (getVideo() != null && getVideo().isShorts &&
                 getPlayerTweaksData().isMarsShortPrefetchEnabled()) {""",
 """        if (getVideo() != null && getVideo().isShorts &&
                 (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
-                 getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {"""),
-("guard warmup",
-"""        if (!getPlayerTweaksData().isMarsShortPrefetchEnabled()) {
-            clearShortPrefetch();
-            return;
-        }""",
-"""        if (!getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
-                !getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) {
-            clearShortPrefetch();
-            return;
-        }""")
+                 getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {""")
 ])
