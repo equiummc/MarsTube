@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path android:fillColor="#FF07182D"
+        android:pathData="M0,0 L320,0 L320,180 L0,180 Z"/>
+    <path android:fillColor="#CC153452"
+        android:pathData="M0,0 L320,0 L320,65 Q162,40 0,102 Z"/>
+    <path android:fillColor="#2C5FC2FF"
+        android:pathData="M0,178 L320,178 L320,180 L0,180 Z"/>
+    <path android:fillColor="#4058C4FE"
+        android:pathData="M38,124 L54,48 L68,48 L105,92 L142,48 L156,48 L172,124 L150,124 L141,78 L110,115 L100,115 L69,78 L60,124 Z"/>
+    <path android:fillColor="#F1F7FCFF"
+        android:pathData="M42,120 L57,50 L68,50 L105,96 L142,50 L153,50 L168,120 L150,120 L141,77 L109,111 L101,111 L69,77 L60,120 Z"/>
+    <path android:fillColor="#99FFFFFF"
+        android:pathData="M57,50 L69,77 L60,120 L42,120 Z"/>
+    <path android:fillColor="#9FDBF2FF"
+        android:pathData="M62,50 L69,50 L105,91 L141,50 L148,50 L105,102 Z"/>
+    <!-- Restrained glass highlights, leaving the M as the readable hero. -->
+    <path android:fillColor="#6043B9FF"
+        android:pathData="M197,72 L287,72 L287,75 L197,75 Z"/>
+    <path android:fillColor="#3999DDFF"
+        android:pathData="M197,86 L269,86 L269,89 L197,89 Z"/>
+    <path android:fillColor="#2278D4FF"
+        android:pathData="M197,100 L251,100 L251,103 L197,103 Z"/>
+</vector>
