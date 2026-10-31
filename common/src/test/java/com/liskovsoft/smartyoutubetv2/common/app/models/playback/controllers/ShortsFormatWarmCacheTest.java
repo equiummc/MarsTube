@@ -60,6 +60,31 @@ public class ShortsFormatWarmCacheTest {
         cache.remove(null);
     }
 
+    @Test public void eightShortsSurviveBackAndForthThenOldestEvicts() {
+        ShortsFormatWarmCache<String> cache = new ShortsFormatWarmCache<>(8, 60000);
+        for (int i = 0; i < 8; i++) {
+            cache.put("short-" + i, "fmt-" + i, 100 + i);
+        }
+        assertEquals(8, cache.size());
+        for (int i = 0; i < 8; i++) {
+            assertEquals("fmt-" + i, cache.get("short-" + i, 900));
+        }
+        // Access to 0 made 0 recent; adding a ninth evicts 1.
+        cache.put("short-8", "fmt-8", 1000);
+        assertNull(cache.get("short-0", 1001)); // 0 was oldest after walking 0..7
+        assertEquals("fmt-8", cache.get("short-8", 1001));
+        assertEquals(8, cache.size());
+    }
+
+    @Test public void extendedCacheStillExpiresAndNeverCrossesClockEpoch() {
+        ShortsFormatWarmCache<String> cache = new ShortsFormatWarmCache<>(8, 60000);
+        cache.put("one", "fmt", 250);
+        assertEquals("fmt", cache.get("one", 60249));
+        assertNull(cache.get("one", 60250));
+        cache.put("two", "fmt2", 1500);
+        assertNull(cache.get("two", 1400));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void rejectsUnboundedCapacity() {
         new ShortsFormatWarmCache<String>(0, 15000);
