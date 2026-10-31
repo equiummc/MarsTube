@@ -156,6 +156,9 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        if (getView() != null) {
+            getView().post(this::enforceMarsRailOnly);
+        }
 
         setupEventListeners();
 
@@ -174,6 +177,41 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     @Override
     public HeadersSupportFragment onCreateHeadersSupportFragment() {
         return new ExtendedHeadersSupportFragment();
+    }
+
+    /**
+     * The compact MarsTube rail owns all navigation. Leanback may recreate its legacy
+     * headers dock after fragment restoration; hide the *actual view*, not just its state.
+     * This avoids a second, expanding drawer and prevents that drawer from taking DPAD focus.
+     */
+    private void enforceMarsRailOnly() {
+        if (!isAdded()) return;
+        if (getHeadersState() != HEADERS_DISABLED) {
+            setHeadersState(HEADERS_DISABLED);
+        }
+        HeadersSupportFragment oldHeaders = getHeadersSupportFragment();
+        if (oldHeaders != null) {
+            blockLegacyHeaderView(oldHeaders.getView());
+        }
+        View root = getView();
+        if (root != null) {
+            int dockId = getResources().getIdentifier("browse_headers_dock", "id",
+                    requireContext().getPackageName());
+            if (dockId != 0) {
+                blockLegacyHeaderView(root.findViewById(dockId));
+            }
+        }
+    }
+
+    private static void blockLegacyHeaderView(View old) {
+        if (old == null) return;
+        old.setVisibility(View.GONE);
+        old.setFocusable(false);
+        old.setEnabled(false);
+        old.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        if (old instanceof ViewGroup) {
+            ((ViewGroup) old).setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        }
     }
 
     private void setupEventListeners() {
@@ -539,6 +577,9 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         }
 
         mIsFragmentCreated = false;
+        if (getView() != null) {
+            getView().post(this::enforceMarsRailOnly);
+        }
     }
 
     /**
