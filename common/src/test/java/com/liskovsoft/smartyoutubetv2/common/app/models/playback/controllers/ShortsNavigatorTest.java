@@ -55,6 +55,29 @@ public class ShortsNavigatorTest {
         assertNull(ShortsNavigator.adjacent(regular, true));
     }
 
+    @Test public void twentyRemoteSwipesStayWithinShortsAndBacktrack() {
+        java.util.List<Video> items = new java.util.ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            items.add(item("short-" + i, true));
+            items.add(item("normal-" + i, false));
+        }
+        VideoGroup group = VideoGroup.from(items);
+        assertNotNull(group);
+        Video current = items.get(0);
+        for (int i = 1; i < 20; i++) {
+            current = ShortsNavigator.adjacent(current, true);
+            assertNotNull("missing short " + i, current);
+            assertEquals("short-" + i, current.videoId);
+        }
+        assertNull(ShortsNavigator.adjacent(current, true));
+        for (int i = 18; i >= 0; i--) {
+            current = ShortsNavigator.adjacent(current, false);
+            assertNotNull(current);
+            assertEquals("short-" + i, current.videoId);
+        }
+        assertNull(ShortsNavigator.adjacent(current, false));
+    }
+
     @Test public void skipsDuplicateAndInvalidEntries() {
         Video a = item("a", true);
         Video duplicate = item("a", true);
