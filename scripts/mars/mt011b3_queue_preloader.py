@@ -154,6 +154,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
     private String mShortNextId;
     private String mShortAttemptedId;
     private String mShortAdoptedId;
+    private boolean mShortPreloadDisabledForSession;
     private long mShortNextAtMs;
     private ShortsSabrPreloadBudget mShortBudget;
     private final android.os.Handler mShortHandler =
@@ -196,7 +197,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
                 mShortQueue.getSize() != 1 || !current.videoId.equals(mShortCurrentId)) return;
         long bufferedMs = mPlayer.getBufferedPosition() - mPlayer.getCurrentPosition();
         if (!ShortsMediaHandoffPolicy.shouldOffer(
-                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled(),
+                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled() &&
+                        !mShortPreloadDisabledForSession,
                 true, mPlayer.getPlaybackState() == Player.STATE_READY,
                 mPlayer.getPlayWhenReady(), bufferedMs, false)) return;
         boolean enoughBuffer = bufferedMs >= ShortsMediaHandoffPolicy.MIN_FOREGROUND_BUFFER_MS;
@@ -314,7 +316,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
 """        mPlayer.prepare(mediaSource);
     }""",
 """        if (video != null && video.isShorts && mediaSource instanceof SabrMediaSource &&
-                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled()) {
+                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled() &&
+                !mShortPreloadDisabledForSession) {
             mShortQueue = new ConcatenatingMediaSource(mediaSource);
             mShortCurrentId = video.videoId;
             mPlayer.prepare(mShortQueue);
@@ -376,7 +379,13 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/exoplayer/cont
 """    public void onPlayerError(ExoPlaybackException error) {
         Log.e(TAG, "onPlayerError: " + error);""",
 """    public void onPlayerError(ExoPlaybackException error) {
-        if (mShortNextId != null) dropShortCandidate();
+        if (mShortNextId != null || mShortAdoptedId != null) {
+            // Do not repeat a speculative failure for every video in this
+            // session. Normal playback continues with the original engine.
+            mShortPreloadDisabledForSession = true;
+            android.util.Log.i("MarsTubePerf", "MT-011B4 preload_auto_disabled=true");
+            dropShortCandidate();
+        }
         if (mShortAdoptedId != null) {
             android.util.Log.i("MarsTubePerf", "MT-011B4 preload_handoff_failed=true");
             mShortAdoptedId = null;
