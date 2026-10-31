@@ -109,7 +109,7 @@ public class ExoPlayerInitializer {
         // Default values
         int minBufferMs = 30_000;
         int maxBufferMs = 30_000;
-        int bufferForPlaybackMs = 2_500;
+        int bufferForPlaybackMs = 1_000; // MT-006 A/B test: faster first frame; monitor stalls/rebuffers
         int bufferForPlaybackAfterRebufferMs = 5_000;
 
         switch (mPlayerData.getVideoBufferType()) {
