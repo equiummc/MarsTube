@@ -139,7 +139,8 @@ import com.google.android.exoplayer2.source.MergingMediaSource;"""),
 """import com.liskovsoft.smartyoutubetv2.common.exoplayer.ExoMediaSourceFactory;""",
 """import com.liskovsoft.smartyoutubetv2.common.exoplayer.ExoMediaSourceFactory;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.ShortsSabrPreloadBudget;
-import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.ShortsSamplePreloadGate;"""),
+import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.ShortsSamplePreloadGate;
+import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.ShortsMediaHandoffPolicy;"""),
 ("field",
 """    private SimpleExoPlayer mPlayer;
     /** Not null only for sabr live streams */""",
@@ -147,6 +148,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
     private ConcatenatingMediaSource mShortQueue;
     private String mShortCurrentId;
     private String mShortNextId;
+    private String mShortAttemptedId;
+    private String mShortAdoptedId;
     private long mShortNextAtMs;
     private ShortsSabrPreloadBudget mShortBudget;
     private final android.os.Handler mShortHandler =
@@ -165,10 +168,12 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
 """    private void openMediaSource(MediaSource mediaSource) {""",
 """    /** The queued source stays owned by the current ExoPlayer until adopted. */
     public boolean hasPreloadedShort(String id) {
-        return id != null && id.equals(mShortNextId) && mShortQueue != null &&
-                mShortQueue.getSize() == 2 && mShortBudget != null &&
-                android.os.SystemClock.elapsedRealtime() - mShortNextAtMs <
-                        ShortsSabrPreloadBudget.MAX_AGE_MS;
+        long ageMs = android.os.SystemClock.elapsedRealtime() - mShortNextAtMs;
+        return ShortsMediaHandoffPolicy.canAdopt(
+                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled(),
+                id != null && id.equals(mShortNextId),
+                mShortQueue != null && mShortQueue.getSize() == 2,
+                mShortBudget == null ? 0 : mShortBudget.bytes(), ageMs);
     }
 
     public void preloadNextSabrShort(String id, MediaItemFormatInfo info) {
@@ -178,18 +183,25 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
         }
         Video current = getVideo();
         if (id == null || current == null || current.videoId == null ||
-                id.equals(current.videoId) || !current.isShorts || info == null ||
+                id.equals(current.videoId) || id.equals(mShortAttemptedId) ||
+                !current.isShorts || info == null ||
                 info.isLive() || !info.containsSabrFormats() ||
                 info.containsDashFormats() || mShortQueue == null ||
                 mPlayer == null || mPlayer.getPlaybackState() != Player.STATE_READY ||
                 mShortQueue.getSize() != 1 || !current.videoId.equals(mShortCurrentId)) return;
-        boolean enoughBuffer = mPlayer.getBufferedPosition() - mPlayer.getCurrentPosition() > 500;
+        long bufferedMs = mPlayer.getBufferedPosition() - mPlayer.getCurrentPosition();
+        if (!ShortsMediaHandoffPolicy.shouldOffer(
+                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled(),
+                true, mPlayer.getPlaybackState() == Player.STATE_READY,
+                mPlayer.getPlayWhenReady(), bufferedMs, false)) return;
+        boolean enoughBuffer = bufferedMs >= ShortsMediaHandoffPolicy.MIN_FOREGROUND_BUFFER_MS;
         ShortsSamplePreloadGate.Input gate = new ShortsSamplePreloadGate.Input(
                 true, true, true, false, true, true, enoughBuffer,
                 true, true, true, true);
         if (ShortsSamplePreloadGate.evaluate(gate) != ShortsSamplePreloadGate.Decision.ALLOW) {
             return;
         }
+        mShortAttemptedId = id; // No speculative retries after a denial or deadline.
         final String expected = id;
         ShortsSabrPreloadBudget budget = new ShortsSabrPreloadBudget(() -> {
             if (expected.equals(mShortNextId)) dropShortCandidate();
@@ -202,7 +214,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
             mShortNextAtMs = android.os.SystemClock.elapsedRealtime();
             mShortHandler.removeCallbacks(mExpireShort);
             mShortHandler.postDelayed(mExpireShort, ShortsSabrPreloadBudget.MAX_AGE_MS);
-            android.util.Log.i("MarsTubePerf", "MT-011B short_prefetch_queued=true");
+            android.util.Log.i("MarsTubePerf", "MT-011B4 preload_candidate_queued=true");
         } catch (RuntimeException ex) {
             budget.cancel();
             dropShortCandidate();
@@ -219,6 +231,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
         budget.promote();
         mShortHandler.removeCallbacks(mExpireShort);
         long read = budget.bytes();
+        android.util.Log.i("MarsTubePerf", "MT-011B4 preload_candidate_bytes=" + read);
         mShortBudget = null;
         mShortNextId = null;
         mShortNextAtMs = 0;
@@ -233,7 +246,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
             mOnSourceChanged = true;
             mEventListener.onSourceChanged(target);
             PlaybackStartupMetrics.sourcePrepared(target.videoId, "QueuedSabrMediaSource");
-            android.util.Log.i("MarsTubePerf", "MT-011B short_prefetch_handoff_bytes=" + read);
+            mShortAdoptedId = target.videoId;
+            android.util.Log.i("MarsTubePerf", "MT-011B4 preload_handoff_bytes=" + read);
             return true;
         } catch (RuntimeException ex) {
             android.util.Log.i("MarsTubePerf", "MT-011B short_prefetch_handoff_failed=true");
@@ -252,6 +266,10 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
 
     private void dropShortCandidate() {
         mShortHandler.removeCallbacks(mExpireShort);
+        if (mShortNextId != null) {
+            android.util.Log.i("MarsTubePerf", "MT-011B4 preload_discard_bytes=" +
+                    (mShortBudget == null ? 0 : mShortBudget.bytes()));
+        }
         if (mShortBudget != null) mShortBudget.cancel();
         mShortBudget = null;
         mShortNextId = null;
@@ -269,11 +287,14 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
         dropShortCandidate();
         mShortQueue = null;
         mShortCurrentId = null;
+        mShortAttemptedId = null;
+        mShortAdoptedId = null;
         mSabrLiveManifest = null;"""),
 ("prepare same player queue",
 """        mPlayer.prepare(mediaSource);
     }""",
-"""        if (video != null && video.isShorts && mediaSource instanceof SabrMediaSource) {
+"""        if (video != null && video.isShorts && mediaSource instanceof SabrMediaSource &&
+                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled()) {
             mShortQueue = new ConcatenatingMediaSource(mediaSource);
             mShortCurrentId = video.videoId;
             mPlayer.prepare(mShortQueue);
@@ -288,6 +309,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
         dropShortCandidate();
         mShortQueue = null;
         mShortCurrentId = null;
+        mShortAttemptedId = null;
+        mShortAdoptedId = null;
         mTrackSelectorManager.release();"""),
 ("natural end preserves original next-video flow",
 """        if (reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION) {
@@ -307,3 +330,36 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
         if (formatItem != null && formatItem.getTrack() != null) {""")
 ])
 print("MT-011B3 same-player queue overlay: no sidecar decoder or duplicate SABR POST")
+
+
+# MT-011B4: only count a sample handoff after the next Short renders a frame.
+# An error drops the speculative source; ordinary error recovery remains unchanged.
+patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/exoplayer/controller/ExoPlayerController.java", [
+("first frame confirmation",
+"""    public void onRenderedFirstFrame() {
+        Video video = getVideo();
+        if (video != null) {
+            PlaybackStartupMetrics.firstFrame(video.videoId);
+        }
+    }""",
+"""    public void onRenderedFirstFrame() {
+        Video video = getVideo();
+        if (video != null) {
+            PlaybackStartupMetrics.firstFrame(video.videoId);
+            if (video.videoId.equals(mShortAdoptedId)) {
+                android.util.Log.i("MarsTubePerf", "MT-011B4 preload_handoff_first_frame=true");
+                mShortAdoptedId = null;
+            }
+        }
+    }"""),
+("error invalidation",
+"""    public void onPlayerError(ExoPlaybackException error) {
+        Log.e(TAG, "onPlayerError: " + error);""",
+"""    public void onPlayerError(ExoPlaybackException error) {
+        if (mShortNextId != null) dropShortCandidate();
+        if (mShortAdoptedId != null) {
+            android.util.Log.i("MarsTubePerf", "MT-011B4 preload_handoff_failed=true");
+            mShortAdoptedId = null;
+        }
+        Log.e(TAG, "onPlayerError: " + error);""")
+])
