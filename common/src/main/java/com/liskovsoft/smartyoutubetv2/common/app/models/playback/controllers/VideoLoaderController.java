@@ -349,6 +349,8 @@ public class VideoLoaderController extends BasePlayerController {
         //getPlayer().showProgressBar(true);
         Utils.post(mShowProgressBar);
         disposeActions();
+        // Foreground request wins over any speculative 2-4-ahead call.
+        cancelFarShortPrefetch();
 
         ServiceManager service = YouTubeServiceManager.instance();
         MediaItemService mediaItemManager = service.getMediaItemService();
@@ -805,11 +807,15 @@ public class VideoLoaderController extends BasePlayerController {
         }
     }
 
-    private void clearShortPrefetch() {
+    private void cancelFarShortPrefetch() {
         Utils.removeCallbacks(mPrefetchSecondShort);
         mShortLookaheadDistance = 2;
         RxHelper.disposeActions(mShortSecondWarmAction);
         mShortSecondWarmAction = null;
+    }
+
+    private void clearShortPrefetch() {
+        cancelFarShortPrefetch();
         RxHelper.disposeActions(mShortPrefetchAction);
         mShortPrefetchAction = null;
         mShortPrefetchObservable = null;
