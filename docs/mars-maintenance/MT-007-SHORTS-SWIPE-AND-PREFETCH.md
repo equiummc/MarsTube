@@ -18,7 +18,16 @@ The existing `MarsTubePerf` log measured the following six sessions, all with
 | 6 | 4,690 ms | 7,029 ms |
 
 The dominant delay is within the asynchronous `getFormatInfoObserve` request.
-This log **does not distinguish** HTTP time, retries and response parsing. The
+This log **does not distinguish** HTTP time, retries and response parsing.
+
+Source review of pinned `MediaServiceCore` (`40fec843`):
+`youtubeapi/.../service/internal/FormatInfoWrapper.kt` serializes calls via
+` synchronized(lock) ` and may try a secondary (Innertube or legacy) provider
+if the first says the video is unplayable. It also maintains a one-entry
+format cache. This is **a possible cause of serialized/long lookups, not a
+proven cause of these particular measurements**. A canceled prefetch may still
+be executing inside that lock: verify UP/BACK and mixed-navigation latency
+against the baseline before accepting prefetch. The
 ExoPlayer initial playback buffer is still **2,500 ms** in this branch;
 the separate MT-006 1,000-ms experiment is deliberately NOT merged.
 
