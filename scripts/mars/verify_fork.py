@@ -66,9 +66,9 @@ def check(root: pathlib.Path, require_submodules: bool) -> list[str]:
             "default app minSdk inherits SharedModules compatibility setting")
     # Android 8.0 = API 26. An inadvertent raise above API 26 would
     # silently lock out the agreed minimum supported device.
-    stable_match = re.search(r"\\bststable\\s*\\{([^}]*)\\}", gradle, re.S)
+    stable_match = re.search(r"\bststable\s*\{([^}]*)\}", gradle, re.S)
     stable_block = stable_match.group(1) if stable_match else ""
-    stable_override = re.search(r"minSdkVersion\\s+(\\d+)", stable_block)
+    stable_override = re.search(r"minSdkVersion\s+(\d+)", stable_block)
     require(stable_match is not None and
             (stable_override is None or int(stable_override.group(1)) <= 26),
             "ststable flavor does not require Android newer than 8.0 (API 26)")
@@ -87,7 +87,7 @@ def check(root: pathlib.Path, require_submodules: bool) -> list[str]:
                      "exoplayer-amzn-2.10.6/core_settings.gradle"):
             require((root / path).is_file(), f"Gradle dependency exists: {path}")
         upstream_constants = read("SharedModules/constants.gradle")
-        inherited_min = re.search(r"^\\s*minSdkVersion\\s*=\\s*(\\d+)\\b", upstream_constants, re.M)
+        inherited_min = re.search(r"^\s*minSdkVersion\s*=\s*(\d+)\b", upstream_constants, re.M)
         require(inherited_min is not None and int(inherited_min.group(1)) <= 26,
                 "inherited minSdk keeps Android 8.0 (API 26) installable")
     else:
