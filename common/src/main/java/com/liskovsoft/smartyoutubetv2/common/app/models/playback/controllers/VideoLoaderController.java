@@ -702,12 +702,13 @@ public class VideoLoaderController extends BasePlayerController {
 
         clearShortPrefetch();
         mShortPrefetchId = next.videoId;
+        final String expectedShortId = next.videoId;
         mShortPrefetchSinceMs = SystemClock.elapsedRealtime();
         mShortPrefetchObservable = YouTubeServiceManager.instance().getMediaItemService()
                 .getFormatInfoObserve(next.videoId).replay(1).refCount();
         mShortPrefetchAction = mShortPrefetchObservable.subscribe(
                 info -> {
-                    if (mShortPrefetchId != null && usableFormat(info)) {
+                    if (expectedShortId.equals(mShortPrefetchId) && usableFormat(info)) {
                         mShortPrefetchedInfo = info;
                         Log.i("MarsTubePerf", "MT-008 prefetch_ready elapsed_ms=" +
                                 (SystemClock.elapsedRealtime() - mShortPrefetchSinceMs));
@@ -715,12 +716,13 @@ public class VideoLoaderController extends BasePlayerController {
                         mShortWarmCache.put(mShortPrefetchId, info, SystemClock.elapsedRealtime());
                         Utils.removeCallbacks(mPrefetchSecondShort);
                         Utils.postDelayed(mPrefetchSecondShort, 1_500);
-                    } else {
+                    } else if (expectedShortId.equals(mShortPrefetchId)) {
                         clearShortPrefetch();
                         Log.i("MarsTubePerf", "MT-008 prefetch_rejected");
                     }
                 },
                 error -> {
+                    if (!expectedShortId.equals(mShortPrefetchId)) return;
                     Log.i("MarsTubePerf", "MT-008 prefetch_error elapsed_ms=" +
                             (SystemClock.elapsedRealtime() - mShortPrefetchSinceMs) +
                             " type=" + error.getClass().getSimpleName());
