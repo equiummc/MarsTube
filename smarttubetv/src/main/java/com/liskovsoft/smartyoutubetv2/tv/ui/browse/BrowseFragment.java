@@ -7,6 +7,11 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.graphics.Color;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -21,6 +26,7 @@ import androidx.leanback.widget.PageRow;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.TitleHelper;
+import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.BrowseSection;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsGroup;
@@ -56,6 +62,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     private boolean mIsFragmentCreated;
     private boolean mFocusOnContent;
     private CrashRestorer mCrashRestorer;
+    private MarsFixedRail mMarsRail;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -96,7 +103,52 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
         mProgressBarManager.setRootView((ViewGroup) root);
 
+        if (root instanceof FrameLayout) {
+            FrameLayout panel = (FrameLayout) root;
+            mMarsRail = new MarsFixedRail(this, panel);
+            mMarsRail.scheduleUpdate();
+
+            ImageView mark = new ImageView(getContext());
+            mark.setImageResource(R.drawable.mars_logo);
+            FrameLayout.LayoutParams markLayout = new FrameLayout.LayoutParams(
+                    dp(68), dp(52), Gravity.START | Gravity.TOP);
+            markLayout.leftMargin = dp(1);
+            markLayout.topMargin = dp(12);
+            panel.addView(mark, markLayout);
+
+            TextView brand = new TextView(getContext());
+            brand.setText("MarsTube");
+            brand.setTextColor(Color.WHITE);
+            brand.setTextSize(28);
+            brand.setTypeface(null, android.graphics.Typeface.BOLD);
+            FrameLayout.LayoutParams brandLayout = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, dp(45), Gravity.TOP | Gravity.START);
+            brandLayout.leftMargin = dp(99);
+            brandLayout.topMargin = dp(20);
+            panel.addView(brand, brandLayout);
+            brand.setFocusable(false);
+        }
+
         return root;
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    ArrayObjectAdapter fixedRailAdapter() {
+        return mSectionRowAdapter;
+    }
+
+    void selectFixedRailSection(long sectionId, boolean focusOnContent) {
+        int index = indexOf(sectionId);
+        if (index < 0) return;
+        selectSection(index, focusOnContent);
+        if (mMarsRail != null) mMarsRail.setSelectedSection(sectionId);
+    }
+
+    public void focusFixedRail() {
+        if (mMarsRail != null) mMarsRail.focusSelected();
     }
 
     @Override
@@ -185,8 +237,9 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             return;
         }
 
-        setHeadersState(HEADERS_ENABLED);
-        setHeadersTransitionOnBackEnabled(true);
+        // Keep Leanback's page infrastructure but never open the old sliding headers.
+        setHeadersState(HEADERS_HIDDEN);
+        setHeadersTransitionOnBackEnabled(false);
 
         int brandColorRes = Helpers.getThemeAttr(getContext(), R.attr.brandColor);
         int brandAccentColorRes = Helpers.getThemeAttr(getContext(), R.attr.brandAccentColor);
@@ -288,6 +341,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
         mSections.put(section.getId(), section);
         createHeader(index, section);
+        if (mMarsRail != null) mMarsRail.scheduleUpdate();
     }
 
     @Override
@@ -298,12 +352,14 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
         mSections.remove(section.getId());
         removeHeader(section);
+        if (mMarsRail != null) mMarsRail.scheduleUpdate();
     }
 
     @Override
     public void removeAllSections() {
         mSections.clear();
         mSectionRowAdapter.clear();
+        if (mMarsRail != null) mMarsRail.scheduleUpdate();
     }
 
     @Override
@@ -338,6 +394,10 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             // Need select again if current header is removed previously (can't check for it right now)
             // Fallback to the last section if index above size
             setSelectedPosition(index < mSectionRowAdapter.size() ? index : mSectionRowAdapter.size() - 1, false);
+            if (mMarsRail != null) {
+                int currentIndex = Math.min(index, mSectionRowAdapter.size() - 1);
+                mMarsRail.setSelectedSection(((PageRow) mSectionRowAdapter.get(currentIndex)).getHeaderItem().getId());
+            }
         }
     }
 
@@ -441,6 +501,10 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
     @Override
     public void onDestroyView() {
+        if (mMarsRail != null) {
+            mMarsRail.destroy();
+            mMarsRail = null;
+        }
         mSectionFragmentFactory.cleanup();
 
         super.onDestroyView();
@@ -524,6 +588,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         Drawable bridgeIcon = Utils.getDrawable(getContext(), splashPresenter.getBridgePackageName(), "app_icon");
 
         // Top right corner logo
-        setBadgeDrawable(bridgeIcon != null ? bridgeIcon : appLogoRes > 0 ? ContextCompat.getDrawable(getContext(), appLogoRes) : null);
+        // The Glass UI uses its own fixed logo, not the legacy Leanback badge.
+        setBadgeDrawable(null);
     }
 }
