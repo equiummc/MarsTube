@@ -68,4 +68,13 @@
     <color name="lb_speech_orb_not_recording">@color/orb_color</color>
     <color name="lb_speech_orb_not_recording_pulsed">@color/orb_bright_color</color>
     <color name="lb_speech_orb_not_recording_icon">@color/orb_icon_color</color>
+    <!-- Mars Glass: static colors, no runtime blurring. -->
+    <color name="mars_bg">#061426</color>
+    <color name="mars_side">#E00A1C32</color>
+    <color name="mars_surface">#D0172A43</color>
+    <color name="mars_surface_selected">#EF1E4E75</color>
+    <color name="mars_focus">#58C4FF</color>
+    <color name="mars_blue">#2A9DF4</color>
+    <color name="mars_text">#F3F8FF</color>
+    <color name="mars_muted_text">#B0C2DA</color>
 </resources>
