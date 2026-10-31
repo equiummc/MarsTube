@@ -54,6 +54,7 @@ public class VideoLoaderController extends BasePlayerController {
     private long mShortPrefetchReadyMs;
     private String mShortAwaitingPrefetch;
     private boolean mShortStarted;
+    private boolean mShortPageRequestPending;
     private final Runnable mReloadVideo = () -> {
         getMainController().onNewVideo(getVideo());
     };
@@ -97,6 +98,7 @@ public class VideoLoaderController extends BasePlayerController {
 
         PlaybackStartupMetrics.videoSelected(item.videoId);
         mShortStarted = false;
+        mShortPageRequestPending = false;
         if (ShortsNavigator.isPlayableShort(item)) {
             if (mShortPrefetchId != null && !mShortPrefetchId.equals(item.videoId))
                 clearShortPrefetch();
@@ -141,6 +143,7 @@ public class VideoLoaderController extends BasePlayerController {
     public void onEngineReleased() {
         disposeActions();
         clearShortPrefetch();
+        mShortPageRequestPending = false;
         mShortHistory.clear();
         mShortHistoryIndex = -1;
     }
@@ -213,9 +216,23 @@ public class VideoLoaderController extends BasePlayerController {
                     : mSuggestionsController.getNextShort();
             if (ShortsNavigator.isPlayableShort(next)) {
                 openVideoInt(next);
-            } else {
-                // Never fall through to the regular-video playlist.
-                MessageHelpers.showMessage(getContext(), R.string.mars_short_no_next);
+            } else if (!mShortPageRequestPending) {
+                // Only extend this Shorts shelf. The regular queue may be mixed.
+                final String sourceId = getVideo().videoId;
+                mShortPageRequestPending = true;
+                boolean loading = mSuggestionsController.loadMoreShorts(continuation -> {
+                    mShortPageRequestPending = false;
+                    if (getVideo() == null || !sourceId.equals(getVideo().videoId)) return;
+                    if (ShortsNavigator.isPlayableShort(continuation)) {
+                        openVideoInt(continuation);
+                    } else {
+                        MessageHelpers.showMessage(getContext(), R.string.mars_short_no_next);
+                    }
+                });
+                if (!loading) {
+                    mShortPageRequestPending = false;
+                    MessageHelpers.showMessage(getContext(), R.string.mars_short_no_next);
+                }
             }
             return;
         }
