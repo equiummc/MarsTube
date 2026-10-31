@@ -6,6 +6,7 @@ import android.os.Handler;
 import androidx.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultLoadControl;
+import com.google.android.exoplayer2.LoadControl;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.SeekParameters;
@@ -34,6 +35,7 @@ public class ExoPlayerInitializer {
     private VolumeBooster mVolumeBooster;
     private float mVolumeBoost;
     private SimpleExoPlayer mPlayer;
+    private ShortsAwareLoadControl mShortsLoadControl;
     private static AudioAttributes sAudioAttributes;
 
     public ExoPlayerInitializer(Context context) {
@@ -49,7 +51,7 @@ public class ExoPlayerInitializer {
     }
 
     public SimpleExoPlayer createPlayer(Context context, DefaultRenderersFactory renderersFactory, DefaultTrackSelector trackSelector) {
-        DefaultLoadControl loadControl = createLoadControl();
+        LoadControl loadControl = createLoadControl();
 
         // HDR fix?
         //trackSelector.setParameters(trackSelector.buildUponParameters().setTunnelingAudioSessionId(C.generateAudioSessionIdV21(context)));
@@ -97,7 +99,7 @@ public class ExoPlayerInitializer {
      * Increase player's min/max buffer size to 60 secs
      * @return load control
      */
-    private DefaultLoadControl createLoadControl() {
+    private LoadControl createLoadControl() {
         DefaultLoadControl.Builder baseBuilder = new DefaultLoadControl.Builder();
 
         // Default values
@@ -145,7 +147,16 @@ public class ExoPlayerInitializer {
         // Decrease buffer size?
         //baseBuilder.setAllocator(new DefaultAllocator(true, 16 * 1024));
 
-        return baseBuilder.createDefaultLoadControl();
+        mShortsLoadControl = new ShortsAwareLoadControl(baseBuilder.createDefaultLoadControl());
+        return mShortsLoadControl;
+    }
+
+    /**
+     * PlaybackFragment updates this on each video selection. Other video
+     * categories continue using DefaultLoadControl's existing thresholds.
+     */
+    public void setShortsPlayback(boolean isShorts) {
+        if (mShortsLoadControl != null) mShortsLoadControl.setShorts(isShorts);
     }
 
     private void setupVolumeBoost(SimpleExoPlayer player) {
@@ -201,6 +212,7 @@ public class ExoPlayerInitializer {
 
         mVolumeBooster = null;
         mPlayer = null;
+        mShortsLoadControl = null;
     }
 
     private DrmSessionManager<FrameworkMediaCrypto> createDrmManager() {
