@@ -114,7 +114,7 @@ try {
     Write-Host ("MT-009 RELEASE INSTALLIERT" + [Environment]::NewLine + "Backup: $oldApk" + [Environment]::NewLine + "Test-APK: $newApk") -ForegroundColor Green
 } finally {
     if ($createdWorktree) {
-        & git -C $repo worktree remove --force $testRoot | Out-Host
+        & git -C $repo worktree remove --force --force $testRoot | Out-Host
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "Arbeitsordner konnte nicht entfernt werden: $testRoot"
         }
