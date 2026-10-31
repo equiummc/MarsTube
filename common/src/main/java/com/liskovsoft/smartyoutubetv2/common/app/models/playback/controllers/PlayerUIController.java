@@ -800,19 +800,14 @@ public class PlayerUIController extends BasePlayerController {
      * accidental seeking or ordinary-video navigation.
      */
     private boolean handleShortsSwipe(int keyCode) {
-        if (getPlayer() == null || getVideo() == null || !getVideo().isShorts
-                || getPlayer().isOverlayShown() || getAppDialogPresenter().isDialogShown()) {
-            return false;
-        }
-        if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-            getMainController().onNextClicked();
-            return true;
-        }
-        if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-            getMainController().onPreviousClicked();
-            return true;
-        }
-        return false;
+        if (getPlayer() == null) return false;
+        int direction = ShortsRemoteKeys.direction(keyCode,
+                getVideo() != null && getVideo().isShorts,
+                getPlayer().isOverlayShown() || getAppDialogPresenter().isDialogShown());
+        if (direction == 0) return false;
+        if (direction > 0) getMainController().onNextClicked();
+        else getMainController().onPreviousClicked();
+        return true;
     }
 
     private boolean handleLeftRightSkip(int keyCode) {
