@@ -781,7 +781,8 @@ public class VideoLoaderController extends BasePlayerController {
                 .getFormatInfoObserve(targetId).subscribe(info -> {
                     Video playing = getVideo();
                     if (playing == null || !currentId.equals(playing.videoId) ||
-                            distance != mShortLookaheadDistance || !getPlayer().isPlaying()) return;
+                            distance != mShortLookaheadDistance || getPlayer() == null ||
+                            !getPlayer().isPlaying()) return;
                     if (!usableFormat(info)) return;
                     mShortWarmCache.put(targetId, info, SystemClock.elapsedRealtime());
                     Log.i("MarsTubePerf", "MT-011B6 lookahead_ready_distance=" + distance);
