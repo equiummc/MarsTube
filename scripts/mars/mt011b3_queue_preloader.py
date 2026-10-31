@@ -29,7 +29,8 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
 """    void openSabr(MediaItemFormatInfo formatInfo);
     // Optional for compatible players. Existing engines remain unaffected.
     default boolean hasPreloadedShort(String videoId) { return false; }
-    default void preloadNextSabrShort(String videoId, MediaItemFormatInfo formatInfo) { }""")
+    default void preloadNextSabrShort(String videoId, MediaItemFormatInfo formatInfo) { }
+    default void cancelPreloadedShort() { }""")
 ])
 
 patch("smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/PlaybackFragment.java",[
@@ -46,6 +47,11 @@ patch("smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/P
     @Override
     public void preloadNextSabrShort(String videoId, MediaItemFormatInfo formatInfo) {
         if (mExoPlayerController != null) mExoPlayerController.preloadNextSabrShort(videoId, formatInfo);
+    }
+
+    @Override
+    public void cancelPreloadedShort() {
+        if (mExoPlayerController != null) mExoPlayerController.cancelPreloadedShort();
     }
 
     @Override
@@ -66,6 +72,18 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
                 getPlayer().resetPlayerState();
             }
             loadFormatInfo(item);"""),
+("discard prepared session on account switch",
+"""            account -> {
+                clearShortPrefetch();
+                mShortWarmCache.clear();
+            };""",
+"""            account -> {
+                clearShortPrefetch();
+                mShortWarmCache.clear();
+                Utils.post(() -> {
+                    if (getPlayer() != null) getPlayer().cancelPreloadedShort();
+                });
+            };"""),
 ("enqueue after format info ready",
 """                        mShortPrefetchedInfo = info;
                         Log.i("MarsTubePerf", "MT-008 prefetch_ready elapsed_ms=" +""",
@@ -221,6 +239,14 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
             android.util.Log.i("MarsTubePerf", "MT-011B short_prefetch_handoff_failed=true");
             dropShortCandidate();
             return false;
+        }
+    }
+
+    public void cancelPreloadedShort() {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            mShortHandler.post(this::dropShortCandidate);
+        } else {
+            dropShortCandidate();
         }
     }
 
