@@ -272,6 +272,53 @@ public class SuggestionsController extends BasePlayerController {
         mActions.add(metadataAction);
     }
 
+
+    public interface OnShortAvailable {
+        void onShortAvailable(Video shortVideo);
+    }
+
+    /** Only navigates the active Shorts group. Never uses the general play queue. */
+    public Video getAdjacentShort(boolean forward) {
+        Video current = getVideo();
+        if (current == null || !current.isShorts) return null;
+        return findAdjacentShort(current.getGroup(), current, forward);
+    }
+
+    private Video findAdjacentShort(VideoGroup group, Video current, boolean forward) {
+        if (group == null || current == null || !current.isShorts) return null;
+        return ShortsSwipeNavigator.adjacent(group.getVideos(), current, forward ? 1 : -1,
+                item -> item.isShorts && item.hasVideo() && !item.isUpcoming && !item.isLive);
+    }
+
+    /**
+     * Page the active Shorts row only if its current items are exhausted.
+     * The caller must guard against navigation changing before the callback.
+     */
+    public void requestNextShort(OnShortAvailable callback) {
+        Video current = getVideo();
+        VideoGroup group = current == null ? null : current.getGroup();
+        if (getPlayer() == null || current == null || !current.isShorts ||
+                group == null || !group.isShorts() || group.getMediaGroup() == null) {
+            callback.onShortAvailable(null);
+            return;
+        }
+        Disposable action = mContentService.continueGroupObserve(group.getMediaGroup())
+                .subscribe(continuation -> {
+                    if (getPlayer() == null || getVideo() == null ||
+                            !current.videoId.equals(getVideo().videoId)) {
+                        callback.onShortAvailable(null);
+                        return;
+                    }
+                    VideoGroup updated = VideoGroup.from(group, continuation);
+                    getPlayer().updateSuggestions(updated);
+                    callback.onShortAvailable(findAdjacentShort(updated, current, true));
+                }, error -> {
+                    Log.e(TAG, "MT-007 Shorts continuation failed: %s", error.getClass().getSimpleName());
+                    callback.onShortAvailable(null);
+                });
+        mActions.add(action);
+    }
+
     public Video getNext() {
         if (getPlayer() == null || getVideo() == null) {
             return null;
