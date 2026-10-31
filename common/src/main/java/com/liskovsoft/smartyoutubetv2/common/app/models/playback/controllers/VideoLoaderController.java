@@ -28,6 +28,8 @@ import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.youtubeapi.service.YouTubeServiceManager;
 
 import io.reactivex.disposables.Disposable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VideoLoaderController extends BasePlayerController {
     private static final String TAG = VideoLoaderController.class.getSimpleName();
@@ -37,6 +39,11 @@ public class VideoLoaderController extends BasePlayerController {
     private SuggestionsController mSuggestionsController;
     private ErrorFixerController mErrorFixerController;
     private Disposable mFormatInfoAction;
+    // MT-007: a bounded navigation history, separate from the ordinary queue.
+    private static final int SHORT_HISTORY_MAX = 12;
+    private final List<Video> mShortHistory = new ArrayList<>();
+    private int mShortHistoryIndex = -1;
+    private boolean mShortHintShown;
     private final Runnable mReloadVideo = () -> {
         getMainController().onNewVideo(getVideo());
     };
@@ -79,6 +86,16 @@ public class VideoLoaderController extends BasePlayerController {
         }
 
         PlaybackStartupMetrics.videoSelected(item.videoId);
+        if (ShortsNavigator.isPlayableShort(item)) {
+            rememberShort(item);
+            if (!mShortHintShown) {
+                mShortHintShown = true;
+                MessageHelpers.showMessage(getContext(), R.string.mars_short_swipe_hint);
+            }
+        } else {
+            mShortHistory.clear();
+            mShortHistoryIndex = -1;
+        }
         item.isShuffled = false;
 
         if (!item.fromQueue && !item.belongsToPlaybackQueue()) {
@@ -109,6 +126,8 @@ public class VideoLoaderController extends BasePlayerController {
     @Override
     public void onEngineReleased() {
         disposeActions();
+        mShortHistory.clear();
+        mShortHistoryIndex = -1;
     }
 
     @Override
@@ -145,6 +164,17 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
+        if (getVideo() != null && getVideo().isShorts) {
+            Video previous = mShortHistoryIndex > 0
+                    ? mShortHistory.get(mShortHistoryIndex - 1)
+                    : mSuggestionsController.getPreviousShort();
+            if (ShortsNavigator.isPlayableShort(previous)) {
+                openVideoInt(previous);
+            } else {
+                MessageHelpers.showMessage(getContext(), R.string.mars_short_no_previous);
+            }
+            return;
+        }
         openVideoInt(mSuggestionsController.getPrevious());
 
         if (getPlayerTweaksData().isPlayerUiOnNextEnabled()) {
@@ -157,6 +187,18 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
+        if (getVideo().isShorts) {
+            Video next = mShortHistoryIndex >= 0 && mShortHistoryIndex + 1 < mShortHistory.size()
+                    ? mShortHistory.get(mShortHistoryIndex + 1)
+                    : mSuggestionsController.getNextShort();
+            if (ShortsNavigator.isPlayableShort(next)) {
+                openVideoInt(next);
+            } else {
+                // Never fall through to the regular-video playlist.
+                MessageHelpers.showMessage(getContext(), R.string.mars_short_no_next);
+            }
+            return;
+        }
         Video next = mSuggestionsController.getNext();
 
         if (next != null) {
@@ -245,6 +287,27 @@ public class VideoLoaderController extends BasePlayerController {
                 Utils.postDelayed(mMetadataSync, 1_000);
             }
         }
+    }
+
+    private void rememberShort(Video item) {
+        if (mShortHistoryIndex >= 0 && mShortHistoryIndex < mShortHistory.size()
+                && item.videoId.equals(mShortHistory.get(mShortHistoryIndex).videoId)) return;
+        if (mShortHistoryIndex > 0
+                && item.videoId.equals(mShortHistory.get(mShortHistoryIndex - 1).videoId)) {
+            mShortHistoryIndex--;
+            return;
+        }
+        if (mShortHistoryIndex >= 0 && mShortHistoryIndex + 1 < mShortHistory.size()
+                && item.videoId.equals(mShortHistory.get(mShortHistoryIndex + 1).videoId)) {
+            mShortHistoryIndex++;
+            return;
+        }
+        while (mShortHistory.size() > mShortHistoryIndex + 1) {
+            mShortHistory.remove(mShortHistory.size() - 1);
+        }
+        mShortHistory.add(item);
+        if (mShortHistory.size() > SHORT_HISTORY_MAX) mShortHistory.remove(0);
+        mShortHistoryIndex = mShortHistory.size() - 1;
     }
 
     private void loadFormatInfo(Video video) {
