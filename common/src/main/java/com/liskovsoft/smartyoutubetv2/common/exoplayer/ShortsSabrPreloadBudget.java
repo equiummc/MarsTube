@@ -24,6 +24,8 @@ public final class ShortsSabrPreloadBudget {
     public static final long MAX_AGE_MS = 15_000L;
 
     private final AtomicLong downloaded = new AtomicLong();
+    private final Object reservationLock = new Object();
+    private long reservedBytes;
     private final AtomicBoolean promoted = new AtomicBoolean();
     private final AtomicBoolean cancelled = new AtomicBoolean();
     private final AtomicBoolean notified = new AtomicBoolean();
@@ -81,17 +83,32 @@ public final class ShortsSabrPreloadBudget {
             checkAllowed();
             if (readLength == 0) return 0;
             int requested = readLength;
-            if (!promoted.get()) {
-                long remaining = MAX_BYTES - downloaded.get();
-                requested = (int) Math.min(requested, Math.max(0, remaining));
-                if (requested <= 0) {
-                    checkAllowed();
-                    return -1;
+            boolean limited = !promoted.get();
+            if (limited) {
+                // Multiple SABR audio/video tracks may read concurrently. Reserve
+                // before the I/O to make the shared 4MiB ceiling deterministic.
+                synchronized (reservationLock) {
+                    long remaining = MAX_BYTES - downloaded.get() - reservedBytes;
+                    requested = (int) Math.min(requested, Math.max(0, remaining));
+                    if (requested > 0) reservedBytes += requested;
+                }
+                if (requested == 0) {
+                    if (notified.compareAndSet(false, true)) main.post(onLimit);
+                    throw new IOException("MT-011B speculative byte cap reached");
                 }
             }
-            int count = delegate.read(buffer, offset, requested);
-            if (count > 0 && !promoted.get()) downloaded.addAndGet(count);
-            return count;
+            int count = 0;
+            try {
+                count = delegate.read(buffer, offset, requested);
+                return count;
+            } finally {
+                if (limited) {
+                    synchronized (reservationLock) {
+                        reservedBytes -= requested;
+                        if (count > 0) downloaded.addAndGet(count);
+                    }
+                }
+            }
         }
 
         @Override
