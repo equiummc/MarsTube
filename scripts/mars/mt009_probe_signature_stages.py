@@ -140,6 +140,21 @@ patch("youtubeapi/src/main/java/com/liskovsoft/youtubeapi/app/nsigsolver/impl/Tc
                     (android.os.SystemClock.elapsedRealtime() - mt009Shutdown))
                 result
             }"""),
+    ("TCL V8 startup script and native creation",
+     """        v8Runtime = V8.createV8Runtime()
+        runV8(constructCommonStdin())""",
+     """        val mt009CreateStart = android.os.SystemClock.elapsedRealtime()
+        v8Runtime = V8.createV8Runtime()
+        android.util.Log.i("MarsTubePerf", "MT-009 tcl_v8_native_create_ms=" +
+            (android.os.SystemClock.elapsedRealtime() - mt009CreateStart))
+        val mt009ScriptStart = android.os.SystemClock.elapsedRealtime()
+        val mt009Script = constructCommonStdin()
+        android.util.Log.i("MarsTubePerf", "MT-009 tcl_v8_load_script_ms=" +
+            (android.os.SystemClock.elapsedRealtime() - mt009ScriptStart))
+        val mt009BootStart = android.os.SystemClock.elapsedRealtime()
+        runV8(mt009Script)
+        android.util.Log.i("MarsTubePerf", "MT-009 tcl_v8_boot_script_ms=" +
+            (android.os.SystemClock.elapsedRealtime() - mt009BootStart))"""),
     ("TCL solution decode",
      """        val output: SolverOutput = try {
             Gson().fromJson(stdout, solverOutputType)""",
@@ -181,6 +196,21 @@ patch("youtubeapi/src/main/java/com/liskovsoft/youtubeapi/app/nsigsolver/impl/V8
                 (android.os.SystemClock.elapsedRealtime() - mt009Shutdown))
             return result
         }"""),
+    ("web V8 startup script and native creation",
+     """        v8Runtime = V8.createV8Runtime()
+        runV8(constructCommonStdin()) // ignore the result, just warm up""",
+     """        val mt009CreateStart = android.os.SystemClock.elapsedRealtime()
+        v8Runtime = V8.createV8Runtime()
+        android.util.Log.i("MarsTubePerf", "MT-009 web_v8_native_create_ms=" +
+            (android.os.SystemClock.elapsedRealtime() - mt009CreateStart))
+        val mt009ScriptStart = android.os.SystemClock.elapsedRealtime()
+        val mt009Script = constructCommonStdin()
+        android.util.Log.i("MarsTubePerf", "MT-009 web_v8_load_script_ms=" +
+            (android.os.SystemClock.elapsedRealtime() - mt009ScriptStart))
+        val mt009BootStart = android.os.SystemClock.elapsedRealtime()
+        runV8(mt009Script) // ignore the result, just warm up
+        android.util.Log.i("MarsTubePerf", "MT-009 web_v8_boot_script_ms=" +
+            (android.os.SystemClock.elapsedRealtime() - mt009BootStart))"""),
 ])
 
 print("MT-009 instrument complete: durations and format counts only, no URLs/IDs/tokens")
