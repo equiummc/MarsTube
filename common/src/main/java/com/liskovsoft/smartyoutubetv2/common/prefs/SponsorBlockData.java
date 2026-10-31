@@ -298,7 +298,8 @@ public class SponsorBlockData {
                 if (SponsorSegment.CATEGORY_FILLER.equals(segmentCategory)) {
                     mActions.add(SegmentAction.from(segmentCategory, ACTION_DO_NOTHING));
                 } else {
-                    mActions.add(SegmentAction.from(segmentCategory, ACTION_SKIP_WITH_TOAST));
+                    // New installations default to silent skipping. Existing saved choices remain unchanged.
+                    mActions.add(SegmentAction.from(segmentCategory, ACTION_SKIP_ONLY));
                 }
             }
         }
