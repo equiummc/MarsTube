@@ -159,6 +159,18 @@ jobs:
         if: github.ref_name == 'feature/mt-011b2-lowcopy-tcl-20261031' || github.base_ref == 'feature/mt-011b-sabr-handoff-lab-20261031'
         run: node scripts/mars/mt011ab_verify_challenges.js
 
+      - name: MT-011AB validate one-shot release installer syntax
+        if: github.ref_name == 'feature/mt-011b2-lowcopy-tcl-20261031' || github.base_ref == 'feature/mt-011b-sabr-handoff-lab-20261031'
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/mars/Install-MT011AB-Release.ps1').Path,
+            [ref]$tokens, [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Host; exit 1 }
+
       - name: MT-011B validate fail-closed preloader gate tests
         if: (github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031' || github.ref_name == 'feature/mt-011b2-lowcopy-tcl-20261031') || (github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031' || github.base_ref == 'feature/mt-011b-sabr-handoff-lab-20261031')
         run: |
