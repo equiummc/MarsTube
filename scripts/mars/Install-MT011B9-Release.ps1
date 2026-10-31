@@ -1,4 +1,4 @@
-# MT-011B91: signed release-mode TCL stage diagnostic install for Thomson only.
+# MT-011B9: signed release-mode TCL stage diagnostic install for Thomson only.
 # Protects existing app data, does not modify primary Git checkout.
 $ErrorActionPreference = 'Stop'
 $adb = Join-Path $env:USERPROFILE 'Android-Tools\platform-tools\adb.exe'
@@ -166,10 +166,39 @@ try {
     Checked 'MT-011B9 Queue-Overlay'
 
     Write-Host '[5] MT-011B9 RELEASE (nicht Debug) bauen' -ForegroundColor Cyan
+    # The former installer discarded the Gradle failure context: it only
+    # reported the exit code. Persist both the full output and an error tail.
+    $buildLog = Join-Path $backupRoot ("MT011B9-Gradle-" + $stamp + ".log")
+    $javaHome = $env:JAVA_HOME
+    Write-Host ("Java_HOME: " + $(if ($javaHome) { $javaHome } else { '<not set>' })) -ForegroundColor Cyan
+    $javaExe = Get-Command java -ErrorAction SilentlyContinue
+    if ($javaExe) {
+        Write-Host ("Java executable: " + $javaExe.Source) -ForegroundColor Cyan
+        # java -version writes to stderr, but this is only a diagnostic line.
+        & cmd.exe /d /c 'java -version 2>&1' | Out-Host
+    } else {
+        Write-Warning 'java.exe ist nicht ueber PATH auffindbar; Gradle verwendet ggf. JAVA_HOME.'
+    }
+
     Push-Location $testRoot
     try {
-        & .\gradlew.bat --no-daemon :smarttubetv:assembleStstableRelease | Out-Host
-        Checked 'Release Build'
+        # Capture stdout/stderr in one file without PowerShell treating Gradle
+        # native stderr messages as a terminating ErrorRecord.
+        $gradleCommand = 'call gradlew.bat --no-daemon --stacktrace :smarttubetv:assembleStstableRelease'
+        $cmdLine = $gradleCommand + ' > "' + $buildLog + '" 2>&1'
+        & cmd.exe /d /s /c $cmdLine
+        $buildCode = $LASTEXITCODE
+        if ($buildCode -ne 0) {
+            Write-Host ("Gradle BUILD FAILED (Exit " + $buildCode + ")") -ForegroundColor Red
+            Write-Host "Vollstaendiges Build-Log: $buildLog" -ForegroundColor Yellow
+            if (Test-Path -LiteralPath $buildLog) {
+                Write-Host '--- Letzte 100 Gradle-Logzeilen ---' -ForegroundColor Yellow
+                Get-Content -LiteralPath $buildLog -Tail 100 | Out-Host
+                Write-Host '--- Ende des Gradle-Fehlers ---' -ForegroundColor Yellow
+            }
+            throw "Release Build fehlgeschlagen (Exit $buildCode). Log: $buildLog"
+        }
+        Write-Host "Build erfolgreich. Gradle-Log: $buildLog" -ForegroundColor Green
     } finally {
         Pop-Location
     }
