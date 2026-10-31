@@ -61,6 +61,18 @@ jobs:
         if: github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031'
         run: python3 scripts/mars/mt009_probe_signature_stages.py
 
+      - name: MT-009 check installer PowerShell syntax (do not run it)
+        if: github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031'
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/mars/Install-MT009-Release.ps1').Path,
+            [ref]$tokens, [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Host; exit 1 }
+
       - name: Build native Android TV debug APK (not for release)
         run: |
           chmod +x ./gradlew
@@ -69,7 +81,7 @@ jobs:
       - name: Run applicable common module unit tests
         run: ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest
 
-      - name: Validate release-mode Android TV APK (MT-008 experiment only)
+      - name: Validate release-mode Android TV APK (MT-009/MT-008 experiment only)
         if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031'
         run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableRelease
 
