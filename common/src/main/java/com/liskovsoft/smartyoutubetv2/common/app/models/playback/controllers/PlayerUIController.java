@@ -60,6 +60,7 @@ public class PlayerUIController extends BasePlayerController {
     private boolean mDebugViewEnabled;
     private boolean mIsMetadataLoaded;
     private long mOverlayHideTimeMs;
+    private boolean mShortsHintShown;
     private final Runnable mSuggestionsResetHandler = () -> {
         if (getPlayer() == null) {
             return;
@@ -108,6 +109,10 @@ public class PlayerUIController extends BasePlayerController {
     @Override
     public void onNewVideo(Video item) {
         enableUiAutoHideTimeout();
+        if (item != null && item.isShorts && !mShortsHintShown) {
+            mShortsHintShown = true;
+            MessageHelpers.showMessage(getContext(), R.string.mars_shorts_swipe_hint);
+        }
 
         if (item != null && !item.equals(getVideo())) {
             mIsMetadataLoaded = false; // metadata isn't loaded yet at this point
@@ -133,7 +138,9 @@ public class PlayerUIController extends BasePlayerController {
             return false;
         }
 
-        boolean isHandled = handleBackKey(keyCode) || handleMenuKey(keyCode) ||
+        // Handle Shorts swipes ahead of the generic seek/quick-skip paths.
+        boolean isHandled = handleShortsSwipe(keyCode) ||
+                handleBackKey(keyCode) || handleMenuKey(keyCode) ||
                 handleConfirmKey(keyCode) || handleStopKey(keyCode) || handleNumKeys(keyCode) ||
                 handlePlayPauseKey(keyCode) || handleLeftRightSkip(keyCode) || handleUpDownSkip(keyCode);
 
@@ -787,7 +794,30 @@ public class PlayerUIController extends BasePlayerController {
         return false;
     }
 
+    private boolean handleShortsSwipe(int keyCode) {
+        Video video = getVideo();
+        if (video == null || !video.isShorts || getPlayer() == null ||
+                getAppDialogPresenter().isDialogShown() || getPlayer().isOverlayShown()) {
+            return false; // Menus and overlays keep their existing navigation.
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            getController(VideoLoaderController.class).loadAdjacentShort(true);
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+            getController(VideoLoaderController.class).loadAdjacentShort(false);
+            return true;
+        }
+        if (KeyHelpers.isConfirmKey(keyCode)) {
+            getPlayer().setPlayWhenReady(!getPlayer().getPlayWhenReady());
+            return true;
+        }
+        return false;
+    }
+
     private boolean handleLeftRightSkip(int keyCode) {
+        // Shorts never use horizontal quick-skip; left/right can seek as before.
+        if (getVideo() != null && getVideo().isShorts) return false;
         if (getPlayer() == null || getPlayer().isOverlayShown() || getVideo() == null ||
                 (getVideo().belongsToShortsGroup() && !getPlayerTweaksData().isQuickSkipShortsEnabled() ||
                 (!getVideo().belongsToShortsGroup() && !getPlayerTweaksData().isQuickSkipVideosEnabled()))) {
@@ -808,6 +838,7 @@ public class PlayerUIController extends BasePlayerController {
     }
 
     private boolean handleUpDownSkip(int keyCode) {
+        if (getVideo() != null && getVideo().isShorts) return false;
         if (getPlayer() == null || getPlayer().isOverlayShown() || getVideo() == null ||
                 (getVideo().belongsToShortsGroup() && !getPlayerTweaksData().isQuickSkipShortsAltEnabled() ||
                         (!getVideo().belongsToShortsGroup() && !getPlayerTweaksData().isQuickSkipVideosAltEnabled()))) {
