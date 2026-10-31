@@ -155,6 +155,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
     private final android.os.Handler mShortHandler =
             new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable mExpireShort = this::dropShortCandidate;
+    private final Runnable mWatchShort = this::watchShortCandidate;
     /** Not null only for sabr live streams */"""),
 ("openSabr adoption",
 """    public void openSabr(MediaItemFormatInfo formatInfo) {
@@ -214,6 +215,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
             mShortNextAtMs = android.os.SystemClock.elapsedRealtime();
             mShortHandler.removeCallbacks(mExpireShort);
             mShortHandler.postDelayed(mExpireShort, ShortsSabrPreloadBudget.MAX_AGE_MS);
+            mShortHandler.removeCallbacks(mWatchShort);
+            mShortHandler.postDelayed(mWatchShort, 500);
             android.util.Log.i("MarsTubePerf", "MT-011B4 preload_candidate_queued=true");
         } catch (RuntimeException ex) {
             budget.cancel();
@@ -264,8 +267,21 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
         }
     }
 
+    private void watchShortCandidate() {
+        if (mShortNextId == null) return;
+        if (mPlayer == null || mPlayer.getPlaybackState() != Player.STATE_READY ||
+                !mPlayer.getPlayWhenReady() ||
+                mPlayer.getBufferedPosition() - mPlayer.getCurrentPosition() < 1_500) {
+            android.util.Log.i("MarsTubePerf", "MT-011B4 preload_cancel_foreground_priority=true");
+            dropShortCandidate();
+        } else {
+            mShortHandler.postDelayed(mWatchShort, 500);
+        }
+    }
+
     private void dropShortCandidate() {
         mShortHandler.removeCallbacks(mExpireShort);
+        mShortHandler.removeCallbacks(mWatchShort);
         if (mShortNextId != null) {
             android.util.Log.i("MarsTubePerf", "MT-011B4 preload_discard_bytes=" +
                     (mShortBudget == null ? 0 : mShortBudget.bytes()));
@@ -362,4 +378,37 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/exoplayer/cont
             mShortAdoptedId = null;
         }
         Log.e(TAG, "onPlayerError: " + error);""")
+])
+
+# MT-011B4: enable metadata warmup whenever media preload was deliberately enabled.
+# Keep the two switches independent and default-off for older installations.
+patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java",[
+("schedule warmup on loaded",
+"""        if (video != null && video.isShorts &&
+                getPlayerTweaksData().isMarsShortPrefetchEnabled()) {""",
+"""        if (video != null && video.isShorts &&
+                (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
+                 getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {"""),
+("allow warmup reuse for media preload",
+"""        boolean matchingPrefetch = getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
+                video.isShorts""",
+"""        boolean matchingPrefetch = (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
+                getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) &&
+                video.isShorts"""),
+("schedule metadata warmup",
+"""        if (getVideo() != null && getVideo().isShorts &&
+                getPlayerTweaksData().isMarsShortPrefetchEnabled()) {""",
+"""        if (getVideo() != null && getVideo().isShorts &&
+                (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
+                 getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {"""),
+("guard warmup",
+"""        if (!getPlayerTweaksData().isMarsShortPrefetchEnabled()) {
+            clearShortPrefetch();
+            return;
+        }""",
+"""        if (!getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
+                !getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) {
+            clearShortPrefetch();
+            return;
+        }""")
 ])
