@@ -20,6 +20,7 @@ import androidx.leanback.widget.PageRow;
 import com.bumptech.glide.Glide;
 import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
+import com.liskovsoft.smartyoutubetv2.common.app.presenters.SearchPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.dialogs.AccountSelectionPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.settings.AccountSettingsPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.settings.GeneralSettingsPresenter;
@@ -206,6 +207,19 @@ final class MarsFixedRail {
                 showTooltip(icon, focused ? section.getName().toString() : null);
             });
             icon.setOnKeyListener((v, keyCode, event) -> handleDirection(event, keyCode));
+
+            if (id == MediaGroup.TYPE_HOME) {
+                ImageView search = button(R.drawable.mars_rail_search,
+                        overlay.getContext().getString(R.string.settings_search));
+                LinearLayout.LayoutParams searchLayout = new LinearLayout.LayoutParams(dp(48), dp(48));
+                searchLayout.gravity = Gravity.CENTER_HORIZONTAL;
+                searchLayout.bottomMargin = dp(7);
+                icons.addView(search, searchLayout);
+                search.setOnClickListener(v -> SearchPresenter.instance(overlay.getContext()).startSearch(null));
+                search.setOnFocusChangeListener((v, focused) -> showTooltip(search,
+                        focused ? overlay.getContext().getString(R.string.settings_search) : null));
+                search.setOnKeyListener((v, keyCode, event) -> handleDirection(event, keyCode));
+            }
         }
         settings.setSelected(selectedSection == MediaGroup.TYPE_SETTINGS);
         if (buttons.containsKey(focusId)) buttons.get(focusId).requestFocus();
