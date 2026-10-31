@@ -70,7 +70,7 @@ final class MarsFixedRail {
             return true;
         });
         profile.setOnFocusChangeListener((v, focused) -> showTooltip(profile, focused ? ctx.getString(R.string.settings_accounts) : null));
-        profile.setOnKeyListener((v, keyCode, event) -> handleDirection(event, keyCode));
+        profile.setOnKeyListener((v, keyCode, event) -> handleDirection(v, event, keyCode));
         refreshProfile();
 
         scroll = new ScrollView(ctx);
@@ -101,7 +101,7 @@ final class MarsFixedRail {
             settings.setSelected(focused || selectedSection == MediaGroup.TYPE_SETTINGS);
             showTooltip(settings, focused ? ctx.getString(R.string.header_settings) : null);
         });
-        settings.setOnKeyListener((v, keyCode, event) -> handleDirection(event, keyCode));
+        settings.setOnKeyListener((v, keyCode, event) -> handleDirection(v, event, keyCode));
 
         tooltip = new TextView(ctx);
         tooltip.setTextColor(Color.WHITE);
@@ -137,13 +137,35 @@ final class MarsFixedRail {
         return view;
     }
 
-    private boolean handleDirection(KeyEvent event, int code) {
+    private boolean handleDirection(View source, KeyEvent event, int code) {
         if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
         if (code == KeyEvent.KEYCODE_DPAD_RIGHT) {
             browse.focusOnContent();
             return true;
         }
-        return code == KeyEvent.KEYCODE_DPAD_LEFT;
+        if (code == KeyEvent.KEYCODE_DPAD_LEFT) return true;
+        if (code == KeyEvent.KEYCODE_DPAD_DOWN && source == profile) {
+            if (icons.getChildCount() > 0) icons.getChildAt(0).requestFocus();
+            else settings.requestFocus();
+            return true;
+        }
+        if (code == KeyEvent.KEYCODE_DPAD_DOWN &&
+                icons.getChildCount() > 0 && source == icons.getChildAt(icons.getChildCount() - 1)) {
+            settings.requestFocus();
+            return true;
+        }
+        if (code == KeyEvent.KEYCODE_DPAD_UP && source == settings) {
+            if (icons.getChildCount() > 0)
+                icons.getChildAt(icons.getChildCount() - 1).requestFocus();
+            else profile.requestFocus();
+            return true;
+        }
+        if (code == KeyEvent.KEYCODE_DPAD_UP &&
+                icons.getChildCount() > 0 && source == icons.getChildAt(0)) {
+            profile.requestFocus();
+            return true;
+        }
+        return false;
     }
 
     private void showTooltip(View source, String label) {
@@ -206,7 +228,7 @@ final class MarsFixedRail {
                 icon.setColorFilter(focused ? 0xFF6AD5FF : 0xFFC2D9F3);
                 showTooltip(icon, focused ? section.getName().toString() : null);
             });
-            icon.setOnKeyListener((v, keyCode, event) -> handleDirection(event, keyCode));
+            icon.setOnKeyListener((v, keyCode, event) -> handleDirection(v, event, keyCode));
 
             if (id == MediaGroup.TYPE_HOME) {
                 ImageView search = button(R.drawable.mars_rail_search,
@@ -218,7 +240,7 @@ final class MarsFixedRail {
                 search.setOnClickListener(v -> SearchPresenter.instance(overlay.getContext()).startSearch(null));
                 search.setOnFocusChangeListener((v, focused) -> showTooltip(search,
                         focused ? overlay.getContext().getString(R.string.settings_search) : null));
-                search.setOnKeyListener((v, keyCode, event) -> handleDirection(event, keyCode));
+                search.setOnKeyListener((v, keyCode, event) -> handleDirection(v, event, keyCode));
             }
         }
         settings.setSelected(selectedSection == MediaGroup.TYPE_SETTINGS);
