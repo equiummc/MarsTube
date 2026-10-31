@@ -19,6 +19,16 @@ import com.liskovsoft.smartyoutubetv2.tv.R;
 
 /** Real scrollable hero row. It leaves the viewport with the first rows of videos. */
 public final class MarsFeatureRowPresenter extends RowPresenter {
+    public interface VideoClickListener {
+        void onVideoClick(Video video);
+    }
+
+    private VideoClickListener clickListener;
+
+    public void setOnVideoClickListener(VideoClickListener listener) {
+        clickListener = listener;
+    }
+
     private final Handler handler = new Handler(Looper.getMainLooper());
     private RowPresenter.ViewHolder attached;
     private Video selected;
@@ -33,8 +43,14 @@ public final class MarsFeatureRowPresenter extends RowPresenter {
             params.height = Math.round(218 * parent.getResources().getDisplayMetrics().density);
             view.setLayoutParams(params);
         }
-        view.setFocusable(false);
-        view.setClickable(false);
+        // The banner is a real selectable video entry, not a decorative wallpaper.
+        view.setFocusable(true);
+        view.setClickable(true);
+        view.setOnClickListener(v -> {
+            if (selected != null && clickListener != null) {
+                clickListener.onVideoClick(selected);
+            }
+        });
         setSelectEffectEnabled(false);
         return new RowPresenter.ViewHolder(view);
     }
@@ -83,6 +99,8 @@ public final class MarsFeatureRowPresenter extends RowPresenter {
                 ? selected.getTitle() : v.getContext().getString(R.string.app_name));
         CharSequence info = selected != null ? selected.getSecondTitle() : null;
         subtitle.setText(info != null ? info : "");
+        v.setContentDescription(selected != null && selected.getTitle() != null
+                ? selected.getTitle() : v.getContext().getString(R.string.app_name));
 
         String imageUrl = selected != null ? selected.getCardImageUrl() : null;
         if (TextUtils.isEmpty(imageUrl)) {
