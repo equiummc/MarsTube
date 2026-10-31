@@ -127,7 +127,7 @@ public class PlayerTweaksData implements ProfileChangeListener {
     public void setMarsShortMediaPreloadEnabled(boolean enabled) {
         if (mIsMarsShortMediaPreloadEnabled != enabled) {
             mIsMarsShortMediaPreloadEnabled = enabled;
-            persistData();
+            persistNow(); // This setting requires a restart; save before exit.
         }
     }
 
