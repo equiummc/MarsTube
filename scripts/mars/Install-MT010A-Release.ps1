@@ -50,7 +50,7 @@ if (-not (Test-Path $oldApk) -or (Get-Item $oldApk).Length -lt 1000000) {
 Write-Host "Backup: $oldApk" -ForegroundColor Green
 
 Write-Host '[3] Separaten Git-Worktree vorbereiten' -ForegroundColor Cyan
-& git -C $repo fetch origin "refs/heads/feature/mt-009-signature-stage-diagnostics-20261031:refs/remotes/origin/feature/mt-009-signature-stage-diagnostics-20261031" | Out-Host
+& git -C $repo fetch origin "refs/heads/${branch}:refs/remotes/origin/${branch}" | Out-Host
 Checked 'Git fetch'
 $commit = (& git -C $repo rev-parse "refs/remotes/origin/$branch" | Out-String).Trim()
 Checked 'Branch SHA'
