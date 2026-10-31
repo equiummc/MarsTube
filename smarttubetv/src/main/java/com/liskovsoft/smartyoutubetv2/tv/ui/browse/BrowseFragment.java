@@ -28,6 +28,7 @@ import androidx.leanback.widget.TitleHelper;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
+import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.BrowseSection;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsGroup;
@@ -123,6 +124,27 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             mMarsHeroImage = hero.findViewById(R.id.mars_hero_image);
             mMarsHeroTitle = hero.findViewById(R.id.mars_hero_title);
             mMarsHeroSubtitle = hero.findViewById(R.id.mars_hero_subtitle);
+
+            // Small, reachable settings shortcut in the lower-left corner.
+            ImageView settingsGear = new ImageView(getContext());
+            settingsGear.setId(View.generateViewId());
+            settingsGear.setImageResource(R.drawable.icon_settings);
+            settingsGear.setBackgroundResource(R.drawable.mars_glass_navigation);
+            settingsGear.setPadding(dp(10), dp(10), dp(10), dp(10));
+            settingsGear.setFocusable(true);
+            settingsGear.setClickable(true);
+            settingsGear.setContentDescription(getString(R.string.header_settings));
+            settingsGear.setOnClickListener(v -> {
+                int settingsIndex = indexOf(MediaGroup.TYPE_SETTINGS);
+                if (settingsIndex >= 0) {
+                    selectSection(settingsIndex, true);
+                }
+            });
+            FrameLayout.LayoutParams gearParams = new FrameLayout.LayoutParams(
+                    dp(48), dp(48), Gravity.BOTTOM | Gravity.START);
+            gearParams.leftMargin = dp(24);
+            gearParams.bottomMargin = dp(18);
+            ((FrameLayout) root).addView(settingsGear, gearParams);
         }
 
         return root;
