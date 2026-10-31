@@ -8,6 +8,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.OptionItem;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.ui.UiOptionItem;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.AppDialogPresenter;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.selector.FormatItem;
+import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerTweaksData;
 import com.liskovsoft.smartyoutubetv2.common.utils.AppDialogUtil;
 
 import java.util.HashSet;
@@ -92,6 +93,13 @@ public class HQDialogController extends BasePlayerController {
         }
 
         FormatItem formatItem = UiOptionItem.toFormat(option);
+        if (formatItem == null) {
+            return;
+        }
+        // A deliberate manual video-format selection overrides adaptive mode.
+        if (formatItem.getType() == FormatItem.TYPE_VIDEO && !formatItem.isDefault()) {
+            PlayerTweaksData.instance(getContext()).setMarsAdaptiveQualityEnabled(false);
+        }
         getPlayer().setFormat(formatItem);
         persistFormat(formatItem);
 

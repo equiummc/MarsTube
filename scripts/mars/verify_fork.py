@@ -82,6 +82,21 @@ def check(root: pathlib.Path, require_submodules: bool) -> list[str]:
             urls[0].startswith("https://raw.githubusercontent.com/equiummc/mars-smarttube/") and
             "yuliskov/SmartTube" not in urls[0],
             "stable updater configured for fork, not upstream")
+    # MT-005: the experimental ABR hook must never become an unreviewed default
+    # or interfere with SmartTube's original fixed-track fallback.
+    if (root / "docs/mars-maintenance/MT-005-SMART-QUALITY-LAB.md").is_file():
+        tweaks = read("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/prefs/PlayerTweaksData.java")
+        selector = read("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/exoplayer/versions/selector/RestoreTrackSelector.java")
+        require("mIsMarsAdaptiveQualityEnabled = Helpers.parseBoolean(split, 62, false)" in tweaks,
+                "experimental adaptive quality defaults OFF for existing users")
+        require("mIsMarsAdaptiveQualityEnabled" in tweaks and
+                "isMarsAdaptiveQualityEnabled()" in selector and
+                "enableAdaptiveTrackSelection" in selector and
+                "super.selectVideoTrack(groups, formatSupports" in selector,
+                "experimental ABR path uses existing ExoPlayer selector")
+        require("selectVideoTrack: choose custom video processing" in selector,
+                "legacy SmartTube fixed-quality path remains available")
+
     if require_submodules:
         for path in ("SharedModules/core_settings.gradle", "MediaServiceCore/core_settings.gradle",
                      "exoplayer-amzn-2.10.6/core_settings.gradle"):

@@ -19,6 +19,7 @@ public class RestoreTrackSelector extends DefaultTrackSelector {
     private TrackSelectorCallback mCallback;
 
     public interface TrackSelectorCallback {
+        boolean isMarsAdaptiveQualityEnabled();
         Pair<Definition, MediaTrack> onSelectVideoTrack(TrackGroupArray groups, Parameters params);
         Pair<Definition, MediaTrack> onSelectAudioTrack(TrackGroupArray groups, Parameters params);
         Pair<Definition, MediaTrack> onSelectSubtitleTrack(TrackGroupArray groups, Parameters params);
@@ -125,6 +126,16 @@ public class RestoreTrackSelector extends DefaultTrackSelector {
     @Override
     protected Definition selectVideoTrack(TrackGroupArray groups, int[][] formatSupports, int mixedMimeTypeAdaptationSupports,
                                               Parameters params, boolean enableAdaptiveTrackSelection) throws ExoPlaybackException {
+        // MT-005 experimental: let the existing ExoPlayer ABR selector choose
+        // among device-supported tracks. Preserve original fixed track logic
+        // when disabled and respect explicit manual override state.
+        if (mCallback != null && mCallback.isMarsAdaptiveQualityEnabled()
+                && !params.hasSelectionOverride(TrackSelectorManager.RENDERER_INDEX_VIDEO, groups)) {
+            Log.d(TAG, "MT-005 adaptive video selection");
+            return super.selectVideoTrack(groups, formatSupports,
+                    mixedMimeTypeAdaptationSupports, params, enableAdaptiveTrackSelection);
+        }
+
         if (mCallback != null) {
             Pair<Definition, MediaTrack> resultPair = mCallback.onSelectVideoTrack(groups, params);
 

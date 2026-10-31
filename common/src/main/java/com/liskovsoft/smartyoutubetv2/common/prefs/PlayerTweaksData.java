@@ -111,7 +111,20 @@ public class PlayerTweaksData implements ProfileChangeListener {
     private boolean mIsSuggestionsHorizontallyScrolled;
     private boolean mIsQueueRespectsPlaybackMode;
     private boolean mIsSabrLiveEnabled;
+    // MT-005: experimental opt-in; no silent migration of user-selected video presets.
+    private boolean mIsMarsAdaptiveQualityEnabled;
     private final Runnable mPersistDataInt = this::persistDataInt;
+
+    public boolean isMarsAdaptiveQualityEnabled() {
+        return mIsMarsAdaptiveQualityEnabled;
+    }
+
+    public void setMarsAdaptiveQualityEnabled(boolean enabled) {
+        if (mIsMarsAdaptiveQualityEnabled != enabled) {
+            mIsMarsAdaptiveQualityEnabled = enabled;
+            persistData();
+        }
+    }
 
     private PlayerTweaksData(Context context) {
         mPrefs = AppPrefs.instance(context);
@@ -775,6 +788,7 @@ public class PlayerTweaksData implements ProfileChangeListener {
         mIsAudioTimeStretchingEnabled = Helpers.parseBoolean(split, 59, true);
         mIsQueueRespectsPlaybackMode = Helpers.parseBoolean(split, 60, false);
         mIsSabrLiveEnabled = Helpers.parseBoolean(split, 61, false);
+        mIsMarsAdaptiveQualityEnabled = Helpers.parseBoolean(split, 62, false); // opt-in until TV validated
 
         updateDefaultValues();
     }
@@ -802,7 +816,7 @@ public class PlayerTweaksData implements ProfileChangeListener {
                 mIsUnsafeAudioFormatsEnabled, null, mIsLoopShortsEnabled, mIsQuickSkipShortsEnabled, mIsRememberPositionOfLiveVideosEnabled,
                 mIsOculusQuestFixEnabled, null, mIsExtraLongSpeedListEnabled, mIsQuickSkipVideosEnabled, mIsNetworkErrorFixingDisabled, mIsCommentsPlacedLeft,
                 null, mIsAudioFocusEnabled, mIsDontResizeVideoToFitDialogEnabled, mIsSuggestionsHorizontallyScrolled,
-                mIsQuickSkipShortsAltEnabled, mIsQuickSkipVideosAltEnabled, mIsAudioTimeStretchingEnabled, mIsQueueRespectsPlaybackMode, mIsSabrLiveEnabled
+                mIsQuickSkipShortsAltEnabled, mIsQuickSkipVideosAltEnabled, mIsAudioTimeStretchingEnabled, mIsQueueRespectsPlaybackMode, mIsSabrLiveEnabled, mIsMarsAdaptiveQualityEnabled
                 ));
     }
 

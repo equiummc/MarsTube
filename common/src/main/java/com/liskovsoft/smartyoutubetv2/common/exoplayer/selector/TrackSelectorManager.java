@@ -365,6 +365,11 @@ public class TrackSelectorManager implements TrackSelectorCallback {
     }
 
     @Override
+    public boolean isMarsAdaptiveQualityEnabled() {
+        return PlayerTweaksData.instance(mContext).isMarsAdaptiveQualityEnabled();
+    }
+
+    @Override
     public Pair<Definition, MediaTrack> onSelectVideoTrack(TrackGroupArray groups, Parameters params) {
         return createRendererSelection(RENDERER_INDEX_VIDEO, groups, params);
     }
