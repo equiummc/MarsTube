@@ -518,7 +518,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         // Never draw a free-floating logo over the network/status indicators.
         if (MainUIData.instance(getContext()).getColorScheme().nameResId
                 == R.string.color_scheme_mars_safe_glass) {
-            setBadgeDrawable(ContextCompat.getDrawable(getContext(), R.drawable.mars_logo_blue));
+            setBadgeDrawable(ContextCompat.getDrawable(getContext(), R.drawable.mars_logo_title));
             return;
         }
 
