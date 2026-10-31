@@ -11,6 +11,7 @@ on:
       - feature/mt-010a-tcl-decoder-cache-20261031
       - feature/mt-010a2-tcl-warm-runtime-20261031
       - feature/mt-011a-tcl-stage-probes-20261031
+      - feature/mt-011b-sabr-handoff-lab-20261031
   push:
     branches:
       - feature/mt-001-upstream-ci-20261031
@@ -22,6 +23,7 @@ on:
       - feature/mt-010a-tcl-decoder-cache-20261031
       - feature/mt-010a2-tcl-warm-runtime-20261031
       - feature/mt-011a-tcl-stage-probes-20261031
+      - feature/mt-011b-sabr-handoff-lab-20261031
   workflow_dispatch:
 
 permissions:
@@ -57,49 +59,49 @@ jobs:
         run: python3 scripts/mars/verify_fork.py --require-submodules
 
       - name: MT-008 pinned MediaServiceCore timing probe (test branch only)
-        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031'))) || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'))
+        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')))) || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')))
         run: python3 scripts/mars/mt008_probe_media_core.py
 
       - name: MT-009 verify pinned signature probe anchors
-        if: (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031'))) || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'))
+        if: (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')))) || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')))
         run: python3 scripts/mars/mt009_probe_signature_stages.py --check
 
       - name: MT-009 instrument n-signature solver for diagnostic builds
-        if: (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031'))) || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'))
+        if: (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')))) || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')))
         run: python3 scripts/mars/mt009_probe_signature_stages.py
 
       - name: MT-010A validate exact decoder-cache patch anchors
-        if: (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031')) || (github.base_ref == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'))
+        if: (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031'))) || (github.base_ref == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')))
         run: python3 scripts/mars/mt010a_decoder_cache.py --check
 
       - name: MT-010A apply experimental decoder cache to pinned test sources
-        if: (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031')) || (github.base_ref == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'))
+        if: (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031'))) || (github.base_ref == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')))
         run: python3 scripts/mars/mt010a_decoder_cache.py
 
       - name: MT-010A2 validate dedicated-worker and JS patch anchors
-        if: (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031') || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031')
+        if: (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')) || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031'))
         run: python3 scripts/mars/mt010a2_warm_runtime.py --check
 
       - name: MT-010A2 apply experimental V8 worker and compiled function cache
-        if: (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031') || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031')
+        if: (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')) || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031'))
         run: python3 scripts/mars/mt010a2_warm_runtime.py
 
       - name: MT-010A2 compare compiled solver outputs with original
-        if: (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031') || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031')
+        if: (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')) || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031'))
         run: node scripts/mars/mt010a2_validate_solver.js
 
       - name: MT-011A validate pinned TCL timing anchors
-        if: github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'
+        if: (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031') || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')
         run: |
           python3 -m py_compile scripts/mars/mt011a_tcl_stage_probes.py
           python3 scripts/mars/mt011a_tcl_stage_probes.py --check
 
       - name: MT-011A inject diagnostics (no algorithm changes)
-        if: github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'
+        if: (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031') || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')
         run: python3 scripts/mars/mt011a_tcl_stage_probes.py
 
       - name: MT-011A check installer PowerShell syntax (do not execute)
-        if: github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'
+        if: (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031') || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')
         shell: pwsh
         run: |
           $tokens = $null
@@ -111,7 +113,7 @@ jobs:
           if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Host; exit 1 }
 
       - name: MT-010A2 check local release install script syntax
-        if: (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031') || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031')
+        if: (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')) || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031'))
         shell: pwsh
         run: |
           $tokens = $null
@@ -123,7 +125,7 @@ jobs:
           if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Host; exit 1 }
 
       - name: MT-009 check installer PowerShell syntax (do not run it)
-        if: (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031'))) || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'))
+        if: (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')))) || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')))
         shell: pwsh
         run: |
           $tokens = $null
@@ -134,6 +136,12 @@ jobs:
           ) | Out-Null
           if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Host; exit 1 }
 
+      - name: MT-011B validate fail-closed preloader gate tests
+        if: github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031'
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest --tests '*ShortsSamplePreloadGateTest'
+
       - name: Build native Android TV debug APK (not for release)
         run: |
           chmod +x ./gradlew
@@ -143,11 +151,11 @@ jobs:
         run: ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest
 
       - name: Validate release-mode Android TV APK (MT-009/MT-008 experiment only)
-        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031'))) || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031'))
+        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')))) || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031')))
         run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableRelease
 
       - name: Upload CI release-mode APK (not install-signed or published)
-        if: success() && (github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031'))) || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031')))
+        if: success() && (github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || (github.ref_name == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.ref_name == 'feature/mt-010a2-tcl-warm-runtime-20261031' || (github.ref_name == 'feature/mt-011a-tcl-stage-probes-20261031' || github.ref_name == 'feature/mt-011b-sabr-handoff-lab-20261031')))) || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || (github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031' || (github.base_ref == 'feature/mt-010a-tcl-decoder-cache-20261031' || (github.base_ref == 'feature/mt-010a2-tcl-warm-runtime-20261031' || github.base_ref == 'feature/mt-011a-tcl-stage-probes-20261031'))))
         uses: actions/upload-artifact@v4
         with:
           name: marstube-mt011a-release-mode-ci-cert
