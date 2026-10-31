@@ -60,6 +60,7 @@ public class PlayerUIController extends BasePlayerController {
     private boolean mDebugViewEnabled;
     private boolean mIsMetadataLoaded;
     private long mOverlayHideTimeMs;
+    private boolean mShortsHintShown;
     private final Runnable mSuggestionsResetHandler = () -> {
         if (getPlayer() == null) {
             return;
@@ -108,6 +109,10 @@ public class PlayerUIController extends BasePlayerController {
     @Override
     public void onNewVideo(Video item) {
         enableUiAutoHideTimeout();
+        if (item != null && item.isShorts && !mShortsHintShown) {
+            mShortsHintShown = true;
+            MessageHelpers.showMessage(getContext(), R.string.mars_shorts_swipe_hint);
+        }
 
         if (item != null && !item.equals(getVideo())) {
             mIsMetadataLoaded = false; // metadata isn't loaded yet at this point
