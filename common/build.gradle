@@ -56,7 +56,10 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:' + appCompatXVersion
     testImplementation 'junit:junit:' + junitVersion
-    testImplementation 'org.robolectric:robolectric:' + robolectricVersion
+    // MT-001 CI: pinned SharedModules currently sets Robolectric 4.6.1, whose old ASM
+    // cannot load the JDK 17 bytecode on the Actions runner. Test-only upgrade;
+    // no changes to shipped Android TV runtime dependencies.
+    testImplementation 'org.robolectric:robolectric:4.11.1'
 
     implementation project(':sharedutils')
     implementation project(':fragment-1.1.0')
