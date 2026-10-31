@@ -52,6 +52,14 @@ public class ShortsFormatWarmCacheTest {
         assertNull(cache.get(null, 200));
     }
 
+    @Test public void invalidSignedFormatCanBeEvicted() {
+        ShortsFormatWarmCache<String> cache = new ShortsFormatWarmCache<>(3, 15000);
+        cache.put("one", "expired-url", 100);
+        cache.remove("one");
+        assertNull(cache.get("one", 110));
+        cache.remove(null);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void rejectsUnboundedCapacity() {
         new ShortsFormatWarmCache<String>(0, 15000);
