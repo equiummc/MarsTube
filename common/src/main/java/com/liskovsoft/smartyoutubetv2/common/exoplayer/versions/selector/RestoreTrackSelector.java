@@ -131,9 +131,15 @@ public class RestoreTrackSelector extends DefaultTrackSelector {
         // when disabled and respect explicit manual override state.
         if (mCallback != null && mCallback.isMarsAdaptiveQualityEnabled()
                 && !params.hasSelectionOverride(TrackSelectorManager.RENDERER_INDEX_VIDEO, groups)) {
-            Log.d(TAG, "MT-005 adaptive video selection");
-            return super.selectVideoTrack(groups, formatSupports,
+            Definition adaptiveDefinition = super.selectVideoTrack(groups, formatSupports,
                     mixedMimeTypeAdaptationSupports, params, enableAdaptiveTrackSelection);
+            // A single selected track is not evidence of adaptive bitrate switching.
+            // Log only the selection topology; no URLs, tokens or user data.
+            Log.d(TAG, "MT-005 video selection: adaptiveAllowed=%s, selectedTracks=%s, groups=%s",
+                    enableAdaptiveTrackSelection,
+                    adaptiveDefinition == null ? 0 : adaptiveDefinition.tracks.length,
+                    groups.length);
+            return adaptiveDefinition;
         }
 
         if (mCallback != null) {
