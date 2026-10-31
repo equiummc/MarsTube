@@ -49,8 +49,8 @@ patch("youtubeapi/src/main/java/com/liskovsoft/youtubeapi/app/nsigsolver/impl/Tc
         val mt011ChallengeJson = Gson().toJson(challengeByParam.values.toList())"""),
     ("skip large JS string off worker for cache hits",
      """        val stdin = "JSON.stringify(tclSolver($mt011EncodedRequest));" """.rstrip(),
-     """        val stdin = if (cachedPreprocessed == null)
-            "JSON.stringify(tclSolver($mt011EncodedRequest));" else """""),
+     '''        val stdin = if (cachedPreprocessed == null)
+            "JSON.stringify(tclSolver($mt011EncodedRequest));" else ""'''),
     ("execute exact cached JS or full request",
      """                        val result = runV8(stdin)
                         android.util.Log.i("MarsTubePerf", "MT-009 tcl_v8_exec_ms=" +""",
