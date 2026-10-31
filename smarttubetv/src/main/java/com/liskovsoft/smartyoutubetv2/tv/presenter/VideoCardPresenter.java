@@ -55,7 +55,7 @@ public class VideoCardPresenter extends LongClickPresenter {
         mSelectedBackgroundColor =
                 ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardSelectedBackground));
         mSelectedTextColor =
-                ContextCompat.getColor(context, R.color.card_selected_text_grey);
+                ContextCompat.getColor(context, R.color.mars_text);
 
         mCardPreviewType = getCardPreviewType(context);
         mThumbQuality = getThumbQuality(context);
@@ -85,6 +85,14 @@ public class VideoCardPresenter extends LongClickPresenter {
         cardView.enableTitle(isTitleEnabled());
         cardView.enableContent(isContentEnabled());
         cardView.setBackgroundColor(mDefaultBackgroundColor); // background is temporarily visible during animations
+        View glassInfoField = cardView.findViewById(R.id.info_field);
+        if (glassInfoField != null) {
+            glassInfoField.setBackgroundResource(R.drawable.mars_glass_card_info);
+        }
+        // One static outline per card, no per-frame blur or allocations.
+        if (VERSION.SDK_INT >= 23) {
+            cardView.setForeground(ContextCompat.getDrawable(context, R.drawable.mars_glass_card_outline));
+        }
         //if (VERSION.SDK_INT >= 23 && MainUIData.instance(context).isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS)) {
         //    cardView.setForeground(ContextCompat.getDrawable(context, R.drawable.lb_card_outline));
         //}
@@ -103,7 +111,7 @@ public class VideoCardPresenter extends LongClickPresenter {
 
         View infoField = view.findViewById(R.id.info_field);
         if (infoField != null) {
-            infoField.setBackgroundColor(backgroundColor);
+            infoField.setSelected(selected);
         }
 
         TextView titleText = view.findViewById(R.id.title_text);
