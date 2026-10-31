@@ -68,6 +68,59 @@ try {
         throw 'STOPP: Unerwartete MediaServiceCore-Version.'
     }
 
+    # Git worktrees do not copy ignored local.properties. Copy only the
+    # working Android SDK configuration, never reset or modify the main checkout.
+    Write-Host '[3a] Android-SDK fuer den isolierten Worktree konfigurieren' -ForegroundColor Cyan
+    $sourceLocal = Join-Path $repo 'local.properties'
+    $targetLocal = Join-Path $testRoot 'local.properties'
+    $sdkPath = $null
+    if (Test-Path $sourceLocal) {
+        $sdkLine = Get-Content -Path $sourceLocal |
+            Where-Object { $_ -match '^\s*sdk\.dir\s*=' } |
+            Select-Object -First 1
+        if ($sdkLine) {
+            # Java properties often escape Windows colons and backslashes.
+            $rawSdk = ($sdkLine -split '=', 2)[1].Trim()
+            $candidate = $rawSdk.Replace('\:', ':').Replace('\\', '\')
+            if ((Test-Path -LiteralPath $candidate -PathType Container) -and
+                    (Test-Path -LiteralPath (Join-Path $candidate 'build-tools'))) {
+                $sdkPath = (Resolve-Path -LiteralPath $candidate).Path
+                Copy-Item -LiteralPath $sourceLocal -Destination $targetLocal -Force
+                Write-Host 'Vorhandene local.properties in den Worktree uebernommen.'
+            } else {
+                Write-Warning 'SDK-Pfad in local.properties ist nicht verfuegbar; pruefe bekannte SDK-Pfade.'
+            }
+        }
+    }
+    if (-not $sdkPath) {
+        $sdkCandidates = @(
+            $env:ANDROID_HOME
+            $env:ANDROID_SDK_ROOT
+            (Join-Path $env:LOCALAPPDATA 'Android\Sdk')
+            (Join-Path $env:USERPROFILE 'AppData\Local\Android\Sdk')
+        ) | Where-Object { $_ } | Select-Object -Unique
+        foreach ($candidate in $sdkCandidates) {
+            if ((Test-Path -LiteralPath $candidate -PathType Container) -and
+                    (Test-Path -LiteralPath (Join-Path $candidate 'build-tools'))) {
+                $sdkPath = (Resolve-Path -LiteralPath $candidate).Path
+                break
+            }
+        }
+        if (-not $sdkPath) {
+            throw 'STOPP: Android-SDK fehlt. Pruefe sdk.dir in der bestehenden lokalen Projektdatei local.properties.'
+        }
+        # Forward slashes avoid Java properties escaping rules on Windows.
+        $sdkForGradle = $sdkPath.Replace('\', '/')
+        Set-Content -LiteralPath $targetLocal -Value "sdk.dir=$sdkForGradle" -Encoding ASCII
+        Write-Host 'local.properties fuer diesen Worktree neu erstellt.'
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $sdkPath 'build-tools') -PathType Container)) {
+        throw 'STOPP: SDK build-tools nicht vorhanden.'
+    }
+    $env:ANDROID_HOME = $sdkPath
+    $env:ANDROID_SDK_ROOT = $sdkPath
+    Write-Host "Android-SDK erkannt: $sdkPath" -ForegroundColor Green
+
     Write-Host '[4] MT-008 und MT-009 Diagnose in isolierten Quellen aktivieren' -ForegroundColor Cyan
     & python (Join-Path $testRoot 'scripts\mars\mt008_probe_media_core.py') | Out-Host
     Checked 'MT-008 Probe'
@@ -94,7 +147,7 @@ try {
     Copy-Item $apk.FullName $newApk -Force
 
     Write-Host '[6] Signatur gegen bestehende App pruefen' -ForegroundColor Cyan
-    $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { Join-Path $env:LOCALAPPDATA 'Android\Sdk' }
+    $sdk = $sdkPath
     $signer = Get-ChildItem (Join-Path $sdk 'build-tools') -Recurse -Filter 'apksigner.bat' -ErrorAction Stop |
         Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
     if (-not $signer) { throw 'Kein apksigner.bat gefunden; Installation abgebrochen.' }
