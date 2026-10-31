@@ -39,6 +39,7 @@ public class VideoCardPresenter extends LongClickPresenter {
     private int mDefaultTextColor = -1;
     private int mSelectedBackgroundColor = -1;
     private int mSelectedTextColor = -1;
+    private boolean mMarsSafeGlass;
     private int mCardPreviewType;
     private int mThumbQuality;
     private int mWidth;
@@ -47,6 +48,8 @@ public class VideoCardPresenter extends LongClickPresenter {
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent) {
         Context context = parent.getContext();
+        mMarsSafeGlass = MainUIData.instance(context).getColorScheme().nameResId
+                == R.string.color_scheme_mars_safe_glass;
 
         mDefaultBackgroundColor =
             ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardDefaultBackground));
@@ -55,7 +58,8 @@ public class VideoCardPresenter extends LongClickPresenter {
         mSelectedBackgroundColor =
                 ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardSelectedBackground));
         mSelectedTextColor =
-                ContextCompat.getColor(context, R.color.card_selected_text_grey);
+                ContextCompat.getColor(context, mMarsSafeGlass
+                        ? R.color.mars_glass_text : R.color.card_selected_text_grey);
 
         mCardPreviewType = getCardPreviewType(context);
         mThumbQuality = getThumbQuality(context);
@@ -88,6 +92,12 @@ public class VideoCardPresenter extends LongClickPresenter {
         //if (VERSION.SDK_INT >= 23 && MainUIData.instance(context).isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS)) {
         //    cardView.setForeground(ContextCompat.getDrawable(context, R.drawable.lb_card_outline));
         //}
+        if (mMarsSafeGlass) {
+            View infoField = cardView.findViewById(R.id.info_field);
+            if (infoField != null) {
+                infoField.setBackgroundResource(R.drawable.mars_glass_card_info);
+            }
+        }
         updateCardBackgroundColor(cardView, false);
         return new ViewHolder(cardView);
     }
@@ -103,7 +113,11 @@ public class VideoCardPresenter extends LongClickPresenter {
 
         View infoField = view.findViewById(R.id.info_field);
         if (infoField != null) {
-            infoField.setBackgroundColor(backgroundColor);
+            if (mMarsSafeGlass) {
+                infoField.setSelected(selected);
+            } else {
+                infoField.setBackgroundColor(backgroundColor);
+            }
         }
 
         TextView titleText = view.findViewById(R.id.title_text);
