@@ -421,6 +421,12 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 "App.Theme.Leanback.Blue.OLED.Browse",
                 "App.Theme.Leanback.Blue.Preferences",
                 mContext));
+        mColorSchemes.add(new ColorScheme(
+                R.string.color_scheme_mars_glass,
+                "App.Theme.MarsGlass.Player",
+                "App.Theme.MarsGlass.Browse",
+                "App.Theme.MarsGlass.Preferences",
+                mContext));
     }
 
     private void restoreState() {
@@ -481,6 +487,13 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
         }
         
         updateDefaultValues();
+
+        // Activate Mars Glass once per profile after upgrading. Later theme changes remain respected.
+        if (mPrefs.getProfileData("mars_glass_theme_v1_initialized") == null) {
+            mColorSchemeIndex = mColorSchemes.size() - 1;
+            mPrefs.setProfileData("mars_glass_theme_v1_initialized", "1");
+            persistNow();
+        }
     }
 
     public void persistNow() {
