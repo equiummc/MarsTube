@@ -56,6 +56,6 @@ public class ShortsSamplePreloadGateTest {
         assertEquals(4 * 1024 * 1024, MAX_PRELOAD_BYTES);
         assertEquals(4_000, MAX_PRELOAD_LEAD_MS);
         assertEquals(15_000, MAX_PRELOAD_DURATION_MS);
-        assertEquals(2, MAX_TARGETS);
+        assertEquals(1, MAX_TARGETS);
     }
 }

@@ -12,7 +12,7 @@ public final class ShortsSamplePreloadGate {
     public static final int MAX_PRELOAD_BYTES = 4 * 1024 * 1024;
     public static final long MAX_PRELOAD_LEAD_MS = 4_000L;
     public static final long MAX_PRELOAD_DURATION_MS = 15_000L;
-    public static final int MAX_TARGETS = 2;
+    public static final int MAX_TARGETS = 1;
 
     public enum Decision {
         ALLOW,
