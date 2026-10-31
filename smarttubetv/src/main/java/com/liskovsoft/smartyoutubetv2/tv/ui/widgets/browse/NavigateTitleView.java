@@ -226,16 +226,18 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
     private void updateButtonsVisibility() {
         MainUIData mainUIData = MainUIData.instance(getContext());
 
-        mIsSearchOrbEnabled = !mainUIData.isTopButtonEnabled(MainUIData.TOP_BUTTON_SEARCH);
-        mIsAccountViewEnabled = mainUIData.isTopButtonEnabled(MainUIData.TOP_BUTTON_BROWSE_ACCOUNTS);
-        mIsLanguageViewEnabled = mainUIData.isTopButtonEnabled(MainUIData.TOP_BUTTON_CHANGE_LANGUAGE);
-        mIsGlobalClockEnabled = GeneralData.instance(getContext()).isGlobalClockEnabled();
+        // The fixed rail owns search and accounts; top-right only displays the clock.
+        boolean marsGlass = mainUIData.getColorScheme().nameResId == R.string.color_scheme_mars_glass;
+        mIsSearchOrbEnabled = !marsGlass && !mainUIData.isTopButtonEnabled(MainUIData.TOP_BUTTON_SEARCH);
+        mIsAccountViewEnabled = !marsGlass && mainUIData.isTopButtonEnabled(MainUIData.TOP_BUTTON_BROWSE_ACCOUNTS);
+        mIsLanguageViewEnabled = !marsGlass && mainUIData.isTopButtonEnabled(MainUIData.TOP_BUTTON_CHANGE_LANGUAGE);
+        mIsGlobalClockEnabled = marsGlass || GeneralData.instance(getContext()).isGlobalClockEnabled();
 
         mSearchOrbView.setVisibility(mIsSearchOrbEnabled ? View.VISIBLE : View.GONE);
         mAccountView.setVisibility(mIsAccountViewEnabled ? View.VISIBLE : View.GONE);
         mLanguageView.setVisibility(mIsLanguageViewEnabled ? View.VISIBLE : View.GONE);
         mGlobalClock.setVisibility(mIsGlobalClockEnabled ? View.VISIBLE : View.GONE);
-        mGlobalDate.setVisibility(mIsGlobalClockEnabled ? View.VISIBLE : View.GONE);
+        mGlobalDate.setVisibility(mIsGlobalClockEnabled && !marsGlass ? View.VISIBLE : View.GONE);
 
         Utils.postDelayed(this::updateAccountIcon, 1_000); // give a time to engine to fetch an updated icon url
         //updateAccountIcon();
