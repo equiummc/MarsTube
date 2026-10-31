@@ -68,4 +68,13 @@
     <color name="lb_speech_orb_not_recording">@color/orb_color</color>
     <color name="lb_speech_orb_not_recording_pulsed">@color/orb_bright_color</color>
     <color name="lb_speech_orb_not_recording_icon">@color/orb_icon_color</color>
+    <!-- MarsTube Safe Blue Glass: static colors only. -->
+    <color name="mars_glass_background">#091B31</color>
+    <color name="mars_glass_shelf">#0C213A</color>
+    <color name="mars_glass_sidebar">#CF122D4D</color>
+    <color name="mars_glass_card">#D016304D</color>
+    <color name="mars_glass_card_focus">#D1285682</color>
+    <color name="mars_glass_blue">#39ACFF</color>
+    <color name="mars_glass_ice">#8FD9FF</color>
+    <color name="mars_glass_text">#F2F9FF</color>
 </resources>
