@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A compact, centered M inside Leanback's native badge slot next to the clock. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/mars_logo_blue"
+        android:gravity="center"
+        android:width="40dp"
+        android:height="28dp" />
+</layer-list>
