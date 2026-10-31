@@ -296,6 +296,18 @@ public class SuggestionsController extends BasePlayerController {
         return result;
     }
 
+    /**
+     * MT-007: only adjacent playable Shorts from the originating shelf.
+     * Does not read the generic playlist, recommendations or remote queue.
+     */
+    public Video getNextShort() {
+        return ShortsNavigator.adjacent(getVideo(), true);
+    }
+
+    public Video getPreviousShort() {
+        return ShortsNavigator.adjacent(getVideo(), false);
+    }
+
     public Video getPrevious() {
         if (getPlayer() == null || getVideo() == null) {
             return null;
