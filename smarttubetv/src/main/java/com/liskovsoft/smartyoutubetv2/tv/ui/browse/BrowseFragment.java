@@ -142,9 +142,11 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
     void selectFixedRailSection(long sectionId, boolean focusOnContent) {
         int index = indexOf(sectionId);
-        if (index < 0) return;
-        selectSection(index, focusOnContent);
+        if (index < 0 || index >= mSectionRowAdapter.size()) return;
+        PageRow row = (PageRow) mSectionRowAdapter.get(index);
+        if (row.getHeaderItem().getId() != sectionId) return; // Section is not enabled.
         if (mMarsRail != null) mMarsRail.setSelectedSection(sectionId);
+        selectSection(index, focusOnContent);
     }
 
     public void focusFixedRail() {
@@ -238,7 +240,8 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         }
 
         // Keep Leanback's page infrastructure but never open the old sliding headers.
-        setHeadersState(HEADERS_HIDDEN);
+        // Completely disable the legacy sliding headers. Navigation belongs to MarsFixedRail.
+        setHeadersState(HEADERS_DISABLED);
         setHeadersTransitionOnBackEnabled(false);
 
         int brandColorRes = Helpers.getThemeAttr(getContext(), R.attr.brandColor);
