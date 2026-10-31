@@ -22,7 +22,7 @@ public final class ShortsFormatWarmCache<T> {
     private static final class CacheEntry<T> {
         final T value;
         final long atMs;
-        Entry(T value, long atMs) {
+        CacheEntry(T value, long atMs) {
             this.value = value;
             this.atMs = atMs;
         }
