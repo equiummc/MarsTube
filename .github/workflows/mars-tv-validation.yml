@@ -47,6 +47,10 @@ jobs:
       - name: Protect MarsTube TV customizations
         run: python3 scripts/mars/verify_fork.py --require-submodules
 
+      - name: MT-008 pinned MediaServiceCore timing probe (test branch only)
+        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031'
+        run: python3 scripts/mars/mt008_probe_media_core.py
+
       - name: Build native Android TV debug APK (not for release)
         run: |
           chmod +x ./gradlew
