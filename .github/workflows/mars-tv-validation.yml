@@ -8,6 +8,7 @@ on:
     branches:
       - feature/mt-001-upstream-ci-20261031
       - feature/mt-005-smart-quality-lab-20261031
+      - feature/mt-005-adaptive-diagnostics-20261031
   workflow_dispatch:
 
 permissions:
