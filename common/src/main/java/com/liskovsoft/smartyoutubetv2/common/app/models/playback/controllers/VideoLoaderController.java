@@ -167,7 +167,10 @@ public class VideoLoaderController extends BasePlayerController {
 
     @Override
     public boolean onNextClicked() {
-        if (getGeneralData().isChildModeEnabled()) {
+        if (getVideo() != null && getVideo().isShorts) {
+            // Swipe must never be forwarded to an ordinary-video queue.
+            loadNext();
+        } else if (getGeneralData().isChildModeEnabled()) {
             onPlayEnd();
         } else {
             loadNext();
@@ -387,9 +390,8 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     private boolean isFreshShortPrefetch(long nowMs) {
-        return mShortPrefetchReady != null && mShortPrefetchReadyMs > 0
-                && nowMs >= mShortPrefetchReadyMs
-                && nowMs - mShortPrefetchReadyMs < SHORT_PREFETCH_TTL_MS;
+        return mShortPrefetchReady != null
+                && ShortsPrefetchPolicy.fresh(mShortPrefetchReadyMs, nowMs, SHORT_PREFETCH_TTL_MS);
     }
 
     private void loadFormatInfo(Video video) {
