@@ -1,6 +1,7 @@
 package com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers;
 
 import android.os.Build.VERSION;
+import android.os.SystemClock;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.other.PlaybackStartupMetrics;
 
 import com.liskovsoft.mediaserviceinterfaces.MediaItemService;
@@ -28,6 +29,9 @@ import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.youtubeapi.service.YouTubeServiceManager;
 
 import io.reactivex.disposables.Disposable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VideoLoaderController extends BasePlayerController {
     private static final String TAG = VideoLoaderController.class.getSimpleName();
@@ -37,6 +41,20 @@ public class VideoLoaderController extends BasePlayerController {
     private SuggestionsController mSuggestionsController;
     private ErrorFixerController mErrorFixerController;
     private Disposable mFormatInfoAction;
+    // MT-007: a bounded navigation history, separate from the ordinary queue.
+    private static final int SHORT_HISTORY_MAX = 12;
+    private final List<Video> mShortHistory = new ArrayList<>();
+    private int mShortHistoryIndex = -1;
+    private boolean mShortHintShown;
+    // Only one future Short is prepared; memory-only and expiring quickly.
+    private static final long SHORT_PREFETCH_TTL_MS = 15_000;
+    private Disposable mShortPrefetchAction;
+    private String mShortPrefetchId;
+    private MediaItemFormatInfo mShortPrefetchReady;
+    private long mShortPrefetchReadyMs;
+    private String mShortAwaitingPrefetch;
+    private boolean mShortStarted;
+    private boolean mShortPageRequestPending;
     private final Runnable mReloadVideo = () -> {
         getMainController().onNewVideo(getVideo());
     };
@@ -79,6 +97,21 @@ public class VideoLoaderController extends BasePlayerController {
         }
 
         PlaybackStartupMetrics.videoSelected(item.videoId);
+        mShortStarted = false;
+        mShortPageRequestPending = false;
+        if (ShortsNavigator.isPlayableShort(item)) {
+            if (mShortPrefetchId != null && !mShortPrefetchId.equals(item.videoId))
+                clearShortPrefetch();
+            rememberShort(item);
+            if (!mShortHintShown) {
+                mShortHintShown = true;
+                MessageHelpers.showMessage(getContext(), R.string.mars_short_swipe_hint);
+            }
+        } else {
+            mShortHistory.clear();
+            mShortHistoryIndex = -1;
+            clearShortPrefetch();
+        }
         item.isShuffled = false;
 
         if (!item.fromQueue && !item.belongsToPlaybackQueue()) {
@@ -109,6 +142,10 @@ public class VideoLoaderController extends BasePlayerController {
     @Override
     public void onEngineReleased() {
         disposeActions();
+        clearShortPrefetch();
+        mShortPageRequestPending = false;
+        mShortHistory.clear();
+        mShortHistoryIndex = -1;
     }
 
     @Override
@@ -118,6 +155,8 @@ public class VideoLoaderController extends BasePlayerController {
         }
         
         getPlayer().setButtonState(R.id.action_repeat, video.finishOnEnded ? PlayerConstants.PLAYBACK_MODE_CLOSE : getPlayerData().getPlaybackMode());
+        mShortStarted = true;
+        maybePrefetchNextShort();
         // Can't set title at this point
         //checkSleepTimer();
     }
@@ -131,7 +170,10 @@ public class VideoLoaderController extends BasePlayerController {
 
     @Override
     public boolean onNextClicked() {
-        if (getGeneralData().isChildModeEnabled()) {
+        if (getVideo() != null && getVideo().isShorts) {
+            // Swipe must never be forwarded to an ordinary-video queue.
+            loadNext();
+        } else if (getGeneralData().isChildModeEnabled()) {
             onPlayEnd();
         } else {
             loadNext();
@@ -145,6 +187,17 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
+        if (getVideo() != null && getVideo().isShorts) {
+            Video previous = mShortHistoryIndex > 0
+                    ? mShortHistory.get(mShortHistoryIndex - 1)
+                    : mSuggestionsController.getPreviousShort();
+            if (ShortsNavigator.isPlayableShort(previous)) {
+                openVideoInt(previous);
+            } else {
+                MessageHelpers.showMessage(getContext(), R.string.mars_short_no_previous);
+            }
+            return;
+        }
         openVideoInt(mSuggestionsController.getPrevious());
 
         if (getPlayerTweaksData().isPlayerUiOnNextEnabled()) {
@@ -157,6 +210,32 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
+        if (getVideo().isShorts) {
+            Video next = mShortHistoryIndex >= 0 && mShortHistoryIndex + 1 < mShortHistory.size()
+                    ? mShortHistory.get(mShortHistoryIndex + 1)
+                    : mSuggestionsController.getNextShort();
+            if (ShortsNavigator.isPlayableShort(next)) {
+                openVideoInt(next);
+            } else if (!mShortPageRequestPending) {
+                // Only extend this Shorts shelf. The regular queue may be mixed.
+                final String sourceId = getVideo().videoId;
+                mShortPageRequestPending = true;
+                boolean loading = mSuggestionsController.loadMoreShorts(continuation -> {
+                    mShortPageRequestPending = false;
+                    if (getVideo() == null || !sourceId.equals(getVideo().videoId)) return;
+                    if (ShortsNavigator.isPlayableShort(continuation)) {
+                        openVideoInt(continuation);
+                    } else {
+                        MessageHelpers.showMessage(getContext(), R.string.mars_short_no_next);
+                    }
+                });
+                if (!loading) {
+                    mShortPageRequestPending = false;
+                    MessageHelpers.showMessage(getContext(), R.string.mars_short_no_next);
+                }
+            }
+            return;
+        }
         Video next = mSuggestionsController.getNext();
 
         if (next != null) {
@@ -247,6 +326,91 @@ public class VideoLoaderController extends BasePlayerController {
         }
     }
 
+    private void rememberShort(Video item) {
+        if (mShortHistoryIndex >= 0 && mShortHistoryIndex < mShortHistory.size()
+                && item.videoId.equals(mShortHistory.get(mShortHistoryIndex).videoId)) return;
+        if (mShortHistoryIndex > 0
+                && item.videoId.equals(mShortHistory.get(mShortHistoryIndex - 1).videoId)) {
+            mShortHistoryIndex--;
+            return;
+        }
+        if (mShortHistoryIndex >= 0 && mShortHistoryIndex + 1 < mShortHistory.size()
+                && item.videoId.equals(mShortHistory.get(mShortHistoryIndex + 1).videoId)) {
+            mShortHistoryIndex++;
+            return;
+        }
+        while (mShortHistory.size() > mShortHistoryIndex + 1) {
+            mShortHistory.remove(mShortHistory.size() - 1);
+        }
+        mShortHistory.add(item);
+        if (mShortHistory.size() > SHORT_HISTORY_MAX) mShortHistory.remove(0);
+        mShortHistoryIndex = mShortHistory.size() - 1;
+    }
+
+    private void clearShortPrefetch() {
+        if (mShortPrefetchAction != null) mShortPrefetchAction.dispose();
+        mShortPrefetchAction = null;
+        mShortPrefetchId = null;
+        mShortPrefetchReady = null;
+        mShortPrefetchReadyMs = 0;
+        mShortAwaitingPrefetch = null;
+    }
+
+    /**
+     * MT-007: prefetch only the next Short's stream info after current playback
+     * is available. Keep one request/result, with a short in-memory TTL.
+     */
+    private void maybePrefetchNextShort() {
+        if (!mShortStarted || getPlayer() == null || getVideo() == null
+                || !ShortsNavigator.isPlayableShort(getVideo()) || isEmbedPlayer()) return;
+        Video next = mShortHistoryIndex >= 0 && mShortHistoryIndex + 1 < mShortHistory.size()
+                ? mShortHistory.get(mShortHistoryIndex + 1)
+                : mSuggestionsController.getNextShort();
+        if (!ShortsNavigator.isPlayableShort(next)
+                || next.videoId.equals(getVideo().videoId)) return;
+        if (next.videoId.equals(mShortPrefetchId)) {
+            if (mShortPrefetchReady == null
+                    || isFreshShortPrefetch(SystemClock.elapsedRealtime())) return;
+        }
+        clearShortPrefetch();
+        mShortPrefetchId = next.videoId;
+        final String targetId = next.videoId;
+        final long started = SystemClock.elapsedRealtime();
+        Log.i(TAG, "MT-007 short_prefetch_start");
+        mShortPrefetchAction = YouTubeServiceManager.instance().getMediaItemService()
+                .getFormatInfoObserve(targetId)
+                .observeOn(AndroidSchedulers.mainThread())
+                .take(1)
+                .subscribe(formatInfo -> {
+                    if (!targetId.equals(mShortPrefetchId)) return;
+                    mShortPrefetchReady = formatInfo;
+                    mShortPrefetchReadyMs = SystemClock.elapsedRealtime();
+                    Log.i(TAG, "MT-007 short_prefetch_ready elapsed_ms=%s",
+                            mShortPrefetchReadyMs - started);
+                    if (targetId.equals(mShortAwaitingPrefetch) && getVideo() != null
+                            && targetId.equals(getVideo().videoId)) {
+                        mShortAwaitingPrefetch = null;
+                        PlaybackStartupMetrics.formatResolved(targetId);
+                        MediaItemFormatInfo ready = mShortPrefetchReady;
+                        clearShortPrefetch();
+                        processFormatInfo(ready);
+                    }
+                }, error -> {
+                    if (!targetId.equals(mShortPrefetchId)) return;
+                    boolean awaiting = targetId.equals(mShortAwaitingPrefetch)
+                            && getVideo() != null && targetId.equals(getVideo().videoId);
+                    Log.i(TAG, "MT-007 short_prefetch_failed type=%s",
+                            error.getClass().getSimpleName());
+                    clearShortPrefetch();
+                    if (awaiting) loadFormatInfo(getVideo()); // fallback to normal lookup
+                });
+    }
+
+    private boolean isFreshShortPrefetch(long nowMs) {
+        return mShortPrefetchReady != null
+                && ShortsPrefetchPolicy.fresh(mShortPrefetchReadyMs, nowMs, SHORT_PREFETCH_TTL_MS);
+    }
+
     private void loadFormatInfo(Video video) {
         if (getPlayer() == null) {
             return;
@@ -260,6 +424,23 @@ public class VideoLoaderController extends BasePlayerController {
         ServiceManager service = YouTubeServiceManager.instance();
         MediaItemService mediaItemManager = service.getMediaItemService();
         PlaybackStartupMetrics.formatRequested(video.videoId);
+        if (video.isShorts && video.videoId.equals(mShortPrefetchId)) {
+            if (isFreshShortPrefetch(SystemClock.elapsedRealtime())) {
+                MediaItemFormatInfo ready = mShortPrefetchReady;
+                clearShortPrefetch();
+                Log.i(TAG, "MT-007 short_prefetch_hit");
+                PlaybackStartupMetrics.formatResolved(video.videoId);
+                processFormatInfo(ready);
+                return;
+            }
+            if (mShortPrefetchReady == null && mShortPrefetchAction != null
+                    && !mShortPrefetchAction.isDisposed()) {
+                mShortAwaitingPrefetch = video.videoId;
+                Log.i(TAG, "MT-007 short_prefetch_join");
+                return;
+            }
+        }
+        clearShortPrefetch();
         mFormatInfoAction = mediaItemManager.getFormatInfoObserve(video.videoId)
                 .subscribe(formatInfo -> {
                     PlaybackStartupMetrics.formatResolved(video.videoId);
@@ -541,6 +722,7 @@ public class VideoLoaderController extends BasePlayerController {
     @Override
     public void onMetadata(MediaItemMetadata metadata) {
         initRandomNext();
+        maybePrefetchNextShort();
     }
 
     private void initRandomNext() {

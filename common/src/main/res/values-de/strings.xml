@@ -765,4 +765,7 @@
     <string name="mars_quality_category">MarsTube Bildqualität (Test)</string>
     <string name="mars_quality_auto_experimental">Automatisch – beste stabile Qualität (experimentell)</string>
     <string name="mars_quality_auto_experimental_desc">Nutzt vom Gerät unterstützte Formate und passt die Bildqualität an die Verbindung an, sofern der Stream das unterstützt. Nach dem Ändern MarsTube neu starten. Experimentell: SABR-Livestreams sind noch nicht vollständig geprüft. Die bisherige manuelle Voreinstellung bleibt erhalten.</string>
+    <string name="mars_short_swipe_hint">Shorts: Runter nächster, hoch vorheriger, OK Pause</string>
+    <string name="mars_short_no_next">Kein weiterer Short in dieser Reihe geladen</string>
+    <string name="mars_short_no_previous">Kein vorheriger Short verfügbar</string>
 </resources>

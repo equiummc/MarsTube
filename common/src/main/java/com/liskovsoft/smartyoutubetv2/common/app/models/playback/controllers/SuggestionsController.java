@@ -296,6 +296,55 @@ public class SuggestionsController extends BasePlayerController {
         return result;
     }
 
+    /**
+     * MT-007: only adjacent playable Shorts from the originating shelf.
+     * Does not read the generic playlist, recommendations or remote queue.
+     */
+    public Video getNextShort() {
+        return ShortsNavigator.adjacent(getVideo(), true);
+    }
+
+    public Video getPreviousShort() {
+        return ShortsNavigator.adjacent(getVideo(), false);
+    }
+
+    public interface OnMoreShorts {
+        void onLoaded(Video next);
+    }
+
+    /**
+     * MT-007: extend the *same* Shorts shelf when it reaches its loaded edge.
+     * Do not route through the generic queue, which may contain ordinary videos.
+     * Completion with null includes network errors and no eligible next Short.
+     */
+    public boolean loadMoreShorts(OnMoreShorts callback) {
+        Video current = getVideo();
+        VideoGroup group = current != null ? current.getGroup() : null;
+        if (!ShortsNavigator.isPlayableShort(current) || group == null
+                || group.getMediaGroup() == null || group.getNextPageKey() == null
+                || getPlayer() == null) return false;
+
+        final String currentId = current.videoId;
+        Disposable action = mContentService.continueGroupObserve(group.getMediaGroup())
+                .subscribe(nextPage -> {
+                    if (getPlayer() == null || getVideo() == null
+                            || !currentId.equals(getVideo().videoId) || nextPage == null) {
+                        callback.onLoaded(null);
+                        return;
+                    }
+                    VideoGroup continuation = VideoGroup.from(group, nextPage);
+                    getPlayer().updateSuggestions(continuation);
+                    mBrowseProcessor.process(continuation);
+                    callback.onLoaded(ShortsNavigator.adjacent(current, true));
+                }, error -> {
+                    Log.i(TAG, "MT-007 shorts_page_failed type=%s",
+                            error.getClass().getSimpleName());
+                    callback.onLoaded(null);
+                });
+        mActions.add(action);
+        return true;
+    }
+
     public Video getPrevious() {
         if (getPlayer() == null || getVideo() == null) {
             return null;
