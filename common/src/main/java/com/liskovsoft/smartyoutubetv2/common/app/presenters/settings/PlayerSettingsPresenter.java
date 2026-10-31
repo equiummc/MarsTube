@@ -506,6 +506,14 @@ public class PlayerSettingsPresenter extends BasePresenter<Void> {
                 getContext().getString(R.string.mars_short_prefetch_experimental_desc),
                 option -> mPlayerTweaksData.setMarsShortPrefetchEnabled(option.isSelected()),
                 mPlayerTweaksData.isMarsShortPrefetchEnabled()));
+        options.add(UiOptionItem.from(
+                getContext().getString(R.string.mars_short_media_preload_experimental),
+                getContext().getString(R.string.mars_short_media_preload_experimental_desc),
+                option -> {
+                    mPlayerTweaksData.setMarsShortMediaPreloadEnabled(option.isSelected());
+                    mRestartApp = true;
+                },
+                mPlayerTweaksData.isMarsShortMediaPreloadEnabled()));
         settingsPresenter.appendCheckedCategory(
                 getContext().getString(R.string.mars_quality_category), options);
     }

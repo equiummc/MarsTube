@@ -771,4 +771,6 @@
     <string name="mars_shorts_swipe_hint">Shorts: Down = next, Up = previous, OK = pause</string>
     <string name="mars_short_prefetch_experimental">Prefetch next Short (experimental)</string>
     <string name="mars_short_prefetch_experimental_desc">Run a speculative format request while watching a Short. Disable for foreground priority; compare MT-008 latency with this option on and off.</string>
+    <string name="mars_short_media_preload_experimental">MarsTube: Short-Videodaten vorladen (Test)</string>
+    <string name="mars_short_media_preload_experimental_desc">Experimenteller SABR-Preload fuer genau ein naechstes Short. Benutzt denselben ExoPlayer, hoechstens 4 MiB und 15 Sekunden. Startet nur bei gesundem Vordergrundpuffer. Bei Problemen ausschalten und App neu starten.</string>
 </resources>
