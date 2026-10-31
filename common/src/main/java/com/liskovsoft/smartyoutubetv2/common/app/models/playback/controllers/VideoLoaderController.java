@@ -46,15 +46,16 @@ public class VideoLoaderController extends BasePlayerController {
     private static final long SHORT_PREFETCH_TTL_MS = 15_000L;
     // MT-011B5: cheap, validated metadata, NOT decoded video sample buffers.
     // In-flight request identity retains its previous 15-second deadline.
-    private static final long SHORT_WARM_CACHE_TTL_MS = 60_000L;
+    private static final long SHORT_WARM_CACHE_TTL_MS = 30 * 60_000L;
     private final ShortsFormatWarmCache<MediaItemFormatInfo> mShortWarmCache =
-            new ShortsFormatWarmCache<>(8, SHORT_WARM_CACHE_TTL_MS);
+            new ShortsFormatWarmCache<>(12, SHORT_WARM_CACHE_TTL_MS);
     private String mShortPrefetchId;
     private long mShortPrefetchSinceMs;
     private Observable<MediaItemFormatInfo> mShortPrefetchObservable;
     private MediaItemFormatInfo mShortPrefetchedInfo;
     private Disposable mShortPrefetchAction;
     private Disposable mShortSecondWarmAction;
+    private int mShortLookaheadDistance = 2;
     private final Runnable mPrefetchShort = this::prefetchNextShortIfKnown;
     private final Runnable mPrefetchSecondShort = this::prefetchSecondShortIfKnown;
     private final MediaServiceManager.AccountChangeListener mPrefetchAccountChange =
@@ -700,6 +701,19 @@ public class VideoLoaderController extends BasePlayerController {
         if (next.videoId.equals(mShortPrefetchId) &&
                 SystemClock.elapsedRealtime() - mShortPrefetchSinceMs < SHORT_PREFETCH_TTL_MS) return;
 
+        // A previously watched/cached next Short needs no speculative /player call.
+        MediaItemFormatInfo alreadyWarm = mShortWarmCache.get(next.videoId, SystemClock.elapsedRealtime());
+        if (alreadyWarm != null && usableFormat(alreadyWarm)) {
+            if (alreadyWarm.containsSabrFormats() && !alreadyWarm.containsDashFormats() &&
+                    !alreadyWarm.isLive()) {
+                getPlayer().preloadNextSabrShort(next.videoId, alreadyWarm);
+            }
+            mShortLookaheadDistance = 2;
+            Utils.removeCallbacks(mPrefetchSecondShort);
+            Utils.postDelayed(mPrefetchSecondShort, 700);
+            return;
+        }
+
         clearShortPrefetch();
         mShortPrefetchId = next.videoId;
         final String expectedShortId = next.videoId;
@@ -733,9 +747,8 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     /**
-     * A second candidate is metadata-only, requested AFTER the first succeeds
-     * and only while the foreground is playing. No parallel speculative
-     * /player requests, no second decoder, and no retained media bytes.
+     * Metadata-only four-ahead lookahead: at most one speculative /player
+     * request in flight. This cannot allocate four media buffers.
      */
     private void prefetchSecondShortIfKnown() {
         if (!getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
@@ -745,34 +758,56 @@ public class VideoLoaderController extends BasePlayerController {
                 getPlayer() == null || !getPlayer().isPlaying() ||
                 mSuggestionsController == null) return;
 
-        Video target = mSuggestionsController.getSecondNextShort();
+        final int distance = mShortLookaheadDistance;
+        if (distance < 2 || distance > 4) return;
+        Video target = mSuggestionsController.getNthNextShort(distance);
         if (target == null || target.videoId == null ||
-                target.videoId.equals(current.videoId) ||
-                target.videoId.equals(mShortPrefetchId)) return;
-        final long now = SystemClock.elapsedRealtime();
-        if (mShortWarmCache.get(target.videoId, now) != null) return;
+                target.videoId.equals(current.videoId)) return;
 
-        RxHelper.disposeActions(mShortSecondWarmAction);
-        mShortSecondWarmAction = null;
         final String currentId = current.videoId;
         final String targetId = target.videoId;
-        mShortSecondWarmAction = YouTubeServiceManager.instance()
-                .getMediaItemService().getFormatInfoObserve(targetId)
-                .subscribe(info -> {
-                    Video stillPlaying = getVideo();
-                    if (stillPlaying == null || !currentId.equals(stillPlaying.videoId)) return;
-                    if (usableFormat(info)) {
-                        mShortWarmCache.put(targetId, info, SystemClock.elapsedRealtime());
-                        Log.i("MarsTubePerf", "MT-011B5 second_short_metadata_ready=true");
+        final MediaItemFormatInfo cached = mShortWarmCache.get(targetId, SystemClock.elapsedRealtime());
+        if (cached != null && usableFormat(cached)) {
+            if (distance == 2 && cached.containsSabrFormats() &&
+                    !cached.containsDashFormats() && !cached.isLive()) {
+                getPlayer().preloadNextSabrShort(targetId, cached);
+            }
+            scheduleFollowingShort(distance);
+            return;
+        }
+
+        RxHelper.disposeActions(mShortSecondWarmAction);
+        mShortSecondWarmAction = YouTubeServiceManager.instance().getMediaItemService()
+                .getFormatInfoObserve(targetId).subscribe(info -> {
+                    Video playing = getVideo();
+                    if (playing == null || !currentId.equals(playing.videoId) ||
+                            distance != mShortLookaheadDistance || getPlayer() == null ||
+                            !getPlayer().isPlaying()) return;
+                    if (!usableFormat(info)) return;
+                    mShortWarmCache.put(targetId, info, SystemClock.elapsedRealtime());
+                    Log.i("MarsTubePerf", "MT-011B6 lookahead_ready_distance=" + distance);
+                    if (distance == 2 && !info.isLive() &&
+                            info.containsSabrFormats() && !info.containsDashFormats()) {
+                        getPlayer().preloadNextSabrShort(targetId, info);
                     }
+                    scheduleFollowingShort(distance);
                 }, error -> {
-                    Log.i("MarsTubePerf", "MT-011B5 second_short_metadata_error=" +
-                            error.getClass().getSimpleName());
+                    Log.i("MarsTubePerf", "MT-011B6 lookahead_error_distance=" +
+                            distance + " type=" + error.getClass().getSimpleName());
                 });
+    }
+
+    private void scheduleFollowingShort(int completedDistance) {
+        mShortLookaheadDistance = completedDistance + 1;
+        if (mShortLookaheadDistance <= 4) {
+            Utils.removeCallbacks(mPrefetchSecondShort);
+            Utils.postDelayed(mPrefetchSecondShort, 700);
+        }
     }
 
     private void clearShortPrefetch() {
         Utils.removeCallbacks(mPrefetchSecondShort);
+        mShortLookaheadDistance = 2;
         RxHelper.disposeActions(mShortSecondWarmAction);
         mShortSecondWarmAction = null;
         RxHelper.disposeActions(mShortPrefetchAction);

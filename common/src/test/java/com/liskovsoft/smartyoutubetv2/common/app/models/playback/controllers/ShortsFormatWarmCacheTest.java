@@ -85,6 +85,13 @@ public class ShortsFormatWarmCacheTest {
         assertNull(cache.get("two", 1400));
     }
 
+    @Test public void longWatchKeepsSignedMetadataForThirtyMinutes() {
+        ShortsFormatWarmCache<String> cache = new ShortsFormatWarmCache<>(12, 30 * 60000);
+        cache.put("one", "format", 100);
+        assertEquals("format", cache.get("one", 25 * 60000));
+        assertNull(cache.get("one", 30 * 60000 + 100));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void rejectsUnboundedCapacity() {
         new ShortsFormatWarmCache<String>(0, 15000);

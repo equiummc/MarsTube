@@ -284,13 +284,21 @@ public class SuggestionsController extends BasePlayerController {
         return findAdjacentShort(current.getGroup(), current, forward);
     }
 
-    /** Return the next playable Short beyond the immediate next item. No pagination or fetch. */
+    /** Four-ahead lookups remain limited to the currently loaded Shorts group. */
+    public Video getNthNextShort(int distance) {
+        if (distance < 1 || distance > 4) return null;
+        Video candidate = getVideo();
+        if (candidate == null || !candidate.isShorts) return null;
+        VideoGroup group = candidate.getGroup();
+        for (int i = 0; i < distance && candidate != null; i++) {
+            candidate = findAdjacentShort(group, candidate, true);
+        }
+        return candidate;
+    }
+
+    /** Compatibility for the MT-011B5 two-ahead warmup. */
     public Video getSecondNextShort() {
-        Video current = getVideo();
-        if (current == null || !current.isShorts) return null;
-        VideoGroup group = current.getGroup();
-        Video next = findAdjacentShort(group, current, true);
-        return next == null ? null : findAdjacentShort(group, next, true);
+        return getNthNextShort(2);
     }
 
     private Video findAdjacentShort(VideoGroup group, Video current, boolean forward) {
