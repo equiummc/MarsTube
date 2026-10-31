@@ -54,7 +54,7 @@ patch("youtubeapi/src/main/java/com/liskovsoft/youtubeapi/app/nsigsolver/impl/Tc
     ("execute exact cached JS or full request",
      """                        val result = runV8(stdin)
                         android.util.Log.i("MarsTubePerf", "MT-009 tcl_v8_exec_ms=" +""",
-     """                        val mt011PrepareStartNs = android.os.SystemClock.elapsedRealtimeNanos()
+     r"""                        val mt011PrepareStartNs = android.os.SystemClock.elapsedRealtimeNanos()
                         val mt011Reuse = warm && cachedPreprocessed != null &&
                             mt011LastPreparedSource == cachedPreprocessed
                         val mt011Command = if (mt011Reuse) {
