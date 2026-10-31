@@ -768,4 +768,5 @@
     <!-- MT-007: scoped Shorts swipe navigation -->
     <string name="mars_shorts_no_more">No more Shorts in this section</string>
     <string name="mars_shorts_no_previous">No previous Short in this section</string>
+    <string name="mars_shorts_swipe_hint">Shorts: Down = next, Up = previous, OK = pause</string>
 </resources>
