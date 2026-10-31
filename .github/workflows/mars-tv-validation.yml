@@ -5,12 +5,14 @@ on:
       - mars/stable
       - fix/mars-glass-inapp-no-logo-32-68-11
       - feature/mt-005-adaptive-diagnostics-20261031
+      - feature/mt-007-shorts-swipe-startup-20261031
   push:
     branches:
       - feature/mt-001-upstream-ci-20261031
       - feature/mt-005-smart-quality-lab-20261031
       - feature/mt-005-adaptive-diagnostics-20261031
       - feature/mt-007-shorts-swipe-startup-20261031
+      - feature/mt-008-format-priority-diagnostics-20261031
   workflow_dispatch:
 
 permissions:
