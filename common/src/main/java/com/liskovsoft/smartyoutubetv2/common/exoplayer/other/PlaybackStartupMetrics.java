@@ -46,6 +46,15 @@ public final class PlaybackStartupMetrics {
         Log.i(TAG, "session=" + sSession + " format_request since_select_ms=" + (sFormatRequestedMs - sOpenedMs));
     }
 
+    /**
+     * MT-008: identify format resolution paths without logging IDs, account
+     * state, URLs or headers. This distinguishes a hit from an expensive fetch.
+     */
+    public static synchronized void formatRoute(String videoId, String route) {
+        if (!matches(videoId) || sFormatRequestedMs < 0) return;
+        Log.i(TAG, "session=" + sSession + " format_route=" + route);
+    }
+
     public static synchronized void formatResolved(String videoId) {
         if (!matches(videoId) || sFormatRequestedMs < 0) {
             return;
