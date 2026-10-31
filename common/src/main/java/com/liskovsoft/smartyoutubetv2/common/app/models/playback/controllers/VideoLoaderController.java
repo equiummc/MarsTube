@@ -1,6 +1,7 @@
 package com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers;
 
 import android.os.Build.VERSION;
+import android.os.SystemClock;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.other.PlaybackStartupMetrics;
 
 import com.liskovsoft.mediaserviceinterfaces.MediaItemService;
@@ -37,6 +38,8 @@ public class VideoLoaderController extends BasePlayerController {
     private SuggestionsController mSuggestionsController;
     private ErrorFixerController mErrorFixerController;
     private Disposable mFormatInfoAction;
+    private long mLastShortSwipeMs;
+    private boolean mShortContinuationPending;
     private final Runnable mReloadVideo = () -> {
         getMainController().onNewVideo(getVideo());
     };
@@ -78,6 +81,7 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
+        mShortContinuationPending = false;
         PlaybackStartupMetrics.videoSelected(item.videoId);
         item.isShuffled = false;
 
@@ -141,7 +145,9 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     public void loadPrevious() {
-        if (getPlayer() == null) {
+        if (getPlayer() == null) return;
+        if (getVideo() != null && getVideo().isShorts) {
+            loadAdjacentShort(false);
             return;
         }
 
@@ -153,7 +159,9 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     public void loadNext() {
-        if (getPlayer() == null || getVideo() == null) {
+        if (getPlayer() == null || getVideo() == null) return;
+        if (getVideo().isShorts) {
+            loadAdjacentShort(true);
             return;
         }
 
@@ -168,6 +176,43 @@ public class VideoLoaderController extends BasePlayerController {
         if (getPlayerTweaksData().isPlayerUiOnNextEnabled()) {
             getPlayer().showOverlay(true);
         }
+    }
+
+
+    /**
+     * D-pad DOWN/UP: never fall through to the mixed queue or another video.
+     * Ignore key-repeat storms and allow only one continuation request at a time.
+     */
+    public void loadAdjacentShort(boolean forward) {
+        Video current = getVideo();
+        if (getPlayer() == null || current == null || !current.isShorts ||
+                mShortContinuationPending) return;
+        long now = SystemClock.elapsedRealtime();
+        if (now - mLastShortSwipeMs < 300) return;
+        mLastShortSwipeMs = now;
+
+        Video adjacent = mSuggestionsController.getAdjacentShort(forward);
+        if (adjacent != null) {
+            openVideoInt(adjacent);
+            return;
+        }
+        if (!forward) {
+            MessageHelpers.showMessage(getContext(), R.string.mars_shorts_no_previous);
+            return;
+        }
+
+        mShortContinuationPending = true;
+        final String expectedVideoId = current.videoId;
+        mSuggestionsController.requestNextShort(found -> {
+            mShortContinuationPending = false;
+            Video playing = getVideo();
+            if (playing == null || !expectedVideoId.equals(playing.videoId)) return;
+            if (found != null) {
+                openVideoInt(found);
+            } else {
+                MessageHelpers.showMessage(getContext(), R.string.mars_shorts_no_more);
+            }
+        });
     }
 
     @Override
