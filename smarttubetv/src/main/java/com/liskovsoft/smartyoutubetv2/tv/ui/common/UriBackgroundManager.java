@@ -17,6 +17,7 @@ import com.bumptech.glide.request.transition.Transition;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseActivity;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class UriBackgroundManager {
@@ -60,7 +61,11 @@ public class UriBackgroundManager {
     }
 
     public void setBackgroundFrom(Video item) {
-        // Selectively change background picture
+        // Keep full-size backgrounds disabled for low-memory devices.
+        // Only update the small cached banner after focus settles.
+        if (mActivity instanceof BrowseActivity) {
+            ((BrowseActivity) mActivity).updateMarsHero(item);
+        }
     }
 
     public void onStart() {
