@@ -421,6 +421,12 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 "App.Theme.Leanback.Blue.OLED.Browse",
                 "App.Theme.Leanback.Blue.Preferences",
                 mContext));
+        mColorSchemes.add(new ColorScheme(
+                R.string.color_scheme_mars_safe_glass,
+                "App.Theme.MarsSafeGlass.Player",
+                "App.Theme.MarsSafeGlass.Browse",
+                "App.Theme.MarsSafeGlass.Preferences",
+                mContext));
     }
 
     private void restoreState() {
@@ -481,6 +487,12 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
         }
         
         updateDefaultValues();
+        // One-time visual selection after upgrade. The user's future theme choices are respected.
+        if (mPrefs.getProfileData("mars_safe_glass_v1_initialized") == null) {
+            mColorSchemeIndex = mColorSchemes.size() - 1;
+            mPrefs.setProfileData("mars_safe_glass_v1_initialized", "1");
+            persistNow();
+        }
     }
 
     public void persistNow() {
