@@ -11,15 +11,15 @@ import java.util.Map;
 public final class ShortsFormatWarmCache<T> {
     private final long ttlMs;
     private final int capacity;
-    private final LinkedHashMap<String, Entry<T>> values =
-            new LinkedHashMap<String, Entry<T>>(4, 0.75f, true) {
+    private final LinkedHashMap<String, CacheEntry<T>> values =
+            new LinkedHashMap<String, CacheEntry<T>>(4, 0.75f, true) {
                 @Override
-                protected boolean removeEldestEntry(Map.Entry<String, Entry<T>> eldest) {
+                protected boolean removeEldestEntry(Map.Entry<String, CacheEntry<T>> eldest) {
                     return size() > capacity;
                 }
             };
 
-    private static final class Entry<T> {
+    private static final class CacheEntry<T> {
         final T value;
         final long atMs;
         Entry(T value, long atMs) {
@@ -36,13 +36,13 @@ public final class ShortsFormatWarmCache<T> {
 
     public synchronized void put(String id, T value, long nowMs) {
         if (id != null && !id.isEmpty() && value != null) {
-            values.put(id, new Entry<>(value, nowMs));
+            values.put(id, new CacheEntry<>(value, nowMs));
         }
     }
 
     public synchronized T get(String id, long nowMs) {
         if (id == null) return null;
-        Entry<T> entry = values.get(id);
+        CacheEntry<T> entry = values.get(id);
         if (entry == null) return null;
         if (nowMs < entry.atMs || nowMs - entry.atMs >= ttlMs) {
             values.remove(id);
