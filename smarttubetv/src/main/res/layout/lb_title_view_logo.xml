@@ -17,7 +17,7 @@
             android:id="@+id/global_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/pip_title_size"
+            android:textSize="@dimen/browse_global_time_size"
             android:textColor="@color/white"
             android:shadowColor="@color/black"
             android:shadowDx="1.5"
