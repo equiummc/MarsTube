@@ -6,6 +6,7 @@ on:
       - fix/mars-glass-inapp-no-logo-32-68-11
       - feature/mt-005-adaptive-diagnostics-20261031
       - feature/mt-007-shorts-swipe-startup-20261031
+      - feature/mt-008-format-priority-diagnostics-20261031
   push:
     branches:
       - feature/mt-001-upstream-ci-20261031
@@ -13,6 +14,7 @@ on:
       - feature/mt-005-adaptive-diagnostics-20261031
       - feature/mt-007-shorts-swipe-startup-20261031
       - feature/mt-008-format-priority-diagnostics-20261031
+      - feature/mt-009-signature-stage-diagnostics-20261031
   workflow_dispatch:
 
 permissions:
@@ -48,8 +50,28 @@ jobs:
         run: python3 scripts/mars/verify_fork.py --require-submodules
 
       - name: MT-008 pinned MediaServiceCore timing probe (test branch only)
-        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031'
+        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031'
         run: python3 scripts/mars/mt008_probe_media_core.py
+
+      - name: MT-009 verify pinned signature probe anchors
+        if: github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031'
+        run: python3 scripts/mars/mt009_probe_signature_stages.py --check
+
+      - name: MT-009 instrument n-signature solver for diagnostic builds
+        if: github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031'
+        run: python3 scripts/mars/mt009_probe_signature_stages.py
+
+      - name: MT-009 check installer PowerShell syntax (do not run it)
+        if: github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031'
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'scripts/mars/Install-MT009-Release.ps1').Path,
+            [ref]$tokens, [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List | Out-String | Write-Host; exit 1 }
 
       - name: Build native Android TV debug APK (not for release)
         run: |
@@ -59,15 +81,15 @@ jobs:
       - name: Run applicable common module unit tests
         run: ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest
 
-      - name: Validate release-mode Android TV APK (MT-008 experiment only)
-        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031'
+      - name: Validate release-mode Android TV APK (MT-009/MT-008 experiment only)
+        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031'
         run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableRelease
 
       - name: Upload CI release-mode APK (not install-signed or published)
-        if: success() && (github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031')
+        if: success() && (github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.ref_name == 'feature/mt-009-signature-stage-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031' || github.base_ref == 'feature/mt-008-format-priority-diagnostics-20261031')
         uses: actions/upload-artifact@v4
         with:
-          name: marstube-mt008-release-mode-ci-cert
+          name: marstube-mt009-release-mode-ci-cert
           path: smarttubetv/build/outputs/apk/ststable/release/*.apk
           if-no-files-found: error
           retention-days: 7
