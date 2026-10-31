@@ -135,7 +135,8 @@ public class PlayerUIController extends BasePlayerController {
 
         boolean isHandled = handleBackKey(keyCode) || handleMenuKey(keyCode) ||
                 handleConfirmKey(keyCode) || handleStopKey(keyCode) || handleNumKeys(keyCode) ||
-                handlePlayPauseKey(keyCode) || handleLeftRightSkip(keyCode) || handleUpDownSkip(keyCode);
+                handlePlayPauseKey(keyCode) || handleShortsSwipe(keyCode) ||
+                 handleLeftRightSkip(keyCode) || handleUpDownSkip(keyCode);
 
         if (isHandled) {
             return true; // don't show UI
@@ -731,6 +732,12 @@ public class PlayerUIController extends BasePlayerController {
         boolean controlsShown = getPlayer().isOverlayShown();
 
         if (KeyHelpers.isConfirmKey(keyCode) && !controlsShown) {
+            // MT-007: OK toggles an uncluttered Short like a phone tap.
+            if (getVideo() != null && getVideo().isShorts
+                    && !getAppDialogPresenter().isDialogShown()) {
+                getPlayer().setPlayWhenReady(!getPlayer().getPlayWhenReady());
+                return true;
+            }
             switch (getPlayerData().getOKButtonBehavior()) {
                 case PlayerData.OK_ONLY_UI:
                     getPlayer().showOverlay(true);
@@ -787,10 +794,30 @@ public class PlayerUIController extends BasePlayerController {
         return false;
     }
 
+    /**
+     * MT-007: remote-control equivalent of a vertical swipe.
+     * Consume UP/DOWN even at the end of a Shorts shelf, preventing
+     * accidental seeking or ordinary-video navigation.
+     */
+    private boolean handleShortsSwipe(int keyCode) {
+        if (getPlayer() == null || getVideo() == null || !getVideo().isShorts
+                || getPlayer().isOverlayShown() || getAppDialogPresenter().isDialogShown()) {
+            return false;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            getMainController().onNextClicked();
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+            getMainController().onPreviousClicked();
+            return true;
+        }
+        return false;
+    }
+
     private boolean handleLeftRightSkip(int keyCode) {
         if (getPlayer() == null || getPlayer().isOverlayShown() || getVideo() == null ||
-                (getVideo().belongsToShortsGroup() && !getPlayerTweaksData().isQuickSkipShortsEnabled() ||
-                (!getVideo().belongsToShortsGroup() && !getPlayerTweaksData().isQuickSkipVideosEnabled()))) {
+                getVideo().isShorts || !getPlayerTweaksData().isQuickSkipVideosEnabled()) {
             return false;
         }
 
@@ -809,8 +836,7 @@ public class PlayerUIController extends BasePlayerController {
 
     private boolean handleUpDownSkip(int keyCode) {
         if (getPlayer() == null || getPlayer().isOverlayShown() || getVideo() == null ||
-                (getVideo().belongsToShortsGroup() && !getPlayerTweaksData().isQuickSkipShortsAltEnabled() ||
-                        (!getVideo().belongsToShortsGroup() && !getPlayerTweaksData().isQuickSkipVideosAltEnabled()))) {
+                getVideo().isShorts || !getPlayerTweaksData().isQuickSkipVideosAltEnabled()) {
             return false;
         }
 
