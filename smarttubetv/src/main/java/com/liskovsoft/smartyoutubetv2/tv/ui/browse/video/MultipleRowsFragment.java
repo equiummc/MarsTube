@@ -101,6 +101,7 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             presenterSelector.addClassPresenter(ListRow.class, mRowPresenter);
             presenterSelector.addClassPresenter(ChannelHeaderCallback.class, new ChannelHeaderPresenter());
             mMarsFeaturePresenter = new MarsFeatureRowPresenter();
+            mMarsFeaturePresenter.setOnVideoClickListener(video -> mMainPresenter.onVideoItemClicked(video));
             presenterSelector.addClassPresenter(MarsFeatureRow.class, mMarsFeaturePresenter);
 
             mRowsAdapter = new ArrayObjectAdapter(presenterSelector);
@@ -305,7 +306,7 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             return;
         }
 
-        // Skip the decorative, non-focusable feature row.
+        // Start in the first video row; users can still navigate UP to the playable hero.
         index = Math.max(index, mChannelHeaderCallback != null ? 2 : 1);
         if (mRowsAdapter != null && index < mRowsAdapter.size()) {
             setSelectedPosition(index, false);
