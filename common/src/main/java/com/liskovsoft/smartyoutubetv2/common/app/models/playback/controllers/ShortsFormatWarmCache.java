@@ -51,6 +51,10 @@ public final class ShortsFormatWarmCache<T> {
         return entry.value;
     }
 
+    public synchronized void remove(String id) {
+        if (id != null) values.remove(id);
+    }
+
     public synchronized void clear() {
         values.clear();
     }
