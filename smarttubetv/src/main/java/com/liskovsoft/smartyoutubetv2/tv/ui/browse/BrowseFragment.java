@@ -7,6 +7,10 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -21,6 +25,9 @@ import androidx.leanback.widget.PageRow;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.TitleHelper;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.BrowseSection;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsGroup;
@@ -56,6 +63,12 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     private boolean mIsFragmentCreated;
     private boolean mFocusOnContent;
     private CrashRestorer mCrashRestorer;
+    private View mMarsHero;
+    private ImageView mMarsHeroImage;
+    private TextView mMarsHeroTitle;
+    private TextView mMarsHeroSubtitle;
+    private Runnable mMarsHeroTask;
+    private String mMarsHeroImageUrl;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -96,7 +109,67 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
         mProgressBarManager.setRootView((ViewGroup) root);
 
+        // Non-interactive hero sits above the video rows; it never steals DPAD focus.
+        if (root instanceof FrameLayout) {
+            View hero = inflater.inflate(R.layout.mars_hero_banner, (ViewGroup) root, false);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(175), Gravity.TOP | Gravity.START);
+            params.leftMargin = dp(265);
+            params.rightMargin = dp(24);
+            params.topMargin = dp(56);
+            ((FrameLayout) root).addView(hero, params);
+            mMarsHero = hero;
+            mMarsHero.setVisibility(View.GONE);
+            mMarsHeroImage = hero.findViewById(R.id.mars_hero_image);
+            mMarsHeroTitle = hero.findViewById(R.id.mars_hero_title);
+            mMarsHeroSubtitle = hero.findViewById(R.id.mars_hero_subtitle);
+        }
+
         return root;
+    }
+
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    /**
+     * Update only after focus settles. Rapid scrolling does not load additional images.
+     */
+    public void updateMarsHero(Video video) {
+        if (video == null || !video.hasVideo() || mMarsHero == null || mHandler == null) {
+            return;
+        }
+
+        if (mMarsHeroTask != null) {
+            mHandler.removeCallbacks(mMarsHeroTask);
+        }
+
+        final String title = video.getTitle();
+        final CharSequence subtitle = video.getSecondTitle();
+        final String imageUrl = video.getCardImageUrl();
+        mMarsHeroTask = () -> {
+            if (!isAdded() || mMarsHeroImage == null) {
+                return;
+            }
+
+            mMarsHero.setVisibility(View.VISIBLE);
+            mMarsHeroTitle.setText(title == null ? "" : title);
+            mMarsHeroSubtitle.setText(subtitle == null ? "" : subtitle);
+
+            if (imageUrl != null && !imageUrl.equals(mMarsHeroImageUrl)) {
+                mMarsHeroImageUrl = imageUrl;
+                Glide.with(this)
+                        .load(imageUrl)
+                        .apply(new RequestOptions()
+                                .centerCrop()
+                                .override(720, 320)
+                                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                                .dontAnimate())
+                        .into(mMarsHeroImage);
+            }
+        };
+        mHandler.postDelayed(mMarsHeroTask, 650);
     }
 
     @Override
@@ -441,6 +514,18 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
     @Override
     public void onDestroyView() {
+        if (mMarsHeroTask != null) {
+            mHandler.removeCallbacks(mMarsHeroTask);
+            mMarsHeroTask = null;
+        }
+        if (mMarsHeroImage != null && isAdded()) {
+            Glide.with(this).clear(mMarsHeroImage);
+        }
+        mMarsHero = null;
+        mMarsHeroImage = null;
+        mMarsHeroTitle = null;
+        mMarsHeroSubtitle = null;
+        mMarsHeroImageUrl = null;
         mSectionFragmentFactory.cleanup();
 
         super.onDestroyView();
