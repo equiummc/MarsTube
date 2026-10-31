@@ -69,6 +69,10 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
             // Same-player SABR queue already owns this media period; stopping
             // and re-preparing would discard its preloaded media samples.
             if (!getPlayer().hasPreloadedShort(item.videoId)) {
+                // A prepared queue without transferred bytes is not a hit.
+                // Cancel it before resetting so delayed network reads cannot
+                // make the old candidate eligible during the new video open.
+                getPlayer().cancelPreloadedShort();
                 getPlayer().resetPlayerState();
             }
             loadFormatInfo(item);"""),
