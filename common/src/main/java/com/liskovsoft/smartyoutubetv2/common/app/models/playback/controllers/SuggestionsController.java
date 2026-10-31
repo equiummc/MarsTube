@@ -284,6 +284,15 @@ public class SuggestionsController extends BasePlayerController {
         return findAdjacentShort(current.getGroup(), current, forward);
     }
 
+    /** Return the next playable Short beyond the immediate next item. No pagination or fetch. */
+    public Video getSecondNextShort() {
+        Video current = getVideo();
+        if (current == null || !current.isShorts) return null;
+        VideoGroup group = current.getGroup();
+        Video next = findAdjacentShort(group, current, true);
+        return next == null ? null : findAdjacentShort(group, next, true);
+    }
+
     private Video findAdjacentShort(VideoGroup group, Video current, boolean forward) {
         if (group == null || current == null || !current.isShorts) return null;
         return ShortsSwipeNavigator.adjacent(group.getVideos(), current, forward ? 1 : -1,
