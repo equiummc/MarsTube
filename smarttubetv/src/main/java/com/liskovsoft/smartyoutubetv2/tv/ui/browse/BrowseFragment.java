@@ -433,6 +433,12 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             // Need select again if current header is removed previously (can't check for it right now)
             // Fallback to the last section if index above size
             setSelectedPosition(index < mSectionRowAdapter.size() ? index : mSectionRowAdapter.size() - 1, false);
+            if (mMarsHero != null) {
+                int activeIndex = Math.min(index, mSectionRowAdapter.size() - 1);
+                long targetSection = ((PageRow) mSectionRowAdapter.get(activeIndex)).getHeaderItem().getId();
+                mMarsHero.setVisibility(targetSection == MediaGroup.TYPE_SETTINGS
+                        ? View.GONE : (mMarsHeroImageUrl != null ? View.VISIBLE : View.GONE));
+            }
         }
     }
 
