@@ -23,6 +23,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.data.VideoGroup;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.interfaces.VideoGroupPresenter;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.adapter.VideoGroupObjectAdapter;
+import com.liskovsoft.smartyoutubetv2.tv.presenter.MarsFeatureRow;
+import com.liskovsoft.smartyoutubetv2.tv.presenter.MarsFeatureRowPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.ChannelHeaderPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.ChannelHeaderPresenter.ChannelHeaderCallback;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.ShortsCardPresenter;
@@ -52,6 +54,8 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
     private ShortsCardPresenter mShortsPresenter;
     private int mSelectedRowIndex = -1;
     private ChannelHeaderCallback mChannelHeaderCallback;
+    private MarsFeatureRowPresenter mMarsFeaturePresenter;
+    private MarsFeatureRow mMarsFeatureRow;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -96,8 +100,12 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             ClassPresenterSelector presenterSelector = new ClassPresenterSelector();
             presenterSelector.addClassPresenter(ListRow.class, mRowPresenter);
             presenterSelector.addClassPresenter(ChannelHeaderCallback.class, new ChannelHeaderPresenter());
+            mMarsFeaturePresenter = new MarsFeatureRowPresenter();
+            presenterSelector.addClassPresenter(MarsFeatureRow.class, mMarsFeaturePresenter);
 
             mRowsAdapter = new ArrayObjectAdapter(presenterSelector);
+            mMarsFeatureRow = new MarsFeatureRow();
+            mRowsAdapter.add(mMarsFeatureRow);
             setAdapter(mRowsAdapter);
         }
     }
@@ -116,6 +124,9 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             if (mChannelHeaderCallback != null) {
                 mRowsAdapter.add(mChannelHeaderCallback);
             }
+            if (mMarsFeatureRow != null) {
+                mRowsAdapter.add(mMarsFeatureRow);
+            }
         }
 
         if (mVideoGroupAdapters != null) {
@@ -123,7 +134,7 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         }
 
         // Reset the position (bug appeared after fragment been reused)
-        setPosition(mChannelHeaderCallback != null ? 1 : 0);
+        setPosition(mChannelHeaderCallback != null ? 2 : 1);
     }
 
     private void removeByIndex(int idx) {
@@ -200,7 +211,7 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             return mPendingUpdates.isEmpty();
         }
 
-        return mRowsAdapter.size() == 0;
+        return mRowsAdapter.size() <= (mChannelHeaderCallback != null ? 2 : 1);
     }
 
     @Override
@@ -214,9 +225,9 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             return;
         }
 
-        // Correct position depending on the search bar presence
-        if (group.getPosition() != -1 && mChannelHeaderCallback != null) {
-            group.setPosition(group.getPosition() + 1);
+        // Account for the first feature row and optional channel search row.
+        if (group.getPosition() != -1) {
+            group.setPosition(group.getPosition() + (mChannelHeaderCallback != null ? 2 : 1));
         }
 
         int action = group.getAction();
@@ -294,6 +305,8 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             return;
         }
 
+        // Skip the decorative, non-focusable feature row.
+        index = Math.max(index, mChannelHeaderCallback != null ? 2 : 1);
         if (mRowsAdapter != null && index < mRowsAdapter.size()) {
             setSelectedPosition(index, false);
             mSelectedRowIndex = -1;
@@ -354,6 +367,9 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         public void onItemSelected(Presenter.ViewHolder itemViewHolder, Object item,
                                    RowPresenter.ViewHolder rowViewHolder, Row row) {
             if (item instanceof Video) {
+                if (mMarsFeaturePresenter != null) {
+                    mMarsFeaturePresenter.setSelectedVideo((Video) item);
+                }
                 mBackgroundManager.setBackgroundFrom((Video) item);
 
                 mMainPresenter.onVideoItemSelected((Video) item);
