@@ -837,6 +837,11 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
     @Override
     public void setVideo(Video video) {
         mExoPlayerController.setVideo(video);
+        // Exactly the selected Short gets the shorter initial buffer threshold.
+        // Normal videos and playback rebuffering retain the original policy.
+        if (mPlayerInitializer != null) {
+            mPlayerInitializer.setShortsPlayback(video != null && video.isShorts);
+        }
 
         if (mPlayerGlue != null && video != null) {
             // Preserve player formatting
