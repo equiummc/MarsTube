@@ -154,7 +154,10 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
     }
 
     public void preloadNextSabrShort(String id, MediaItemFormatInfo info) {
-        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) return;
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            mShortHandler.post(() -> preloadNextSabrShort(id, info));
+            return;
+        }
         Video current = getVideo();
         if (id == null || current == null || current.videoId == null ||
                 id.equals(current.videoId) || !current.isShorts || info == null ||
@@ -260,6 +263,15 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
         mShortQueue = null;
         mShortCurrentId = null;
         mTrackSelectorManager.release();"""),
+("natural end preserves original next-video flow",
+"""        if (reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION) {
+            mPlayer.stop();
+            mEventListener.onPlayEnd();""",
+"""        if (reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION) {
+            // The presenter still decides on next/loop/close at the boundary.
+            mPlayer.stop();
+            dropShortCandidate();
+            mEventListener.onPlayEnd();"""),
 ("quality change cancellation",
 """    public void selectFormat(FormatItem formatItem) {
         if (formatItem != null && formatItem.getTrack() != null) {""",
