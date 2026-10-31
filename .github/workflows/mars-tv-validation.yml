@@ -13,6 +13,7 @@ on:
       - feature/mt-011a-tcl-stage-probes-20261031
       - feature/mt-011b-sabr-handoff-lab-20261031
       - feature/mt-011b2-lowcopy-tcl-20261031
+      - feature/mt-011b3-sabr-queue-preloader-20261031
       - feature/mt-011b4-meetube-handoff-gate-20261031
   push:
     branches:
