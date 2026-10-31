@@ -41,6 +41,7 @@ public class VideoLoaderController extends BasePlayerController {
     private Disposable mFormatInfoAction;
     private long mLastShortSwipeMs;
     private boolean mShortContinuationPending;
+    private long mShortContinuationGeneration;
     // In-memory only. At most one prefetched next Short, no persistent media URLs.
     private static final long SHORT_PREFETCH_TTL_MS = 15_000L;
     private String mShortPrefetchId;
@@ -101,6 +102,7 @@ public class VideoLoaderController extends BasePlayerController {
         }
 
         mShortContinuationPending = false;
+        mShortContinuationGeneration++; // Invalidate callbacks from the previous Short.
         PlaybackStartupMetrics.videoSelected(item.videoId);
         item.isShuffled = false;
 
@@ -211,7 +213,8 @@ public class VideoLoaderController extends BasePlayerController {
     public void loadAdjacentShort(boolean forward) {
         Video current = getVideo();
         if (getPlayer() == null || current == null || !current.isShorts ||
-                getGeneralData().isChildModeEnabled() || mShortContinuationPending) return;
+                current.videoId == null || getGeneralData().isChildModeEnabled() ||
+                mShortContinuationPending) return;
         long now = SystemClock.elapsedRealtime();
         if (now - mLastShortSwipeMs < 300) return;
         mLastShortSwipeMs = now;
@@ -227,8 +230,10 @@ public class VideoLoaderController extends BasePlayerController {
         }
 
         mShortContinuationPending = true;
+        final long requestGeneration = ++mShortContinuationGeneration;
         final String expectedVideoId = current.videoId;
         mSuggestionsController.requestNextShort(found -> {
+            if (requestGeneration != mShortContinuationGeneration) return;
             mShortContinuationPending = false;
             Video playing = getVideo();
             if (playing == null || !expectedVideoId.equals(playing.videoId)) return;
