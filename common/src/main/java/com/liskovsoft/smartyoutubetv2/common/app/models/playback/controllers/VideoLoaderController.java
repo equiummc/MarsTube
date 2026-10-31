@@ -44,6 +44,8 @@ public class VideoLoaderController extends BasePlayerController {
     private long mShortContinuationGeneration;
     // In-memory only. At most one prefetched next Short, no persistent media URLs.
     private static final long SHORT_PREFETCH_TTL_MS = 15_000L;
+    private final ShortsFormatWarmCache<MediaItemFormatInfo> mShortWarmCache =
+            new ShortsFormatWarmCache<>(3, SHORT_PREFETCH_TTL_MS);
     private String mShortPrefetchId;
     private long mShortPrefetchSinceMs;
     private Observable<MediaItemFormatInfo> mShortPrefetchObservable;
@@ -51,7 +53,10 @@ public class VideoLoaderController extends BasePlayerController {
     private Disposable mShortPrefetchAction;
     private final Runnable mPrefetchShort = this::prefetchNextShortIfKnown;
     private final MediaServiceManager.AccountChangeListener mPrefetchAccountChange =
-            account -> clearShortPrefetch();
+            account -> {
+                clearShortPrefetch();
+                mShortWarmCache.clear();
+            };
     private final Runnable mReloadVideo = () -> {
         getMainController().onNewVideo(getVideo());
     };
@@ -92,6 +97,7 @@ public class VideoLoaderController extends BasePlayerController {
     public void onFinish() {
         disposeActions();
         clearShortPrefetch();
+        mShortWarmCache.clear();
         MediaServiceManager.instance().removeAccountListener(mPrefetchAccountChange);
     }
 
@@ -99,6 +105,10 @@ public class VideoLoaderController extends BasePlayerController {
     public void onNewVideo(Video item) {
         if (item == null) {
             return;
+        }
+        if (!item.isShorts) {
+            clearShortPrefetch();
+            mShortWarmCache.clear();
         }
 
         mShortContinuationPending = false;
@@ -135,6 +145,7 @@ public class VideoLoaderController extends BasePlayerController {
     public void onEngineReleased() {
         disposeActions();
         clearShortPrefetch();
+        mShortWarmCache.clear();
     }
 
     @Override
@@ -142,8 +153,9 @@ public class VideoLoaderController extends BasePlayerController {
         if (getPlayer() == null) {
             return;
         }
-        if (video != null && video.isShorts) {
-            // Schedule once playback has started; do not compete with initial buffering.
+        if (video != null && video.isShorts &&
+                getPlayerTweaksData().isMarsShortPrefetchEnabled()) {
+            // Optional A/B mode; user-initiated format requests have priority by default.
             Utils.removeCallbacks(mPrefetchShort);
             Utils.postDelayed(mPrefetchShort, 2_000);
         }
@@ -334,27 +346,64 @@ public class VideoLoaderController extends BasePlayerController {
 
         ServiceManager service = YouTubeServiceManager.instance();
         MediaItemService mediaItemManager = service.getMediaItemService();
-        boolean prefetched = video.isShorts && video.videoId != null &&
+        final long now = SystemClock.elapsedRealtime();
+
+        MediaItemFormatInfo warm = video.isShorts ?
+                mShortWarmCache.get(video.videoId, now) : null;
+        if (warm != null && !usableFormat(warm)) {
+            mShortWarmCache.remove(video.videoId);
+            warm = null;
+        }
+
+        boolean matchingPrefetch = getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
+                video.isShorts && video.videoId != null &&
                 video.videoId.equals(mShortPrefetchId) && mShortPrefetchObservable != null &&
-                SystemClock.elapsedRealtime() - mShortPrefetchSinceMs < SHORT_PREFETCH_TTL_MS;
-        Observable<MediaItemFormatInfo> formats = prefetched ?
-                (mShortPrefetchedInfo != null ? Observable.just(mShortPrefetchedInfo) : mShortPrefetchObservable) :
-                mediaItemManager.getFormatInfoObserve(video.videoId);
+                now - mShortPrefetchSinceMs < SHORT_PREFETCH_TTL_MS;
+        if (matchingPrefetch && mShortPrefetchedInfo != null &&
+                !usableFormat(mShortPrefetchedInfo)) {
+            matchingPrefetch = false;
+        }
+
+        final String route;
+        Observable<MediaItemFormatInfo> formats;
+        if (warm != null) {
+            route = "warm_cache";
+            formats = Observable.just(warm);
+        } else if (matchingPrefetch) {
+            route = mShortPrefetchedInfo == null ? "prefetch_inflight" : "prefetch_ready";
+            formats = mShortPrefetchedInfo != null ?
+                    Observable.just(mShortPrefetchedInfo) : mShortPrefetchObservable;
+        } else {
+            route = "network";
+            formats = mediaItemManager.getFormatInfoObserve(video.videoId);
+        }
+
+        // Different speculative requests should not contend for the single
+        // upstream service lock. For a matching request, subscribe first.
+        if (!matchingPrefetch) clearShortPrefetch();
         PlaybackStartupMetrics.formatRequested(video.videoId);
-        // Subscribe before releasing the prefetch subscriber: refCount shares the
-        // in-flight format request instead of issuing another one on fast swipes.
-        mFormatInfoAction = formats
-                .subscribe(formatInfo -> {
-                    PlaybackStartupMetrics.formatResolved(video.videoId);
-                    processFormatInfo(formatInfo);
-                },
-                           error -> {
-                               PlaybackStartupMetrics.failure(video.videoId, "format", error.getClass().getSimpleName());
-                               getPlayer().showProgressBar(false);
-                               mErrorFixerController.runFormatErrorAction(error);
-                           });
-        if (prefetched) Log.i(TAG, "MT-007 format_prefetch_hit");
-        clearShortPrefetch();
+        PlaybackStartupMetrics.formatRoute(video.videoId, route);
+        mFormatInfoAction = formats.subscribe(formatInfo -> {
+            PlaybackStartupMetrics.formatResolved(video.videoId);
+            Video playing = getVideo();
+            if (playing == null || video.videoId == null ||
+                    !video.videoId.equals(playing.videoId)) {
+                return; // Never display the stale result of a previous swipe.
+            }
+            if (video.isShorts && usableFormat(formatInfo)) {
+                mShortWarmCache.put(video.videoId, formatInfo, SystemClock.elapsedRealtime());
+            }
+            processFormatInfo(formatInfo);
+        }, error -> {
+            PlaybackStartupMetrics.failure(video.videoId, "format", error.getClass().getSimpleName());
+            if (getPlayer() != null) getPlayer().showProgressBar(false);
+            mErrorFixerController.runFormatErrorAction(error);
+        });
+        if (matchingPrefetch) clearShortPrefetch();
+    }
+
+    private boolean usableFormat(MediaItemFormatInfo info) {
+        return info != null && !info.isUnplayable() && info.isCacheActual();
     }
 
     private void processFormatInfo(MediaItemFormatInfo formatInfo) {
@@ -626,13 +675,18 @@ public class VideoLoaderController extends BasePlayerController {
     @Override
     public void onMetadata(MediaItemMetadata metadata) {
         initRandomNext();
-        if (getVideo() != null && getVideo().isShorts) {
+        if (getVideo() != null && getVideo().isShorts &&
+                getPlayerTweaksData().isMarsShortPrefetchEnabled()) {
             Utils.removeCallbacks(mPrefetchShort);
             Utils.postDelayed(mPrefetchShort, 2_000);
         }
     }
 
     private void prefetchNextShortIfKnown() {
+        if (!getPlayerTweaksData().isMarsShortPrefetchEnabled()) {
+            clearShortPrefetch();
+            return;
+        }
         Video current = getVideo();
         if (current == null || !current.isShorts || getPlayer() == null ||
                 !getPlayer().isPlaying() || mSuggestionsController == null) return;
@@ -648,11 +702,19 @@ public class VideoLoaderController extends BasePlayerController {
                 .getFormatInfoObserve(next.videoId).replay(1).refCount();
         mShortPrefetchAction = mShortPrefetchObservable.subscribe(
                 info -> {
-                    mShortPrefetchedInfo = info;
-                    Log.i(TAG, "MT-007 format_prefetch_ready");
+                    if (mShortPrefetchId != null && usableFormat(info)) {
+                        mShortPrefetchedInfo = info;
+                        Log.i("MarsTubePerf", "MT-008 prefetch_ready elapsed_ms=" +
+                                (SystemClock.elapsedRealtime() - mShortPrefetchSinceMs));
+                    } else {
+                        clearShortPrefetch();
+                        Log.i("MarsTubePerf", "MT-008 prefetch_rejected");
+                    }
                 },
                 error -> {
-                    Log.i(TAG, "MT-007 format_prefetch_error type=" + error.getClass().getSimpleName());
+                    Log.i("MarsTubePerf", "MT-008 prefetch_error elapsed_ms=" +
+                            (SystemClock.elapsedRealtime() - mShortPrefetchSinceMs) +
+                            " type=" + error.getClass().getSimpleName());
                     mShortPrefetchId = null;
                     mShortPrefetchObservable = null;
                     mShortPrefetchedInfo = null;
