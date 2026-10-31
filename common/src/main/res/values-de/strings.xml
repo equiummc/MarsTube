@@ -761,4 +761,5 @@
         <item quantity="one">%s Sekunde</item>
         <item quantity="other">%s Sekunden</item>
     </plurals>
+    <string name="color_scheme_mars_safe_glass">Mars Blauglas</string>
 </resources>
