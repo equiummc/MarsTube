@@ -514,11 +514,12 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             return;
         }
 
-        // Use the existing Leanback badge slot beside the clock.
-        // Never draw a free-floating logo over the network/status indicators.
+        // MarsTube brand logo belongs on the TV launch tile only.
+        // In the running app, keep the title badge empty to prevent overlap
+        // with the clock, network indicator, or native navigation controls.
         if (MainUIData.instance(getContext()).getColorScheme().nameResId
                 == R.string.color_scheme_mars_safe_glass) {
-            setBadgeDrawable(ContextCompat.getDrawable(getContext(), R.drawable.mars_logo_title));
+            setBadgeDrawable(null);
             return;
         }
 
