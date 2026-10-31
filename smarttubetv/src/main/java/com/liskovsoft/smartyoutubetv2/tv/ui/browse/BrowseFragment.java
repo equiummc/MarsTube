@@ -7,6 +7,9 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.view.Gravity;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -30,6 +33,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.errors.ErrorFragmentData
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.BrowsePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.SearchPresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.SplashPresenter;
+import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.common.app.views.BrowseView;
 import com.liskovsoft.smartyoutubetv2.common.misc.CrashRestorer;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
@@ -95,6 +99,24 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         View root = super.onCreateView(inflater, container, savedInstanceState);
 
         mProgressBarManager.setRootView((ViewGroup) root);
+
+        // A single decorative M in the existing menu header. No new menu or focus target.
+        if (root instanceof FrameLayout && getContext() != null
+                && MainUIData.instance(getContext()).getColorScheme().nameResId
+                        == R.string.color_scheme_mars_safe_glass) {
+            ImageView logo = new ImageView(getContext());
+            logo.setImageResource(R.drawable.mars_logo_blue);
+            logo.setFocusable(false);
+            logo.setClickable(false);
+            logo.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            float density = getResources().getDisplayMetrics().density;
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                    Math.round(52 * density), Math.round(36 * density),
+                    Gravity.TOP | Gravity.START);
+            params.leftMargin = Math.round(20 * density);
+            params.topMargin = Math.round(13 * density);
+            ((FrameLayout) root).addView(logo, params);
+        }
 
         return root;
     }
@@ -516,6 +538,12 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         SplashPresenter splashPresenter = SplashPresenter.instance(getContext());
 
         if (splashPresenter == null) {
+            return;
+        }
+
+        if (MainUIData.instance(getContext()).getColorScheme().nameResId
+                == R.string.color_scheme_mars_safe_glass) {
+            setBadgeDrawable(null); // Use the small, blue M on the left; no duplicate badge.
             return;
         }
 
