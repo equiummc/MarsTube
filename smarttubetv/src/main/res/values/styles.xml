@@ -248,4 +248,30 @@
         <item name="cardSelectedBackground">@color/card_selected_background_white_grey</item>
     </style>
     <!--  End Color scheme: Dark Blue (OLED)  -->
+    <!-- Existing Leanback menus and players; only theme colors and icon are customized. -->
+    <style name="App.Theme.MarsSafeGlass.Browse" parent="App.Theme.Leanback.Browse">
+        <item name="android:windowBackground">@color/mars_glass_background</item>
+        <item name="brandColor">@color/mars_glass_sidebar</item>
+        <item name="brandAccentColor">@color/mars_glass_blue</item>
+        <item name="shelfBackground">@color/mars_glass_shelf</item>
+        <item name="cardDefaultBackground">@color/mars_glass_card</item>
+        <item name="cardSelectedBackground">@color/mars_glass_card_focus</item>
+        <item name="appLogo">@null</item>
+        <item name="android:colorAccent" tools:targetApi="21">@color/mars_glass_blue</item>
+    </style>
+
+    <style name="App.Theme.MarsSafeGlass.Player" parent="App.Theme.Leanback.Player">
+        <item name="shelfBackground">@color/mars_glass_shelf</item>
+        <item name="cardDefaultBackground">@color/mars_glass_card</item>
+        <item name="cardSelectedBackground">@color/mars_glass_card_focus</item>
+        <item name="playbackProgressPrimaryColor">@color/mars_glass_blue</item>
+        <item name="playbackProgressSecondaryColor">@color/mars_glass_ice</item>
+        <item name="playbackControlsIconHighlightColor">@color/mars_glass_ice</item>
+        <item name="android:colorAccent" tools:targetApi="21">@color/mars_glass_blue</item>
+    </style>
+
+    <style name="App.Theme.MarsSafeGlass.Preferences" parent="App.Theme.Leanback.Preferences">
+        <item name="android:colorPrimary" tools:targetApi="21">@color/mars_glass_sidebar</item>
+        <item name="android:colorAccent" tools:targetApi="21">@color/mars_glass_blue</item>
+    </style>
 </resources>
