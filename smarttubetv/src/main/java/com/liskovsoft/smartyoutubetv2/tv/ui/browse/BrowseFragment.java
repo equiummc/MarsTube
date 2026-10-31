@@ -186,8 +186,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
                         .apply(new RequestOptions()
                                 .centerCrop()
                                 .override(720, 320)
-                                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-                                .dontAnimate())
+                                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC))
                         .into(mMarsHeroImage);
             }
         };
