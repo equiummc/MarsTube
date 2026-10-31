@@ -58,6 +58,7 @@ public class PlayerSettingsPresenter extends BasePresenter<Void> {
 
         appendPlaybackModeCategory(settingsPresenter);
         appendVideoPresetsCategory(settingsPresenter);
+        appendMarsAdaptiveQualityCategory(settingsPresenter);
         appendPlayerButtonsCategory(settingsPresenter);
         appendNetworkEngineCategory(settingsPresenter);
         appendVideoBufferCategory(settingsPresenter);
@@ -487,6 +488,21 @@ public class PlayerSettingsPresenter extends BasePresenter<Void> {
                 mPlayerTweaksData.isQueueRespectsPlaybackMode()));
 
         settingsPresenter.appendCheckedCategory(getContext().getString(R.string.player_other), options);
+    }
+
+    private void appendMarsAdaptiveQualityCategory(AppDialogPresenter settingsPresenter) {
+        List<OptionItem> options = new ArrayList<>();
+        options.add(UiOptionItem.from(
+                getContext().getString(R.string.mars_quality_auto_experimental),
+                getContext().getString(R.string.mars_quality_auto_experimental_desc),
+                option -> {
+                    // A fresh player is needed to clear prior fixed-quality overrides.
+                    mPlayerTweaksData.setMarsAdaptiveQualityEnabled(option.isSelected());
+                    mRestartApp = true;
+                },
+                mPlayerTweaksData.isMarsAdaptiveQualityEnabled()));
+        settingsPresenter.appendCheckedCategory(
+                getContext().getString(R.string.mars_quality_category), options);
     }
 
     private void appendDeveloperCategory(AppDialogPresenter settingsPresenter) {
