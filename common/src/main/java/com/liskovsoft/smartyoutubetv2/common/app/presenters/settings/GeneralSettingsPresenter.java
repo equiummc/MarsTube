@@ -90,6 +90,13 @@ public class GeneralSettingsPresenter extends BasePresenter<Void> {
         settingsPresenter.showDialog(getContext().getString(R.string.settings_general), mOnFinish);
     }
 
+    /** Compact rail editor. Existing section checkboxes, persistence and order are reused. */
+    public void showSidebarSections() {
+        AppDialogPresenter settingsPresenter = AppDialogPresenter.instance(getContext());
+        appendEnabledSections(settingsPresenter);
+        settingsPresenter.showDialog(getContext().getString(R.string.side_panel_sections), mOnFinish);
+    }
+
     private void appendEnabledSections(AppDialogPresenter settingsPresenter) {
         List<OptionItem> options = new ArrayList<>();
 
