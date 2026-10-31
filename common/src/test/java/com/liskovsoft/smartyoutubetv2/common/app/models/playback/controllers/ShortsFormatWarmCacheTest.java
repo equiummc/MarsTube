@@ -61,7 +61,7 @@ public class ShortsFormatWarmCacheTest {
     }
 
     @Test public void eightShortsSurviveBackAndForthThenOldestEvicts() {
-        ShortsFormatWarmCache<String> cache = new ShortsFormatWarmCache<>(12, 30 * 60000);
+        ShortsFormatWarmCache<String> cache = new ShortsFormatWarmCache<>(8, 60000);
         for (int i = 0; i < 8; i++) {
             cache.put("short-" + i, "fmt-" + i, 100 + i);
         }
@@ -85,10 +85,10 @@ public class ShortsFormatWarmCacheTest {
         assertNull(cache.get("two", 1400));
     }
 
-    @Test public void extendedTtlLongWatchRetainsValidatedMetadata() {
+    @Test public void longWatchKeepsSignedMetadataForThirtyMinutes() {
         ShortsFormatWarmCache<String> cache = new ShortsFormatWarmCache<>(12, 30 * 60000);
-        cache.put("one", "signed-format", 100);
-        assertEquals("signed-format", cache.get("one", 25 * 60000));
+        cache.put("one", "format", 100);
+        assertEquals("format", cache.get("one", 25 * 60000));
         assertNull(cache.get("one", 30 * 60000 + 100));
     }
 
