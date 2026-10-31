@@ -30,6 +30,29 @@ release or a claim of device testing.
   the Thomson Android 14 TV. Record which were actually tested.
   Emulator-only evidence is insufficient for playback quality claims.
 
+## Performance and device priorities (binding)
+
+1. **Performance outranks graphics:** stable playback, remote-control
+   responsiveness, memory safety and fast video starts take precedence
+   over blue-glass transparency, complex layering, animations or extra
+   visual effects. The Mars blue-glass identity remains recognizable,
+   but effects can be reduced or disabled on weaker devices.
+2. **Primary target: 1.5–2.0 GB physical RAM**, including devices that
+   expose only about 1.4 GB as usable memory. Validate at both ends
+   before approving new player or UI overhead. Less than 1.5 GB is
+   best-effort; more than 2 GB must not be required.
+3. Prevent performance regressions by comparing a known-good build
+   with each candidate on the same device under comparable conditions.
+   Examine video start, playback stalls, frame loss, application PSS
+   memory, background return, and remote-control responsiveness.
+4. More aggressive graphics or persistent caching are *opt-in only if
+   justified* by measurements. Do not save one second of start time by
+   causing recurring stutters, RAM exhaustion or crashing.
+5. Software cannot provide missing codec hardware or additional
+   physical memory on aging devices. Android 8.0/API 26 remains the
+   minimum actively supported runtime; older installs are not
+   proactively blocked while current minSdk remains lower.
+
 ## 2. Java and Android build system
 
 - **JDK 17** is the proven GitHub Actions build environment.
