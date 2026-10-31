@@ -28,7 +28,7 @@
     <dimen name="pip_title_max_width">370dp</dimen>
     <dimen name="pip_title_size">24sp</dimen>
     <dimen name="pip_title_date_size">12sp</dimen>
-    <dimen name="browse_global_time_size">30sp</dimen>
+    <dimen name="browse_global_time_size">38sp</dimen>
 
     <!-- Card view default size -->
     <!--
@@ -52,7 +52,7 @@
 
     <!-- Increase this value to hide left strip from Browse fragment (when headers collapsed) -->
     <!-- Old value: 238dp -->
-    <dimen name="lb_browse_rows_margin_start">265dp</dimen>
+    <dimen name="lb_browse_rows_margin_start">100dp</dimen>
 
     <!-- Make search bar more compact so more buttons could be added after it. -->
     <dimen name="lb_search_bar_items_width">600dp</dimen>
