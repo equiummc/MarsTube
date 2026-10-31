@@ -116,7 +116,20 @@ public class PlayerTweaksData implements ProfileChangeListener {
     // MT-008: speculative Short prefetch can contend with user-triggered format requests.
     // Default OFF; cache reuse of recently watched Shorts remains ON in either mode.
     private boolean mIsMarsShortPrefetchEnabled;
+    // MT-011B4 independent media-sample experiment, disabled by default.
+    private boolean mIsMarsShortMediaPreloadEnabled;
     private final Runnable mPersistDataInt = this::persistDataInt;
+
+    public boolean isMarsShortMediaPreloadEnabled() {
+        return mIsMarsShortMediaPreloadEnabled;
+    }
+
+    public void setMarsShortMediaPreloadEnabled(boolean enabled) {
+        if (mIsMarsShortMediaPreloadEnabled != enabled) {
+            mIsMarsShortMediaPreloadEnabled = enabled;
+            persistData();
+        }
+    }
 
     public boolean isMarsShortPrefetchEnabled() {
         return mIsMarsShortPrefetchEnabled;
@@ -804,6 +817,7 @@ public class PlayerTweaksData implements ProfileChangeListener {
         mIsSabrLiveEnabled = Helpers.parseBoolean(split, 61, false);
         mIsMarsAdaptiveQualityEnabled = Helpers.parseBoolean(split, 62, false); // opt-in until TV validated
         mIsMarsShortPrefetchEnabled = Helpers.parseBoolean(split, 63, false); // MT-008: foreground priority
+        mIsMarsShortMediaPreloadEnabled = Helpers.parseBoolean(split, 64, false); // MT-011B4 opt-in
 
         updateDefaultValues();
     }
@@ -831,7 +845,7 @@ public class PlayerTweaksData implements ProfileChangeListener {
                 mIsUnsafeAudioFormatsEnabled, null, mIsLoopShortsEnabled, mIsQuickSkipShortsEnabled, mIsRememberPositionOfLiveVideosEnabled,
                 mIsOculusQuestFixEnabled, null, mIsExtraLongSpeedListEnabled, mIsQuickSkipVideosEnabled, mIsNetworkErrorFixingDisabled, mIsCommentsPlacedLeft,
                 null, mIsAudioFocusEnabled, mIsDontResizeVideoToFitDialogEnabled, mIsSuggestionsHorizontallyScrolled,
-                mIsQuickSkipShortsAltEnabled, mIsQuickSkipVideosAltEnabled, mIsAudioTimeStretchingEnabled, mIsQueueRespectsPlaybackMode, mIsSabrLiveEnabled, mIsMarsAdaptiveQualityEnabled, mIsMarsShortPrefetchEnabled
+                mIsQuickSkipShortsAltEnabled, mIsQuickSkipVideosAltEnabled, mIsAudioTimeStretchingEnabled, mIsQueueRespectsPlaybackMode, mIsSabrLiveEnabled, mIsMarsAdaptiveQualityEnabled, mIsMarsShortPrefetchEnabled, mIsMarsShortMediaPreloadEnabled
                 ));
     }
 
