@@ -177,6 +177,8 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     }
 
     private void setupEventListeners() {
+        // No HeadersSupportFragment exists when headers are disabled.
+        if (getHeadersSupportFragment() != null) {
         getHeadersSupportFragment().setOnHeaderClickedListener(
                 (viewHolder, row) -> {
                     long headerId = row.getHeaderItem().getId();
@@ -201,6 +203,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
                 }
         );
 
+        }
         setOnSearchClickedListener(view -> SearchPresenter.instance(getContext()).startSearch(null));
     }
 
@@ -239,8 +242,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             return;
         }
 
-        // Keep Leanback's page infrastructure but never open the old sliding headers.
-        // Completely disable the legacy sliding headers. Navigation belongs to MarsFixedRail.
+        // Disable Leanback's sliding drawer completely; MarsFixedRail owns navigation.
         setHeadersState(HEADERS_DISABLED);
         setHeadersTransitionOnBackEnabled(false);
 
@@ -292,7 +294,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     }
 
     private int getSelectedHeaderId() {
-        if (getSelectedPosition() >= mSectionRowAdapter.size()) {
+        if (getSelectedPosition() < 0 || getSelectedPosition() >= mSectionRowAdapter.size()) {
             return -1;
         }
 
