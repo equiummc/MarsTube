@@ -761,4 +761,5 @@
         <item quantity="one">%s second</item>
         <item quantity="other">%s seconds</item>
     </plurals>
+    <string name="color_scheme_mars_glass">Mars Glass</string>
 </resources>
