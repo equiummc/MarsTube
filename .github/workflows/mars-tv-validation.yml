@@ -148,6 +148,13 @@ jobs:
         if: github.ref_name == 'feature/mt-011b2-lowcopy-tcl-20261031' || github.base_ref == 'feature/mt-011b-sabr-handoff-lab-20261031'
         run: python3 scripts/mars/mt011ab_lowcopy_tcl.py
 
+      - name: MT-011AB2 validate and apply bounded RAM TCL cache
+        if: github.ref_name == 'feature/mt-011b2-lowcopy-tcl-20261031' || github.base_ref == 'feature/mt-011b-sabr-handoff-lab-20261031'
+        run: |
+          python3 -m py_compile scripts/mars/mt011ab_memory_source_cache.py
+          python3 scripts/mars/mt011ab_memory_source_cache.py --check
+          python3 scripts/mars/mt011ab_memory_source_cache.py
+
       - name: MT-011AB compare warm challenge-only solver output
         if: github.ref_name == 'feature/mt-011b2-lowcopy-tcl-20261031' || github.base_ref == 'feature/mt-011b-sabr-handoff-lab-20261031'
         run: node scripts/mars/mt011ab_verify_challenges.js
