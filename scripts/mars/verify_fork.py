@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""MT-001 read-only guardrails for the MarsTube TV fork.
+
+This check intentionally never modifies user data, builds, tags, or release feeds.
+Functional playback and remote-control checks still require a real device.
+"""
+from __future__ import annotations
+
+import argparse
+import pathlib
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+
+def check(root: pathlib.Path, require_submodules: bool) -> list[str]:
+    failures = []
+
+    def require(condition: bool, message: str) -> None:
+        print(f"{'PASS' if condition else 'FAIL'}: {message}")
+        if not condition:
+            failures.append(message)
+
+    def read(path: str) -> str:
+        target = root / path
+        try:
+            return target.read_text(encoding="utf-8")
+        except OSError:
+            failures.append(f"missing source: {path}")
+            return ""
+
+    gradle = read("smarttubetv/build.gradle")
+    browse = read("smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/browse/BrowseFragment.java")
+    styles = read("smarttubetv/src/main/res/values/styles.xml")
+    scheme = read("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/prefs/MainUIData.java")
+    url_xml = read("common/src/ststable/res/values/update_urls.xml")
+    gitmodules = read(".gitmodules")
+
+    require(bool(re.search(r"ststable\s*\{\s*applicationId\s+\"de\.equiummc\.mars\.smarttube\"", gradle)),
+            "ststable package identifier remains de.equiummc.mars.smarttube")
+    match = re.search(r"versionCode\s+(\d+)", gradle)
+    require(match is not None and int(match.group(1)) >= 100011,
+            "monotonic Mars versionCode >= 100011 baseline")
+    require(bool(re.search(r'versionName\s+"Mars-[^"]+"', gradle)),
+            "independent Mars versionName is configured")
+    require("setHeadersState(HEADERS_ENABLED)" in browse and "setupEventListeners()" in browse,
+            "native Leanback navigation and event listeners retained")
+    require("new MarsFixedRail" not in browse and "enforceMarsRailOnly" not in browse,
+            "experimental secondary menu and legacy-header removal absent")
+    require("R.string.color_scheme_mars_safe_glass" in browse and "setBadgeDrawable(null)" in browse,
+            "no in-app M badge in the Mars glass theme")
+    require('name="App.Theme.MarsSafeGlass.Browse"' in styles and
+            '<item name="appLogo">@null</item>' in styles,
+            "Mars glass browse theme retains no title badge")
+    require("color_scheme_mars_safe_glass" in scheme,
+            "blue glass color scheme remains registered")
+    require("path = SharedModules" in gitmodules and "path = MediaServiceCore" in gitmodules,
+            "both real Git submodules declared")
+    try:
+        tree = ET.fromstring(url_xml)
+        urls = [e.text or "" for e in tree.findall(".//item")]
+    except ET.ParseError:
+        urls = []
+    require(len(urls) == 1 and
+            urls[0].startswith("https://raw.githubusercontent.com/equiummc/mars-smarttube/") and
+            "yuliskov/SmartTube" not in urls[0],
+            "stable updater configured for fork, not upstream")
+    if require_submodules:
+        for path in ("SharedModules/core_settings.gradle", "MediaServiceCore/core_settings.gradle",
+                     "exoplayer-amzn-2.10.6/core_settings.gradle"):
+            require((root / path).is_file(), f"Gradle dependency exists: {path}")
+    else:
+        print("INFO: submodule files not checked (pass --require-submodules after checkout).")
+
+    # More than a compile test is necessary. This is not a TV end-to-end test.
+    print("INFO: Android-TV navigation, playback, account login, and installation require device smoke tests.")
+    return failures
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo", type=pathlib.Path, default=pathlib.Path(__file__).resolve().parents[2])
+    parser.add_argument("--require-submodules", action="store_true")
+    args = parser.parse_args()
+    errors = check(args.repo.resolve(), args.require_submodules)
+    if errors:
+        print(f"MT-001: {len(errors)} fork guardrail(s) FAILED.")
+        sys.exit(1)
+    print("MT-001: static fork guardrails PASS.")
