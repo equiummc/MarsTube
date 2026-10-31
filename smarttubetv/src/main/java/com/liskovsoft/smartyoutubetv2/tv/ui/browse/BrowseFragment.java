@@ -182,6 +182,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             if (imageUrl != null && !imageUrl.equals(mMarsHeroImageUrl)) {
                 mMarsHeroImageUrl = imageUrl;
                 Glide.with(this)
+                        .asBitmap() // Static frame only; no animated preview in the hero.
                         .load(imageUrl)
                         .apply(new RequestOptions()
                                 .centerCrop()
