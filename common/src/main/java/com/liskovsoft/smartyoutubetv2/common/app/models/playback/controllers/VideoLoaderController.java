@@ -46,6 +46,7 @@ public class VideoLoaderController extends BasePlayerController {
     private String mShortPrefetchId;
     private long mShortPrefetchSinceMs;
     private Observable<MediaItemFormatInfo> mShortPrefetchObservable;
+    private MediaItemFormatInfo mShortPrefetchedInfo;
     private Disposable mShortPrefetchAction;
     private final Runnable mPrefetchShort = this::prefetchNextShortIfKnown;
     private final Runnable mReloadVideo = () -> {
@@ -321,7 +322,8 @@ public class VideoLoaderController extends BasePlayerController {
         boolean prefetched = video.isShorts && video.videoId != null &&
                 video.videoId.equals(mShortPrefetchId) && mShortPrefetchObservable != null &&
                 SystemClock.elapsedRealtime() - mShortPrefetchSinceMs < SHORT_PREFETCH_TTL_MS;
-        Observable<MediaItemFormatInfo> formats = prefetched ? mShortPrefetchObservable :
+        Observable<MediaItemFormatInfo> formats = prefetched ?
+                (mShortPrefetchedInfo != null ? Observable.just(mShortPrefetchedInfo) : mShortPrefetchObservable) :
                 mediaItemManager.getFormatInfoObserve(video.videoId);
         PlaybackStartupMetrics.formatRequested(video.videoId);
         // Subscribe before releasing the prefetch subscriber: refCount shares the
@@ -630,11 +632,15 @@ public class VideoLoaderController extends BasePlayerController {
         mShortPrefetchObservable = YouTubeServiceManager.instance().getMediaItemService()
                 .getFormatInfoObserve(next.videoId).replay(1).refCount();
         mShortPrefetchAction = mShortPrefetchObservable.subscribe(
-                unused -> Log.i(TAG, "MT-007 format_prefetch_ready"),
+                info -> {
+                    mShortPrefetchedInfo = info;
+                    Log.i(TAG, "MT-007 format_prefetch_ready");
+                },
                 error -> {
                     Log.i(TAG, "MT-007 format_prefetch_error type=" + error.getClass().getSimpleName());
                     mShortPrefetchId = null;
                     mShortPrefetchObservable = null;
+                    mShortPrefetchedInfo = null;
                 });
     }
 
@@ -642,6 +648,7 @@ public class VideoLoaderController extends BasePlayerController {
         RxHelper.disposeActions(mShortPrefetchAction);
         mShortPrefetchAction = null;
         mShortPrefetchObservable = null;
+        mShortPrefetchedInfo = null;
         mShortPrefetchId = null;
         mShortPrefetchSinceMs = 0;
     }
