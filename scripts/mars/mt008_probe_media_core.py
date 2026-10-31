@@ -111,6 +111,7 @@ patch(
         (
             "playable",
             """        VideoInfo result = firstPlayable(videoId, clickTrackingParams);
+
         if (result == null) {""",
             """        long mt008Started = android.os.SystemClock.elapsedRealtime();
         VideoInfo result = firstPlayable(videoId, clickTrackingParams);
@@ -121,6 +122,7 @@ patch(
         (
             "fixes",
             """        applyFixesIfNeeded(result, videoId, clickTrackingParams);
+
         transformFormats(result);""",
             """        long mt008FixStarted = android.os.SystemClock.elapsedRealtime();
         applyFixesIfNeeded(result, videoId, clickTrackingParams);
