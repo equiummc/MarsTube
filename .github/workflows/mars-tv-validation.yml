@@ -59,6 +59,19 @@ jobs:
       - name: Run applicable common module unit tests
         run: ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest
 
+      - name: Validate release-mode Android TV APK (MT-008 experiment only)
+        if: github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031'
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableRelease
+
+      - name: Upload CI release-mode APK (not install-signed or published)
+        if: success() && (github.ref_name == 'feature/mt-008-format-priority-diagnostics-20261031' || github.base_ref == 'feature/mt-007-shorts-swipe-startup-20261031')
+        uses: actions/upload-artifact@v4
+        with:
+          name: marstube-mt008-release-mode-ci-cert
+          path: smarttubetv/build/outputs/apk/ststable/release/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Upload test APK (not a published release)
         if: success()
         uses: actions/upload-artifact@v4
