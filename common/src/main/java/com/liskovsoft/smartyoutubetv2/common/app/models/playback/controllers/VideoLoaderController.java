@@ -49,6 +49,8 @@ public class VideoLoaderController extends BasePlayerController {
     private MediaItemFormatInfo mShortPrefetchedInfo;
     private Disposable mShortPrefetchAction;
     private final Runnable mPrefetchShort = this::prefetchNextShortIfKnown;
+    private final MediaServiceManager.AccountChangeListener mPrefetchAccountChange =
+            account -> clearShortPrefetch();
     private final Runnable mReloadVideo = () -> {
         getMainController().onNewVideo(getVideo());
     };
@@ -82,6 +84,14 @@ public class VideoLoaderController extends BasePlayerController {
     public void onInit() {
         mSuggestionsController = getController(SuggestionsController.class);
         mErrorFixerController = getController(ErrorFixerController.class);
+        MediaServiceManager.instance().addAccountListener(mPrefetchAccountChange);
+    }
+
+    @Override
+    public void onFinish() {
+        disposeActions();
+        clearShortPrefetch();
+        MediaServiceManager.instance().removeAccountListener(mPrefetchAccountChange);
     }
 
     @Override
@@ -201,7 +211,7 @@ public class VideoLoaderController extends BasePlayerController {
     public void loadAdjacentShort(boolean forward) {
         Video current = getVideo();
         if (getPlayer() == null || current == null || !current.isShorts ||
-                mShortContinuationPending) return;
+                getGeneralData().isChildModeEnabled() || mShortContinuationPending) return;
         long now = SystemClock.elapsedRealtime();
         if (now - mLastShortSwipeMs < 300) return;
         mLastShortSwipeMs = now;
