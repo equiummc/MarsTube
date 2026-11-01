@@ -159,7 +159,7 @@ jobs:
             $preamble=($content -split '(?m)^try \{',2)[0]
             if($preamble -eq $content){throw "Missing main entry: $($variant.File)"}
             . ([scriptblock]::Create($preamble))
-            if($codeSha -ne 'a42f45d518bad5af9d1a256f8a9f73dd4b765a5e'){
+            if($codeSha -ne '8e59b54228aa6f24e31b65665827df4f98b0668b'){
               throw "Incorrect verified source: $($variant.File)"
             }
             Write-Host "Safe signed installer checked: $($variant.File)"
