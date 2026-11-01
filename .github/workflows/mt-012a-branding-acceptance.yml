@@ -1,0 +1,64 @@
+name: MT-012A MarsTube branding acceptance
+on:
+  push:
+    branches:
+      - feature/mt-012a-unified-mars-brand-20261101
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  branding-and-playback-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Check safety and canonical identity
+        run: |
+          python3 scripts/mars/verify_fork.py --require-submodules
+          grep -F 'android:icon="@drawable/mars_brand_tile"' smarttubetv/src/main/AndroidManifest.xml
+          grep -F 'android:banner="@drawable/mars_brand_banner"' smarttubetv/src/main/AndroidManifest.xml
+          grep -F 'name="appLogo">@drawable/mars_brand_badge' smarttubetv/src/main/res/values/styles.xml
+          test -f smarttubetv/src/main/res/drawable/mars_brand_tile.xml
+          test -f smarttubetv/src/main/res/drawable/mars_brand_banner.xml
+          test -f smarttubetv/src/main/res/drawable/mars_brand_badge.xml
+      - name: Apply the exact pinned B6 overlays (unchanged)
+        run: |
+          python3 scripts/mars/mt008_probe_media_core.py
+          python3 scripts/mars/mt009_probe_signature_stages.py --check
+          python3 scripts/mars/mt009_probe_signature_stages.py
+          python3 scripts/mars/mt010a_decoder_cache.py --check
+          python3 scripts/mars/mt010a_decoder_cache.py
+          python3 scripts/mars/mt010a2_warm_runtime.py --check
+          python3 scripts/mars/mt010a2_warm_runtime.py
+          node scripts/mars/mt010a2_validate_solver.js
+          python3 scripts/mars/mt011a_tcl_stage_probes.py --check
+          python3 scripts/mars/mt011a_tcl_stage_probes.py
+          python3 scripts/mars/mt011ab_lowcopy_tcl.py --check
+          python3 scripts/mars/mt011ab_lowcopy_tcl.py
+          python3 scripts/mars/mt011ab_memory_source_cache.py --check
+          python3 scripts/mars/mt011ab_memory_source_cache.py
+          node scripts/mars/mt011ab_verify_challenges.js
+          python3 scripts/mars/mt011b3_queue_preloader.py --check
+          python3 scripts/mars/mt011b3_queue_preloader.py
+      - name: Common unit tests
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest
+      - name: Build branded debug APK
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableDebug
+      - name: Build branded release APK
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableRelease
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: MT-012A-marsTube-CI-apks-not-install-signed
+          path: |
+            smarttubetv/build/outputs/apk/ststable/debug/*.apk
+            smarttubetv/build/outputs/apk/ststable/release/*.apk
