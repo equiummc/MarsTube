@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- MT-012A: canonical MarsTube M paths from mars_logo_blue.xml.
-     Keep the pathData identical in Mars TV and MarsTube. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp"
-    android:viewportWidth="120" android:viewportHeight="120">
-    <path android:fillColor="#FFFFFFFF"
-        android:pathData="M18,0 H102 Q120,0 120,18 V102 Q120,120 102,120 H18 Q0,120 0,102 V18 Q0,0 18,0 Z" />
-    <group android:pivotX="60" android:pivotY="40"
-        android:scaleX="0.82" android:scaleY="1.10" android:translateY="21">
-    <path android:fillColor="#8048C7FF"
-        android:pathData="M7,64 L19,15 Q21,9 28,9 L37,9 L60,39 L83,9 L92,9 Q99,9 101,15 L113,64 Q114,70 107,70 L94,70 L87,35 L66,64 Q60,72 54,64 L33,35 L26,70 L13,70 Q6,70 7,64 Z"/>
-    <path android:fillColor="#FF189FFF"
-        android:pathData="M10,61 L22,17 Q23,13 29,13 L35,13 L60,45 L85,13 L91,13 Q97,13 98,18 L110,61 Q111,65 106,65 L97,65 L88,29 L65,60 Q60,66 55,60 L32,29 L23,65 L14,65 Q9,65 10,61 Z"/>
-    <path android:fillColor="#FF7AD7FF"
-        android:pathData="M22,17 L30,15 L35,28 L23,65 L14,65 Z"/>
-    </group>
+<!-- MT-013 canonical M, same geometry as Mars TV; no orbit, no button. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="1024" android:viewportHeight="1024">
+    <path android:fillColor="#FF168DFF" android:pathData="M 972.6,127.2 L 923.6,135.0 L 856.7,154.5 L 796.0,178.6 L 747.8,205.0 L 698.0,242.4 L 652.1,286.7 L 572.7,385.6 L 568.8,383.2 L 558.7,310.1 L 557.9,214.4 L 548.6,201.1 L 538.5,195.7 L 461.4,217.5 L 374.3,257.2 L 296.5,303.9 L 234.2,349.0 L 172.0,403.5 L 134.6,444.7 L 70.0,537.3 L 73.9,541.2 L 167.3,503.8 L 201.5,496.0 L 209.3,498.4 L 121.4,695.2 L 50.6,896.0 L 190.6,825.2 L 364.2,759.8 L 411.6,623.7 L 419.4,633.0 L 462.2,734.9 L 469.2,737.3 L 604.6,619.8 L 607.7,622.1 L 585.1,720.1 L 562.6,845.4 L 564.1,854.8 L 650.5,812.7 L 738.4,780.8 L 837.3,759.1 L 919.0,752.8 L 920.5,745.0 L 887.8,678.9 L 869.2,613.5 L 859.8,540.4 L 861.4,473.5 L 873.8,391.8 L 897.2,305.4 L 926.0,228.4 Z"/>
 </vector>
