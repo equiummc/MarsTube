@@ -261,6 +261,14 @@ public class VideoLoaderController extends BasePlayerController {
 
         Video adjacent = mSuggestionsController.getAdjacentShort(forward);
         if (adjacent != null) {
+            if (!forward) {
+                // MT-018: previous Short reuses its validated format metadata if
+                // still valid; no extra speculative requests or media decoders.
+                MediaItemFormatInfo previouslySeen = mShortWarmCache.get(
+                        adjacent.videoId, SystemClock.elapsedRealtime());
+                Log.i("MarsTubePerf", "MT-018 shorts_back_route=" +
+                        (previouslySeen != null && usableFormat(previouslySeen) ? "warm_cache" : "network"));
+            }
             openVideoInt(adjacent);
             return;
         }
@@ -384,9 +392,9 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
-        // Fix no progress on next video (the engine may still buffering a bit)
-        //getPlayer().showProgressBar(true);
-        Utils.post(mShowProgressBar);
+        // MT-018: do not schedule a second loading-circle request before we
+        // check the recent Shorts metadata cache. Back swipes are often warm.
+        // Real buffering can still show progress through the player UI.
         disposeActions();
 
         ServiceManager service = YouTubeServiceManager.instance();
@@ -398,6 +406,11 @@ public class VideoLoaderController extends BasePlayerController {
         if (warm != null && !usableFormat(warm)) {
             mShortWarmCache.remove(video.videoId);
             warm = null;
+        }
+        // Cold/network paths retain normal loading feedback. For a previously
+        // viewed Short with valid cached format info, skip the redundant spinner.
+        if (warm == null) {
+            Utils.post(mShowProgressBar);
         }
 
         boolean matchingPrefetch = getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
