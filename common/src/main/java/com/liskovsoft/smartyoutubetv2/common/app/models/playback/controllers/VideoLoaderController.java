@@ -77,6 +77,20 @@ public class VideoLoaderController extends BasePlayerController {
     private int mShortLookaheadDistance = 2;
     private final Runnable mPrefetchShort = this::prefetchNextShortIfKnown;
     private final Runnable mPrefetchSecondShort = this::prefetchSecondShortIfKnown;
+    // MT-018: 3 metadata-only forward slots on the Fire TV reference device.
+    // One low-priority network request in flight, never three parallel streams.
+    private final ShortsWindowPolicy mShortWindow = new ShortsWindowPolicy();
+    private Disposable mShortWindowAction;
+    private int mShortWindowGeneration;
+    private final Runnable mShortWindowRunner = this::warmNextKnownShort;
+    private final Runnable mShortWindowTimeout = () -> {
+        RxHelper.disposeActions(mShortWindowAction);
+        mShortWindowAction = null;
+        mShortWindowGeneration++; // Reject late results of a timed-out speculative request.
+        Log.i("MarsTubePerf", "MT-018 next_window_timeout");
+        advanceShortWindow();
+    };
+
     private final MediaServiceManager.AccountChangeListener mPrefetchAccountChange =
             account -> {
                 clearShortPrefetch();
@@ -123,6 +137,7 @@ public class VideoLoaderController extends BasePlayerController {
         cancelShortContinuation();
         disposeActions();
         clearShortPrefetch();
+        cancelShortWindow();
         mShortWarmCache.clear();
         MediaServiceManager.instance().removeAccountListener(mPrefetchAccountChange);
     }
@@ -132,6 +147,8 @@ public class VideoLoaderController extends BasePlayerController {
         if (item == null) {
             return;
         }
+        // Stop speculative traffic before a foreground swipe to protect first frame.
+        cancelShortWindow();
         if (!item.isShorts) {
             clearShortPrefetch();
             mShortWarmCache.clear();
@@ -173,6 +190,7 @@ public class VideoLoaderController extends BasePlayerController {
         cancelShortContinuation();
         disposeActions();
         clearShortPrefetch();
+        cancelShortWindow();
         mShortWarmCache.clear();
     }
 
@@ -180,6 +198,13 @@ public class VideoLoaderController extends BasePlayerController {
     public void onVideoLoaded(Video video) {
         if (getPlayer() == null) {
             return;
+        }
+        // The Fire Cube (raven) is the current acceptance device. Do not
+        // silently enable speculative requests on the 1.45-GB Thomson.
+        if (video != null && video.isShorts && isFireShortWindowTarget()) {
+            mShortWindow.reset();
+            Utils.removeCallbacks(mShortWindowRunner);
+            Utils.postDelayed(mShortWindowRunner, ShortsWindowPolicy.FIRST_WARM_DELAY_MS);
         }
         if (video != null && video.isShorts &&
                 getPlayerTweaksData().isMarsShortPrefetchEnabled()) {
@@ -261,6 +286,14 @@ public class VideoLoaderController extends BasePlayerController {
 
         Video adjacent = mSuggestionsController.getAdjacentShort(forward);
         if (adjacent != null) {
+            if (!forward) {
+                // MT-018: previous Short reuses its validated format metadata if
+                // still valid; no extra speculative requests or media decoders.
+                MediaItemFormatInfo previouslySeen = mShortWarmCache.get(
+                        adjacent.videoId, SystemClock.elapsedRealtime());
+                Log.i("MarsTubePerf", "MT-018 shorts_back_route=" +
+                        (previouslySeen != null && usableFormat(previouslySeen) ? "warm_cache" : "network"));
+            }
             openVideoInt(adjacent);
             return;
         }
@@ -384,9 +417,9 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
-        // Fix no progress on next video (the engine may still buffering a bit)
-        //getPlayer().showProgressBar(true);
-        Utils.post(mShowProgressBar);
+        // MT-018: do not schedule a second loading-circle request before we
+        // check the recent Shorts metadata cache. Back swipes are often warm.
+        // Real buffering can still show progress through the player UI.
         disposeActions();
 
         ServiceManager service = YouTubeServiceManager.instance();
@@ -398,6 +431,11 @@ public class VideoLoaderController extends BasePlayerController {
         if (warm != null && !usableFormat(warm)) {
             mShortWarmCache.remove(video.videoId);
             warm = null;
+        }
+        // Cold/network paths retain normal loading feedback. For a previously
+        // viewed Short with valid cached format info, skip the redundant spinner.
+        if (warm == null) {
+            Utils.post(mShowProgressBar);
         }
 
         boolean matchingPrefetch = getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
@@ -727,6 +765,73 @@ public class VideoLoaderController extends BasePlayerController {
         }
     }
 
+    private boolean isFireShortWindowTarget() {
+        return "raven".equalsIgnoreCase(android.os.Build.DEVICE) ||
+                "AFTR".equalsIgnoreCase(android.os.Build.MODEL);
+    }
+
+    /** MT-018: Only known Shorts in the current list. No pagination and no
+     * player buffer allocations. Foreground video requests always take priority. */
+    private void warmNextKnownShort() {
+        Video current = getVideo();
+        if (!isFireShortWindowTarget() || current == null || !current.isShorts ||
+                current.videoId == null || mSuggestionsController == null ||
+                getPlayer() == null || !getPlayer().isPlaying() ||
+                isActionsRunning()) return;
+        final int distance = mShortWindow.nextDistance();
+        if (distance < 0) return;
+        Video target = mSuggestionsController.getNthNextShort(distance);
+        if (target == null || target.videoId == null ||
+                target.videoId.equals(current.videoId)) return;
+        MediaItemFormatInfo cached = mShortWarmCache.get(
+                target.videoId, SystemClock.elapsedRealtime());
+        if (cached != null && usableFormat(cached)) {
+            Log.i("MarsTubePerf", "MT-018 next_window_cached distance=" + distance);
+            advanceShortWindow();
+            return;
+        }
+        final String expectedCurrent = current.videoId;
+        final int generation = ++mShortWindowGeneration;
+        Utils.removeCallbacks(mShortWindowTimeout);
+        Utils.postDelayed(mShortWindowTimeout, ShortsWindowPolicy.REQUEST_TIMEOUT_MS);
+        Log.i("MarsTubePerf", "MT-018 next_window_request distance=" + distance);
+        mShortWindowAction = YouTubeServiceManager.instance().getMediaItemService()
+                .getFormatInfoObserve(target.videoId).subscribe(info -> {
+                    if (generation != mShortWindowGeneration) return;
+                    Utils.removeCallbacks(mShortWindowTimeout);
+                    mShortWindowAction = null;
+                    Video playing = getVideo();
+                    if (playing == null || !expectedCurrent.equals(playing.videoId) ||
+                            !getPlayer().isPlaying()) return;
+                    if (usableFormat(info)) {
+                        mShortWarmCache.put(target.videoId, info, SystemClock.elapsedRealtime());
+                        Log.i("MarsTubePerf", "MT-018 next_window_ready distance=" + distance);
+                    }
+                    advanceShortWindow();
+                }, error -> {
+                    if (generation != mShortWindowGeneration) return;
+                    Utils.removeCallbacks(mShortWindowTimeout);
+                    mShortWindowAction = null;
+                    Log.i("MarsTubePerf", "MT-018 next_window_error distance=" + distance);
+                    advanceShortWindow();
+                });
+    }
+
+    private void advanceShortWindow() {
+        if (mShortWindow.advance()) {
+            Utils.removeCallbacks(mShortWindowRunner);
+            Utils.postDelayed(mShortWindowRunner, ShortsWindowPolicy.NEXT_WARM_DELAY_MS);
+        }
+    }
+
+    private void cancelShortWindow() {
+        mShortWindowGeneration++;
+        Utils.removeCallbacks(mShortWindowRunner, mShortWindowTimeout);
+        RxHelper.disposeActions(mShortWindowAction);
+        mShortWindowAction = null;
+        mShortWindow.reset();
+    }
+
     private void prefetchNextShortIfKnown() {
         if (!getPlayerTweaksData().isMarsShortPrefetchEnabled()) {
             clearShortPrefetch();
@@ -845,6 +950,7 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     private void clearShortPrefetch() {
+        cancelShortWindow(); // Includes account switch; keep B6's pinned overlay anchor intact.
         Utils.removeCallbacks(mPrefetchSecondShort);
         mShortLookaheadDistance = 2;
         RxHelper.disposeActions(mShortSecondWarmAction);

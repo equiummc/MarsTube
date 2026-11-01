@@ -925,16 +925,21 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
             return;
         }
 
-        // Fix interrupted progress (by suggestions, etc). The video player can handle these states correctly.
+        // MT-018: hiding MUST work even while ExoPlayer is loading/buffering.
+        // Previously we returned early, leaving the old Short's visible spinner
+        // behind when the user swiped backwards to a warm/cached Short.
+        if (!show) {
+            getProgressBarManager().hide();
+            return;
+        }
+
+        // The engine handles genuine buffer status. The initial Shorts delay
+        // set in setVideo applies to either direction of the swipe.
         if (mExoPlayerController.isLoading() || mExoPlayerController.isBuffering()) {
             return;
         }
 
-        if (show) {
-            getProgressBarManager().show();
-        } else {
-            getProgressBarManager().hide();
-        }
+        getProgressBarManager().show();
     }
 
     @Override
