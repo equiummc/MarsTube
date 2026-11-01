@@ -373,6 +373,11 @@ public class PlaybackPresenter extends BasePresenter<PlaybackView> implements Pl
     }
 
     @Override
+    public void onFirstFrame(Video item) {
+        process(listener -> listener.onFirstFrame(item));
+    }
+
+    @Override
     public void onTickle() {
         process(PlayerEventListener::onTickle);
     }
