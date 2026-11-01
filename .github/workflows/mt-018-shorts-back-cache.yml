@@ -105,6 +105,26 @@ jobs:
         shell: pwsh
         run: |
           & pwsh -NoProfile -File scripts/mars/Test-MT017-FireInstaller.ps1
+      - name: Validate MT-018 Fire installer startup and exact pinned 3x3 window
+        shell: pwsh
+        run: |
+          $file='scripts/mars/Install-MT018-Fire-Shorts-Rewind.ps1'
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path $file).Path,[ref]$tokens,[ref]$errors
+          ) | Out-Null
+          if($errors.Count -gt 0){$errors | Format-List | Out-Host;exit 1}
+          $text=Get-Content $file -Raw
+          if($text -match '(?im)^\s*\$home\s*='){throw 'Reserved HOME variable'}
+          $env:TEMP=$env:RUNNER_TEMP
+          $preamble=($text -split '(?m)^try \{',2)[0]
+          if($preamble -eq $text){throw 'Main installer block not found'}
+          . ([scriptblock]::Create($preamble))
+          if($fireSerial -ne '192.168.41.24:5555' -or
+             $codeSha -ne 'dc0f7566d9b40e8a0712c4f5c21440199aa09acc'){
+            throw 'Wrong Fire target or 3x3 source revision'
+          }
       - name: Common unit tests
         run: |
           chmod +x gradlew
