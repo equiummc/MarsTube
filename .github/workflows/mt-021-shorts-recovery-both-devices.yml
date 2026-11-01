@@ -1,0 +1,99 @@
+name: MT-021 Shorts playback recovery Fire + Thomson metadata rollback
+on:
+  push:
+    branches:
+      - fix/mt-021-thomson-disable-sample-queue-20261101
+  pull_request:
+    branches:
+      - feature/mt-020-thomson-three-ahead-single-sample-20261101
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify canonical MarsTube identity and submodules
+        run: |
+          python3 scripts/mars/verify_fork.py --require-submodules
+          grep -Fq 'android:icon="@drawable/mars_brand_tile"' smarttubetv/src/main/AndroidManifest.xml
+          grep -Fq 'SHORT_CONTINUATION_TIMEOUT_MS = 6_000L' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+      - name: Validate Fire MT-019 first-frame rescue and Thomson metadata-only rollback
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('common/src/main/java/com/liskovsoft/smartyoutubetv2/common')
+          loader=(root/'app/models/playback/controllers/VideoLoaderController.java').read_text()
+          prefs=(root/'prefs/PlayerTweaksData.java').read_text()
+          policy=(root/'app/models/playback/controllers/ShortsDeviceWarmupPolicy.java').read_text()
+          assert 'return isFireShortWindowTarget() || isThomsonShortWindowTarget();' in loader
+          assert 'isShortWindowTarget()' in loader
+          assert 'getFormatInfoObserve(target.videoId)' in loader
+          assert 'maybePreloadThomsonNextShort(' not in loader
+          assert 'mShortWarmCache.put(target.videoId, info' in loader
+          assert 'return mIsMarsShortMediaPreloadEnabled &&' in prefs
+          assert 'ShortsDeviceWarmupPolicy.isThomsonTarget(' in prefs
+          assert 'nagata' in policy
+          assert 'MT-019 black_frame_recovery fresh_retry' in loader
+          assert 'mFirstFrameRecovery.claimFreshRetry(selected.videoId)' in loader
+          assert 'mFreshShortPlaybackId = adjacent.videoId;' in loader
+          print('MT-021 base source rollback / MT-019 rescue PASS')
+          PY
+      - name: Apply pinned B6 overlays with MT-020 single-candidate guard
+        run: |
+          python3 scripts/mars/mt008_probe_media_core.py
+          python3 scripts/mars/mt009_probe_signature_stages.py --check
+          python3 scripts/mars/mt009_probe_signature_stages.py
+          python3 scripts/mars/mt010a_decoder_cache.py --check
+          python3 scripts/mars/mt010a_decoder_cache.py
+          python3 scripts/mars/mt010a2_warm_runtime.py --check
+          python3 scripts/mars/mt010a2_warm_runtime.py
+          node scripts/mars/mt010a2_validate_solver.js
+          python3 scripts/mars/mt011a_tcl_stage_probes.py --check
+          python3 scripts/mars/mt011a_tcl_stage_probes.py
+          python3 scripts/mars/mt011ab_lowcopy_tcl.py --check
+          python3 scripts/mars/mt011ab_lowcopy_tcl.py
+          python3 scripts/mars/mt011ab_memory_source_cache.py --check
+          python3 scripts/mars/mt011ab_memory_source_cache.py
+          node scripts/mars/mt011ab_verify_challenges.js
+          python3 scripts/mars/mt011b3_queue_preloader.py --check
+          python3 scripts/mars/mt011b3_queue_preloader.py
+      - name: Check patched player and both-device recovery
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('common/src/main/java/com/liskovsoft/smartyoutubetv2/common')
+          loader=(root/'app/models/playback/controllers/VideoLoaderController.java').read_text()
+          exo=(root/'exoplayer/controller/ExoPlayerController.java').read_text()
+          prefs=(root/'prefs/PlayerTweaksData.java').read_text()
+          assert 'if (isThomsonShortWindowTarget() ||' in loader
+          assert loader.count('!isThomsonShortWindowTarget()') >= 3
+          assert 'maybePreloadThomsonNextShort(' not in loader
+          assert 'return mIsMarsShortMediaPreloadEnabled &&' in prefs
+          assert 'if (secondSlot && !ShortsDeviceWarmupPolicy.allowSecondSampleCandidate(' in exo
+          assert 'mEventListener.onFirstFrame(video)' in exo
+          assert 'hasThomsonSampleHeadroom()' in exo
+          print('MT-021 actual patched player PASS')
+          PY
+      - name: Common unit tests
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest
+      - name: Playback unit tests
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:testStstableDebugUnitTest
+      - name: Build branded universal release APK
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableRelease
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: MT-021-MarsTube-CI-not-install-signed
+          path: smarttubetv/build/outputs/apk/ststable/release/*.apk
