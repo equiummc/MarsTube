@@ -460,9 +460,11 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
                 (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
                  getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {"""),
 ("allow warmup reuse for media preload",
-"""        boolean matchingPrefetch = getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
+"""        boolean matchingPrefetch = !freshShortSource &&
+                getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
                 video.isShorts""",
-"""        boolean matchingPrefetch = (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
+"""        boolean matchingPrefetch = !freshShortSource &&
+                (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
                 getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) &&
                 video.isShorts"""),
 ("schedule metadata warmup",
