@@ -480,6 +480,7 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
 """        if (video != null && video.isShorts &&
                 getPlayerTweaksData().isMarsShortPrefetchEnabled()) {""",
 """        if (video != null && video.isShorts &&
+                !isThomsonShortWindowTarget() &&
                 (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
                  getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {"""),
 ("allow warmup reuse for media preload",
@@ -487,6 +488,7 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
                 getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
                 video.isShorts""",
 """        boolean matchingPrefetch = !freshShortSource &&
+                !isThomsonShortWindowTarget() &&
                 (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
                 getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) &&
                 video.isShorts"""),
@@ -494,6 +496,7 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
 """        if (getVideo() != null && getVideo().isShorts &&
                 getPlayerTweaksData().isMarsShortPrefetchEnabled()) {""",
 """        if (getVideo() != null && getVideo().isShorts &&
+                !isThomsonShortWindowTarget() &&
                 (getPlayerTweaksData().isMarsShortPrefetchEnabled() ||
                  getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {"""),
 ("guard warmup",
@@ -501,8 +504,9 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/pla
             clearShortPrefetch();
             return;
         }""",
-"""        if (!getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
-                !getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) {
+"""        if (isThomsonShortWindowTarget() ||
+                (!getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
+                !getPlayerTweaksData().isMarsShortMediaPreloadEnabled())) {
             clearShortPrefetch();
             return;
         }""")
