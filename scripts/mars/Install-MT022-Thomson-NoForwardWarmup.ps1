@@ -135,30 +135,19 @@ try {
            (Get-Content (Join-Path $work 'common\src\main\java\com\liskovsoft\smartyoutubetv2\common\exoplayer\controller\ExoPlayerController.java') -Raw) -notmatch 'mEventListener.onFirstFrame\(video\)'){
             throw 'MT-019 Schutzfunktionen fehlen, keine Installation'
         }
-        # MT-022 installer safety: require both-device first-frame recovery,
-        # Thomson metadata-only rollback and existing 3-back / 3-ahead boundaries.
-        $warmPolicy=Get-Content (Join-Path $work 'common\src\main\java\com\liskovsoft\smartyoutubetv2\common\app\models\playback\controllers\ShortsDeviceWarmupPolicy.java') -Raw
-        $warmOverlay=Get-Content (Join-Path $work 'scripts\mars\mt011b3_queue_preloader.py') -Raw
-        if($loader -notmatch 'return isFireShortWindowTarget\(\) \|\| isThomsonShortWindowTarget\(\)' -or
-           $loader -notmatch 'private boolean isShortWindowTarget\(\)' -or
-           $loader -match 'maybePreloadThomsonNextShort\(' -or
-           (Get-Content (Join-Path $work 'common\src\main\java\com\liskovsoft\smartyoutubetv2\common\prefs\PlayerTweaksData.java') -Raw) -notmatch 'return mIsMarsShortMediaPreloadEnabled &&' -or
-           $warmPolicy -notmatch 'MIN_AVAILABLE_MEMORY_BYTES = 160L \* 1024 \* 1024' -or
-           $warmOverlay -notmatch 'allowSecondSampleCandidate' -or
-           $warmOverlay -notmatch 'hasThomsonSampleHeadroom' -or
-           $warmOverlay -notmatch 'sample_preload_cancel_memory_pressure' -or
-           $loader -notmatch 'MT-019 black_frame_recovery fresh_retry'){
-            throw 'MT-022 warmup/MT-019 recovery safety guard failed; no installation'
-        }
+        # MT-022: enforce the current no-speculation policy, not MT-021's
+        # superseded 'return isFireShortWindowTarget() || ...' guard.
         # MT-022 safety gate: the A/B install must not enable any
         # speculative Shorts format requests or SABR media queues.
         $windowPolicy=Get-Content (Join-Path $work 'common\src\main\java\com\liskovsoft\smartyoutubetv2\common\app\models\playback\controllers\ShortsWindowPolicy.java') -Raw
         $prefsSource=Get-Content (Join-Path $work 'common\src\main\java\com\liskovsoft\smartyoutubetv2\common\prefs\PlayerTweaksData.java') -Raw
         if($windowPolicy -notmatch 'ENABLE_SPECULATIVE_FORWARD_WARMUP\s*=\s*false' -or
+           $loader -match 'maybePreloadThomsonNextShort\(' -or
+           $loader -notmatch 'MT-019 black_frame_recovery fresh_retry' -or
            $loader -notmatch 'return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&' -or
            $prefsSource -notmatch 'return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&' -or
            $loader -notmatch 'MT-022 forward_warmup=false previous_cache=preserved'){
-            throw 'MT-022 no-forward-warmup guard failed; no installation'
+            throw 'MT-022 source not metadata-only / MT-019 missing; no installation'
         }
         $sdkCandidates=@($env:ANDROID_HOME,$env:ANDROID_SDK_ROOT,(Join-Path $env:LOCALAPPDATA 'Android\Sdk'))
         $local=Join-Path $repo 'local.properties'
