@@ -260,6 +260,10 @@ public class VideoLoaderController extends BasePlayerController {
         }
         // The Fire Cube (raven) is the current acceptance device. Do not
         // silently enable speculative requests on the 1.45-GB Thomson.
+        if (video != null && video.isShorts &&
+                !ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP) {
+            Log.i("MarsTubePerf", "MT-022 forward_warmup=false previous_cache=preserved");
+        }
         if (video != null && video.isShorts && isShortWindowTarget()) {
             mShortWindow.reset();
             Utils.removeCallbacks(mShortWindowRunner);
@@ -846,7 +850,8 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     private boolean isShortWindowTarget() {
-        return isFireShortWindowTarget() || isThomsonShortWindowTarget();
+        return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&
+                (isFireShortWindowTarget() || isThomsonShortWindowTarget());
     }
 
     /** MT-020: Only known Shorts, no pagination or parallel video decoders.

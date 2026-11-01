@@ -3,6 +3,7 @@ package com.liskovsoft.smartyoutubetv2.common.prefs;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build.VERSION;
+import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.ShortsWindowPolicy;
 
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.prefs.GlobalPreferences;
@@ -121,11 +122,10 @@ public class PlayerTweaksData implements ProfileChangeListener {
     private final Runnable mPersistDataInt = this::persistDataInt;
 
     public boolean isMarsShortMediaPreloadEnabled() {
-        // MT-021 rollback: B6 sample-source queues broke Shorts forward
-        // navigation on the reference Thomson. Keep ONLY 3-ahead metadata warmup.
-        // A previously persisted manual opt-in must not bypass this safeguard.
-        // The Fire TV and other device opt-in behavior is unchanged.
-        return mIsMarsShortMediaPreloadEnabled &&
+        // MT-022: no sample media queues on Fire or Thomson.
+        // Persisted opt-in is preserved for later comparison.
+        return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&
+                mIsMarsShortMediaPreloadEnabled &&
                 !com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.
                         ShortsDeviceWarmupPolicy.isThomsonTarget(
                                 android.os.Build.DEVICE, android.os.Build.MODEL);
@@ -139,7 +139,10 @@ public class PlayerTweaksData implements ProfileChangeListener {
     }
 
     public boolean isMarsShortPrefetchEnabled() {
-        return mIsMarsShortPrefetchEnabled;
+        // MT-022: retain user preference but block speculative requests for
+        // this reversible no-forward-prefetch A/B build.
+        return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&
+                mIsMarsShortPrefetchEnabled;
     }
 
     public void setMarsShortPrefetchEnabled(boolean enabled) {
