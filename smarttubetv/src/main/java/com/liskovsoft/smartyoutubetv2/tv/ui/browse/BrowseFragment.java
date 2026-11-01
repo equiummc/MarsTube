@@ -21,6 +21,7 @@ import androidx.leanback.widget.PageRow;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.TitleHelper;
+import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.BrowseSection;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsGroup;
@@ -220,7 +221,13 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
             private int getHeaderResId(Object o) {
                 if (o instanceof PageRow) {
-                    return ((SectionHeaderItem) ((PageRow) o).getHeaderItem()).getResId();
+                    SectionHeaderItem section = (SectionHeaderItem) ((PageRow) o).getHeaderItem();
+                    // MT-014: replace ONLY the "Start" house with our canonical blue M.
+                    // Navigation labels, ids, focus handling and other icons are untouched.
+                    if (section.getId() == MediaGroup.TYPE_HOME) {
+                        return R.drawable.mars_brand_mark;
+                    }
+                    return section.getResId();
                 }
 
                 return -1;
