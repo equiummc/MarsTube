@@ -144,7 +144,8 @@ import com.google.android.exoplayer2.source.MergingMediaSource;"""),
 """import com.liskovsoft.smartyoutubetv2.common.exoplayer.ExoMediaSourceFactory;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.ShortsSabrPreloadBudget;
 import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.ShortsSamplePreloadGate;
-import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.ShortsMediaHandoffPolicy;"""),
+import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.ShortsMediaHandoffPolicy;
+import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.ShortsDeviceWarmupPolicy;"""),
 ("field",
 """    private SimpleExoPlayer mPlayer;
     /** Not null only for sabr live streams */""",
@@ -177,11 +178,25 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
         openMediaSource(mediaSource);"""),
 ("insert queue before openMediaSource",
 """    private void openMediaSource(MediaSource mediaSource) {""",
-"""    /** The queued source stays owned by the current ExoPlayer until adopted. */
+"""    /** MT-020: real RAM headroom check for Thomson only. */
+    private boolean hasThomsonSampleHeadroom() {
+        if (!ShortsDeviceWarmupPolicy.isThomsonTarget(
+                android.os.Build.DEVICE, android.os.Build.MODEL)) return true;
+        android.app.ActivityManager am = (android.app.ActivityManager)
+                mContext.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        if (am == null) return false;
+        android.app.ActivityManager.MemoryInfo mem = new android.app.ActivityManager.MemoryInfo();
+        am.getMemoryInfo(mem);
+        return !mem.lowMemory &&
+                mem.availMem >= ShortsDeviceWarmupPolicy.MIN_AVAILABLE_MEMORY_BYTES;
+    }
+
+    /** The queued source stays owned by the current ExoPlayer until adopted. */
     public boolean hasPreloadedShort(String id) {
         long ageMs = android.os.SystemClock.elapsedRealtime() - mShortNextAtMs;
         return ShortsMediaHandoffPolicy.canAdopt(
-                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled(),
+                PlayerTweaksData.instance(mContext).isMarsShortMediaPreloadEnabled() &&
+                        hasThomsonSampleHeadroom(),
                 id != null && id.equals(mShortNextId),
                 mShortQueue != null && mShortQueue.getSize() >= 2,
                 mShortBudget == null ? 0 : mShortBudget.bytes(), ageMs);
@@ -192,6 +207,7 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
             mShortHandler.post(() -> preloadNextSabrShort(id, info));
             return;
         }
+        if (!hasThomsonSampleHeadroom()) return;
         Video current = getVideo();
         if (id == null || current == null || current.videoId == null ||
                 id.equals(current.videoId) || id.equals(mShortAttemptedId) ||
@@ -202,6 +218,8 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
                 mPlayer == null || mPlayer.getPlaybackState() != Player.STATE_READY ||
                 mShortQueue.getSize() >= 3 || !current.videoId.equals(mShortCurrentId)) return;
         final boolean secondSlot = mShortNextId != null;
+        if (secondSlot && !ShortsDeviceWarmupPolicy.allowSecondSampleCandidate(
+                android.os.Build.DEVICE, android.os.Build.MODEL)) return;
         if (secondSlot && mShortQueue.getSize() != 2) return;
         if (!secondSlot && mShortQueue.getSize() != 1) return;
         long bufferedMs = mPlayer.getBufferedPosition() - mPlayer.getCurrentPosition();
@@ -316,6 +334,11 @@ import com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.Sho
 
     private void watchShortCandidate() {
         if (mShortNextId == null && mShortSecondId == null) return;
+        if (!hasThomsonSampleHeadroom()) {
+            android.util.Log.i("MarsTubePerf", "MT-020 sample_preload_cancel_memory_pressure=true");
+            dropShortCandidate();
+            return;
+        }
         if (mPlayer == null || mPlayer.getPlaybackState() != Player.STATE_READY ||
                 !mPlayer.getPlayWhenReady() ||
                 mPlayer.getBufferedPosition() - mPlayer.getCurrentPosition() < 1_500) {
