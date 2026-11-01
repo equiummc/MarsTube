@@ -73,7 +73,7 @@ jobs:
       - name: Execute Fire installer preflight and mocked startup metrics
         shell: pwsh
         run: |
-          & pwsh -NoProfile -File scripts/mars/Test-MT016-FireInstaller.ps1
+          & pwsh -NoProfile -File scripts/mars/Test-MT017-FireInstaller.ps1
       - name: Common unit tests
         run: |
           chmod +x gradlew
