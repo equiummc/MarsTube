@@ -140,7 +140,7 @@ try {
         $warmPolicy=Get-Content (Join-Path $work 'common\src\main\java\com\liskovsoft\smartyoutubetv2\common\app\models\playback\controllers\ShortsDeviceWarmupPolicy.java') -Raw
         $warmOverlay=Get-Content (Join-Path $work 'scripts\mars\mt011b3_queue_preloader.py') -Raw
         if($loader -notmatch 'return isFireShortWindowTarget\(\) \|\| isThomsonShortWindowTarget\(\)' -or
-           $loader -notmatch 'ShortsDeviceWarmupPolicy.shouldPreloadThomsonSample' -or
+           $loader -notmatch 'private boolean isShortWindowTarget\(\)' -or
            $loader -match 'maybePreloadThomsonNextShort\(' -or
            (Get-Content (Join-Path $work 'common\src\main\java\com\liskovsoft\smartyoutubetv2\common\prefs\PlayerTweaksData.java') -Raw) -notmatch 'return mIsMarsShortMediaPreloadEnabled &&' -or
            $warmPolicy -notmatch 'MIN_AVAILABLE_MEMORY_BYTES = 160L \* 1024 \* 1024' -or
@@ -216,6 +216,6 @@ try {
         & git -c core.longpaths=true -C $repo worktree remove --force --force $work | Out-Null
         if($LASTEXITCODE -ne 0){Write-Warning "Temp-Worktree noch da: $work"}
     }
-    if($installed){Write-Host 'MT-019 APK auf Thomson installiert.' -ForegroundColor Green}
+    if($installed){Write-Host 'MT-021 APK auf Thomson installiert.' -ForegroundColor Green}
     Write-Host "Sicherungen und Logs: $save"
 }
