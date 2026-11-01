@@ -836,6 +836,15 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
 
     @Override
     public void setVideo(Video video) {
+        // MT-017: restore held-OK speed before the next Short/video gets selected.
+        // Merely refreshing metadata for the same video must not interrupt the hold.
+        Video previousVideo = getVideo();
+        if (video != null && (previousVideo == null ||
+                previousVideo.videoId == null ||
+                !previousVideo.videoId.equals(video.videoId)) &&
+                getActivity() instanceof PlaybackActivity) {
+            ((PlaybackActivity) getActivity()).resetMarsOkDoubleSpeed();
+        }
         // MT-016: 1-second Shorts should not flash a loading spinner.
         // A genuine long stall (>1.8s) still shows progress, rather than
         // leaving the user on a completely unresponsive black frame.
