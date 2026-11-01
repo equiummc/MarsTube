@@ -39,6 +39,38 @@ public class VideoLoaderController extends BasePlayerController {
     private SuggestionsController mSuggestionsController;
     private ErrorFixerController mErrorFixerController;
     private Disposable mFormatInfoAction;
+    // MT-019: a cached Shorts format may be timestamp-valid yet fail to render.
+    // Force a fresh playback source for backwards navigation, and recover once
+    // if ExoPlayer never delivers the actual first rendered frame.
+    private final ShortsFirstFrameRecoveryPolicy mFirstFrameRecovery = new ShortsFirstFrameRecoveryPolicy();
+    private String mFreshShortPlaybackId;
+    private final Runnable mFirstFrameWatchdog = () -> {
+        Video selected = getVideo();
+        if (getPlayer() == null || selected == null || !selected.isShorts ||
+                !mFirstFrameRecovery.waitingForFirstFrame(selected.videoId)) return;
+        if (mFirstFrameRecovery.claimFreshRetry(selected.videoId)) {
+            Log.i("MarsTubePerf", "MT-019 black_frame_recovery fresh_retry");
+            cancelShortWindow(); // Never race background metadata against recovery.
+            invalidateCachedShortForRetry(selected);
+            mFreshShortPlaybackId = selected.videoId;
+            getPlayer().showProgressBar(false);
+            loadFormatInfo(selected);
+            scheduleFirstFrameWatchdog(ShortsFirstFrameRecoveryPolicy.RETRY_TIMEOUT_MS);
+        } else {
+            Log.i("MarsTubePerf", "MT-019 black_frame_recovery exhausted");
+            getPlayer().showProgressBar(true);
+        }
+    };
+    private void invalidateCachedShortForRetry(Video selected) {
+        // Access via a method: this cache is initialized below the watchdog field.
+        mShortWarmCache.remove(selected.videoId);
+    }
+
+    private void scheduleFirstFrameWatchdog(long timeoutMs) {
+        Utils.removeCallbacks(mFirstFrameWatchdog);
+        Utils.postDelayed(mFirstFrameWatchdog, timeoutMs);
+    }
+
     private long mLastShortSwipeMs;
     private boolean mShortContinuationPending;
     private long mShortContinuationGeneration;
@@ -134,6 +166,9 @@ public class VideoLoaderController extends BasePlayerController {
 
     @Override
     public void onFinish() {
+        Utils.removeCallbacks(mFirstFrameWatchdog);
+        mFirstFrameRecovery.clear();
+        mFreshShortPlaybackId = null;
         cancelShortContinuation();
         disposeActions();
         clearShortPrefetch();
@@ -146,6 +181,13 @@ public class VideoLoaderController extends BasePlayerController {
     public void onNewVideo(Video item) {
         if (item == null) {
             return;
+        }
+        // A new selection invalidates any old frame timeout and source recovery.
+        Utils.removeCallbacks(mFirstFrameWatchdog);
+        mFirstFrameRecovery.selected(item.isShorts ? item.videoId : null);
+        if (mFreshShortPlaybackId != null &&
+                !mFreshShortPlaybackId.equals(item.videoId)) {
+            mFreshShortPlaybackId = null;
         }
         // Stop speculative traffic before a foreground swipe to protect first frame.
         cancelShortWindow();
@@ -187,11 +229,28 @@ public class VideoLoaderController extends BasePlayerController {
 
     @Override
     public void onEngineReleased() {
+        Utils.removeCallbacks(mFirstFrameWatchdog);
+        mFirstFrameRecovery.clear();
+        mFreshShortPlaybackId = null;
         cancelShortContinuation();
         disposeActions();
         clearShortPrefetch();
         cancelShortWindow();
         mShortWarmCache.clear();
+    }
+
+    @Override
+    public void onFirstFrame(Video video) {
+        if (video == null) return;
+        boolean matching = mFirstFrameRecovery.waitingForFirstFrame(video.videoId);
+        mFirstFrameRecovery.firstFrame(video.videoId);
+        if (matching) {
+            Utils.removeCallbacks(mFirstFrameWatchdog);
+            if (video.videoId.equals(mFreshShortPlaybackId)) mFreshShortPlaybackId = null;
+            Log.i("MarsTubePerf", "MT-019 first_frame_confirmed recovered=" +
+                    mFirstFrameRecovery.hasRetried());
+            if (getPlayer() != null) getPlayer().showProgressBar(false);
+        }
     }
 
     @Override
@@ -287,12 +346,11 @@ public class VideoLoaderController extends BasePlayerController {
         Video adjacent = mSuggestionsController.getAdjacentShort(forward);
         if (adjacent != null) {
             if (!forward) {
-                // MT-018: previous Short reuses its validated format metadata if
-                // still valid; no extra speculative requests or media decoders.
-                MediaItemFormatInfo previouslySeen = mShortWarmCache.get(
-                        adjacent.videoId, SystemClock.elapsedRealtime());
-                Log.i("MarsTubePerf", "MT-018 shorts_back_route=" +
-                        (previouslySeen != null && usableFormat(previouslySeen) ? "warm_cache" : "network"));
+                // MT-019: the prior Short's position and metadata stay in the
+                // existing list/cache, but never reuse its signed playback source.
+                // isCacheActual() alone does not prove that a new stream can render.
+                mFreshShortPlaybackId = adjacent.videoId;
+                Log.i("MarsTubePerf", "MT-019 shorts_back_route=fresh_source");
             }
             openVideoInt(adjacent);
             return;
@@ -374,6 +432,11 @@ public class VideoLoaderController extends BasePlayerController {
             getPlayer().setVideo(item);
             getPlayer().resetPlayerState();
             loadFormatInfo(item);
+            if (item.isShorts && item.videoId != null) {
+                Utils.removeCallbacks(mFirstFrameWatchdog);
+                Utils.postDelayed(mFirstFrameWatchdog,
+                        ShortsFirstFrameRecoveryPolicy.INITIAL_TIMEOUT_MS);
+            }
         }
     }
 
@@ -426,7 +489,12 @@ public class VideoLoaderController extends BasePlayerController {
         MediaItemService mediaItemManager = service.getMediaItemService();
         final long now = SystemClock.elapsedRealtime();
 
-        MediaItemFormatInfo warm = video.isShorts ?
+        boolean freshShortSource = video.isShorts && video.videoId != null &&
+                video.videoId.equals(mFreshShortPlaybackId);
+        if (freshShortSource) {
+            mShortWarmCache.remove(video.videoId);
+        }
+        MediaItemFormatInfo warm = video.isShorts && !freshShortSource ?
                 mShortWarmCache.get(video.videoId, now) : null;
         if (warm != null && !usableFormat(warm)) {
             mShortWarmCache.remove(video.videoId);
@@ -438,7 +506,8 @@ public class VideoLoaderController extends BasePlayerController {
             Utils.post(mShowProgressBar);
         }
 
-        boolean matchingPrefetch = getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
+        boolean matchingPrefetch = !freshShortSource &&
+                getPlayerTweaksData().isMarsShortPrefetchEnabled() &&
                 video.isShorts && video.videoId != null &&
                 video.videoId.equals(mShortPrefetchId) && mShortPrefetchObservable != null &&
                 now - mShortPrefetchSinceMs < SHORT_PREFETCH_TTL_MS;
@@ -457,7 +526,7 @@ public class VideoLoaderController extends BasePlayerController {
             formats = mShortPrefetchedInfo != null ?
                     Observable.just(mShortPrefetchedInfo) : mShortPrefetchObservable;
         } else {
-            route = "network";
+            route = freshShortSource ? "fresh_recovery_or_rewind" : "network";
             formats = mediaItemManager.getFormatInfoObserve(video.videoId);
         }
 
