@@ -836,6 +836,16 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
 
     @Override
     public void setVideo(Video video) {
+        // MT-016: 1-second Shorts should not flash a loading spinner.
+        // A genuine long stall (>1.8s) still shows progress, rather than
+        // leaving the user on a completely unresponsive black frame.
+        if (getProgressBarManager() != null) {
+            Video previous = getVideo();
+            boolean changed = video != null && (previous == null ||
+                    previous.videoId == null || !previous.videoId.equals(video.videoId));
+            if (changed) getProgressBarManager().hide(); // Clear the previous Short's spinner.
+            getProgressBarManager().setInitialDelay(video != null && video.isShorts ? 1_800L : 700L);
+        }
         mExoPlayerController.setVideo(video);
 
         if (mPlayerGlue != null && video != null) {

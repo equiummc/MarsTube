@@ -40,6 +40,9 @@ import java.util.List;
 public class SuggestionsController extends BasePlayerController {
     private static final String TAG = SuggestionsController.class.getSimpleName();
     private final List<Disposable> mActions = new ArrayList<>();
+    // MT-016: a Shorts page request has its own cancellation handle.
+    // It must be cancellable on timeout independently of normal suggestions.
+    private Disposable mShortContinuationAction;
     private MediaItemService mMediaItemService;
     private ContentService mContentService;
     private BrowseProcessorManager mBrowseProcessor;
@@ -68,6 +71,7 @@ public class SuggestionsController extends BasePlayerController {
 
     @Override
     public void onNewVideo(Video video) {
+        cancelShortContinuation();
         // Remote control fix. Slow network fix. Suggestions may still be loading.
         // This could lead to changing current video info (title, id etc) to wrong one.
         disposeActions();
@@ -91,11 +95,13 @@ public class SuggestionsController extends BasePlayerController {
 
     @Override
     public void onEngineReleased() {
+        cancelShortContinuation();
         disposeActions();
     }
 
     @Override
     public void onFinish() {
+        cancelShortContinuation();
         disposeActions();
     }
 
@@ -312,6 +318,7 @@ public class SuggestionsController extends BasePlayerController {
      * The caller must guard against navigation changing before the callback.
      */
     public void requestNextShort(OnShortAvailable callback) {
+        cancelShortContinuation();
         Video current = getVideo();
         VideoGroup group = current == null ? null : current.getGroup();
         if (getPlayer() == null || current == null || !current.isShorts ||
@@ -319,7 +326,7 @@ public class SuggestionsController extends BasePlayerController {
             callback.onShortAvailable(null);
             return;
         }
-        Disposable action = mContentService.continueGroupObserve(group.getMediaGroup())
+        mShortContinuationAction = mContentService.continueGroupObserve(group.getMediaGroup())
                 .subscribe(continuation -> {
                     if (getPlayer() == null || getVideo() == null ||
                             !current.videoId.equals(getVideo().videoId)) {
@@ -333,7 +340,11 @@ public class SuggestionsController extends BasePlayerController {
                     Log.e(TAG, "MT-007 Shorts continuation failed: %s", error.getClass().getSimpleName());
                     callback.onShortAvailable(null);
                 });
-        mActions.add(action);
+    }
+
+    public void cancelShortContinuation() {
+        RxHelper.disposeActions(mShortContinuationAction);
+        mShortContinuationAction = null;
     }
 
     public Video getNext() {
