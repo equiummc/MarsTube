@@ -71,6 +71,17 @@ jobs:
           assert 'video != null && video.isShorts ? 1_800L : 700L' in fragment
           print('MT-018 reverse Shorts cache and unconditional spinner hide regression GREEN')
           PY
+      - name: Validate three-back and sequential three-ahead Fire metadata window
+        run: |
+          test -f common/src/test/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/ShortsWindowPolicyTest.java
+          grep -Fq 'PREVIOUS_COUNT = 3' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/ShortsWindowPolicy.java
+          grep -Fq 'NEXT_COUNT = 3' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/ShortsWindowPolicy.java
+          grep -Fq 'REQUEST_TIMEOUT_MS = 3_500L' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/ShortsWindowPolicy.java
+          grep -Fq 'mShortWarmCache.put(target.videoId, info' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+          grep -Fq 'cancelShortWindow();' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+          grep -Fq 'isFireShortWindowTarget()' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+          grep -Fq 'return "raven".equalsIgnoreCase(android.os.Build.DEVICE)' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+          ! grep -Fq 'setMarsShortMediaPreloadEnabled(true)' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
       - name: Apply the exact pinned B6 overlays (unchanged)
         run: |
           python3 scripts/mars/mt008_probe_media_core.py
