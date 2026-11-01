@@ -45,17 +45,16 @@ public class VideoLoaderController extends BasePlayerController {
     // MT-016: bounded rescue for Fire TV (and Android TV) Shorts pagination.
     // A missing continuation callback must never lock DPAD_DOWN indefinitely.
     private static final long SHORT_CONTINUATION_TIMEOUT_MS = 6_000L;
-    private int mShortContinuationTimeoutRetries;
+    private final ShortsContinuationRecoveryPolicy mShortRecovery = new ShortsContinuationRecoveryPolicy();
     private final Runnable mShortContinuationTimeout = () -> {
         if (!mShortContinuationPending) return;
         final Video playing = getVideo();
-        Log.i("MarsTubePerf", "MT-016 shorts_continue_timeout retry=" + mShortContinuationTimeoutRetries);
+        Log.i("MarsTubePerf", "MT-016 shorts_continue_timeout retry=" + mShortRecovery.retries());
         mSuggestionsController.cancelShortContinuation();
         mShortContinuationPending = false;
         mShortContinuationGeneration++; // Reject late callbacks from the cancelled request.
         if (playing != null && playing.isShorts && playing.videoId != null &&
-                getPlayer() != null && mShortContinuationTimeoutRetries < 1) {
-            mShortContinuationTimeoutRetries++;
+                getPlayer() != null && mShortRecovery.claimTimeoutRetry()) {
             beginShortContinuation(playing); // Only one retry.
         } else {
             Log.i("MarsTubePerf", "MT-016 shorts_continue_exhausted");
@@ -139,7 +138,7 @@ public class VideoLoaderController extends BasePlayerController {
         }
 
         cancelShortContinuation();
-        mShortContinuationTimeoutRetries = 0;
+        mShortRecovery.reset();
         mShortContinuationGeneration++; // Invalidate callbacks from the previous Short.
         PlaybackStartupMetrics.videoSelected(item.videoId);
         item.isShuffled = false;
@@ -270,7 +269,7 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
-        mShortContinuationTimeoutRetries = 0;
+        mShortRecovery.reset();
         beginShortContinuation(current);
     }
 
@@ -280,7 +279,7 @@ public class VideoLoaderController extends BasePlayerController {
         final String expectedVideoId = current.videoId;
         Utils.removeCallbacks(mShortContinuationTimeout);
         Utils.postDelayed(mShortContinuationTimeout, SHORT_CONTINUATION_TIMEOUT_MS);
-        Log.i("MarsTubePerf", "MT-016 shorts_continue_start retry=" + mShortContinuationTimeoutRetries);
+        Log.i("MarsTubePerf", "MT-016 shorts_continue_start retry=" + mShortRecovery.retries());
         mSuggestionsController.requestNextShort(found -> {
             if (requestGeneration != mShortContinuationGeneration) return;
             Utils.removeCallbacks(mShortContinuationTimeout);
