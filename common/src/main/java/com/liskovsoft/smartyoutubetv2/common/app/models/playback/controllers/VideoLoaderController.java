@@ -55,12 +55,17 @@ public class VideoLoaderController extends BasePlayerController {
             mFreshShortPlaybackId = selected.videoId;
             getPlayer().showProgressBar(false);
             loadFormatInfo(selected);
-            Utils.postDelayed(mFirstFrameWatchdog, ShortsFirstFrameRecoveryPolicy.RETRY_TIMEOUT_MS);
+            scheduleFirstFrameWatchdog(ShortsFirstFrameRecoveryPolicy.RETRY_TIMEOUT_MS);
         } else {
             Log.i("MarsTubePerf", "MT-019 black_frame_recovery exhausted");
             getPlayer().showProgressBar(true);
         }
     };
+    private void scheduleFirstFrameWatchdog(long timeoutMs) {
+        Utils.removeCallbacks(mFirstFrameWatchdog);
+        Utils.postDelayed(mFirstFrameWatchdog, timeoutMs);
+    }
+
     private long mLastShortSwipeMs;
     private boolean mShortContinuationPending;
     private long mShortContinuationGeneration;
