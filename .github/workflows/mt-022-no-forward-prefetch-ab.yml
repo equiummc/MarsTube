@@ -113,9 +113,33 @@ jobs:
             }
             if(-not $script.Contains('ENABLE_SPECULATIVE_FORWARD_WARMUP') -or
                -not $script.Contains('private boolean isShortWindowTarget')){
-
-              throw "MT-022 stale installer check in $($target.File)"
+              throw "MT-022 missing current source guard in $($target.File)"
             }
+            if($script.Contains("MT-022 warmup/MT-019 recovery safety guard failed") -or
+               $script.Contains("return isFireShortWindowTarget\\(\\) \\|\\| isThomsonShortWindowTarget\\(\\)")){
+              throw "MT-021 incompatible assertion still present in $($target.File)"
+            }
+            # Simulate the exact pre-installation gate against the real source
+            # for BOTH device scripts. A text-only presence check missed this bug.
+            $work=(Get-Location).Path
+            $loader=Get-Content 'common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java' -Raw
+            $start=$script.IndexOf('        # MT-022 safety gate:')
+            $end=$script.IndexOf('        $sdkCandidates=', $start)
+            if($start -lt 0 -or $end -le $start){
+              throw "MT-022 guard could not be isolated in $($target.File)"
+            }
+            $guard=$script.Substring($start,$end-$start)
+            Invoke-Expression $guard
+            # Negative gate: make the required actual-frame recovery marker
+            # disappear; a valid installer MUST refuse this altered source.
+            $previous=$loader
+            $loader=$loader.Replace('MT-019 black_frame_recovery fresh_retry','MT-019 removed for test')
+            $blocked=$false
+            try { Invoke-Expression $guard } catch { $blocked=$true }
+            $loader=$previous
+            if(-not $blocked) { throw "Missing MT-019 guard was not rejected in $($target.File)" }
+            Write-Host "MT-022 installer gate executes and rejects broken source: $($target.File)"
+
           }
       - name: Common unit tests
         run: |
