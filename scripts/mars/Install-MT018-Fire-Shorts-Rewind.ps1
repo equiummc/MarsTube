@@ -8,7 +8,7 @@ $fireSerial='192.168.41.24:5555'
 $adbExe=Join-Path $HOME 'Android-Tools\platform-tools\adb.exe'
 $repo=Join-Path $HOME 'MarsTV\mars-smarttube'
 $branch='feature/mt-018-shorts-back-cache-spinner-20261101'
-$codeSha='adc9fd67cd0b3a56432694f39469c9f2d5528ba9'
+$codeSha='821b6c1beed5c1584d3642152a97106961f26276'
 $package='de.equiummc.mars.smarttube'
 $activity='com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity'
 $save=Join-Path $HOME ('MarsTV\backups\Fire-MT018\' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -124,6 +124,9 @@ try {
            $activitySource -notmatch 'setSpeed\(mOkSpeed.previousSpeed\(\)\)' -or
            $holdSource -notmatch 'class MarsOkHoldSpeedState' -or
            $loader -notmatch 'MT-018 shorts_back_route' -or
+           $loader -notmatch 'mShortWindowAction' -or
+           $loader -notmatch 'warmNextKnownShort' -or
+           $loader -notmatch 'isFireShortWindowTarget' -or
            $fragment -notmatch 'if \(!show\)' -or
            $fragment -notmatch 'getProgressBarManager\(\).hide\(\)'){
             throw 'MT-018 Schutzfunktionen fehlen, keine Installation'
