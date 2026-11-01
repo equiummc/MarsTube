@@ -418,7 +418,7 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/exoplayer/cont
         Video video = getVideo();
         if (video != null) {
             PlaybackStartupMetrics.firstFrame(video.videoId);
-            mEventListener.onFirstFrame(video); // MT-019 first rendered frame watchdog
+            mEventListener.onFirstFrame(video); // MT-019: actual frame for black-screen recovery
         }
     }""",
 """    public void onRenderedFirstFrame() {
@@ -429,7 +429,7 @@ patch("common/src/main/java/com/liskovsoft/smartyoutubetv2/common/exoplayer/cont
                 android.util.Log.i("MarsTubePerf", "MT-011B4 preload_handoff_first_frame=true");
                 mShortAdoptedId = null;
             }
-            mEventListener.onFirstFrame(video); // MT-019 first rendered frame watchdog
+            mEventListener.onFirstFrame(video); // MT-019: actual frame for black-screen recovery
         }
     }"""),
 ("error invalidation",
