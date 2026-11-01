@@ -1,7 +1,5 @@
 package com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers;
 
-import android.app.ActivityManager;
-import android.content.Context;
 import android.os.Build.VERSION;
 import android.os.SystemClock;
 import com.liskovsoft.smartyoutubetv2.common.exoplayer.other.PlaybackStartupMetrics;
@@ -851,31 +849,6 @@ public class VideoLoaderController extends BasePlayerController {
         return isFireShortWindowTarget() || isThomsonShortWindowTarget();
     }
 
-    private void maybePreloadThomsonNextShort(int distance, Video target, MediaItemFormatInfo info) {
-        // MT-021: keep metadata lookahead; never allocate a Thomson sample queue.
-        if (!getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) return;
-        if (!isThomsonShortWindowTarget() || target == null || info == null ||
-                info.isLive() || !info.containsSabrFormats() || info.containsDashFormats() ||
-                getPlayer() == null) return;
-        Context context = getContext();
-        if (context == null) return;
-        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        if (am == null) return;
-        ActivityManager.MemoryInfo memory = new ActivityManager.MemoryInfo();
-        am.getMemoryInfo(memory);
-        if (!ShortsDeviceWarmupPolicy.shouldPreloadThomsonSample(
-                android.os.Build.DEVICE, android.os.Build.MODEL, distance,
-                getPlayer().isPlaying(), getPlayer().isLoading(),
-                memory.lowMemory, memory.availMem)) {
-            Log.i("MarsTubePerf", "MT-020 thomson_sample_skip foreground_or_memory");
-            return;
-        }
-        // Existing B6 queue: one SABR source, 4 MiB transfer cap and 15 s TTL.
-        // The following two Shorts remain metadata-only: no extra decoders.
-        getPlayer().preloadNextSabrShort(target.videoId, info);
-        Log.i("MarsTubePerf", "MT-020 thomson_sample_offer next_only");
-    }
-
     /** MT-020: Only known Shorts, no pagination or parallel video decoders.
      * Foreground requests always take priority. */
     private void warmNextKnownShort() {
@@ -893,7 +866,6 @@ public class VideoLoaderController extends BasePlayerController {
                 target.videoId, SystemClock.elapsedRealtime());
         if (cached != null && usableFormat(cached)) {
             Log.i("MarsTubePerf", "MT-018 next_window_cached distance=" + distance);
-            maybePreloadThomsonNextShort(distance, target, cached);
             advanceShortWindow();
             return;
         }
@@ -913,7 +885,6 @@ public class VideoLoaderController extends BasePlayerController {
                     if (usableFormat(info)) {
                         mShortWarmCache.put(target.videoId, info, SystemClock.elapsedRealtime());
                         Log.i("MarsTubePerf", "MT-018 next_window_ready distance=" + distance);
-                        maybePreloadThomsonNextShort(distance, target, info);
                     }
                     advanceShortWindow();
                 }, error -> {
