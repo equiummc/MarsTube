@@ -121,11 +121,12 @@ public class PlayerTweaksData implements ProfileChangeListener {
     private final Runnable mPersistDataInt = this::persistDataInt;
 
     public boolean isMarsShortMediaPreloadEnabled() {
-        // MT-020: the reference Thomson automatically enables the B6 same-player
-        // sample queue; the media candidate remains separately gated by memory.
-        // Other devices retain their existing manual opt-in behavior.
-        return mIsMarsShortMediaPreloadEnabled ||
-                com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.
+        // MT-021 rollback: B6 sample-source queues broke Shorts forward
+        // navigation on the reference Thomson. Keep ONLY 3-ahead metadata warmup.
+        // A previously persisted manual opt-in must not bypass this safeguard.
+        // The Fire TV and other device opt-in behavior is unchanged.
+        return mIsMarsShortMediaPreloadEnabled &&
+                !com.liskovsoft.smartyoutubetv2.common.app.models.playback.controllers.
                         ShortsDeviceWarmupPolicy.isThomsonTarget(
                                 android.os.Build.DEVICE, android.os.Build.MODEL);
     }
