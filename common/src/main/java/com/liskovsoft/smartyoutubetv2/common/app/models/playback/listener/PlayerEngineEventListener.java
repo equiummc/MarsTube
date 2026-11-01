@@ -39,6 +39,8 @@ public interface PlayerEngineEventListener {
     void onSpeedChanged(float speed);
     void onSourceChanged(Video item);
     void onVideoLoaded(Video item);
+    /** Fired only after the renderer displays the first real video frame. */
+    default void onFirstFrame(Video item) { }
     void onEngineInitialized();
     void onEngineReleased();
     void onEngineError(int type, int rendererIndex, Throwable error);
