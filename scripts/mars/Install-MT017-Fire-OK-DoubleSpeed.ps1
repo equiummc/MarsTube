@@ -1,5 +1,5 @@
 # MT-017 Fire TV Cube rollout: MarsTube ONLY, preserve Fire Home/Mars TV/Thomson.
-# InstallAndTest builds stable B6 player with MT-017 OK long-hold speed and MT-017 Shorts navigation; CollectOnly reads playback logs.
+# InstallAndTest builds stable B6 player with MT-017 OK long-hold speed and MT-016 Shorts navigation; CollectOnly reads playback logs.
 [CmdletBinding()]
 param([ValidateSet('InstallAndTest','CollectOnly')][string]$Action='InstallAndTest')
 $ErrorActionPreference='Stop'
@@ -8,7 +8,7 @@ $fireSerial='192.168.41.24:5555'
 $adbExe=Join-Path $HOME 'Android-Tools\platform-tools\adb.exe'
 $repo=Join-Path $HOME 'MarsTV\mars-smarttube'
 $branch='feature/mt-017-ok-hold-double-speed-fire-20261101'
-$codeSha='579c460577b062191793344d7d85a448c77b3636'
+$codeSha='db9c40697280d4268acd5527ec327e2abc551bc4'
 $package='de.equiummc.mars.smarttube'
 $activity='com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity'
 $save=Join-Path $HOME ('MarsTV\backups\Fire-MT017\' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
