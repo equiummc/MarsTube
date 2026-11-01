@@ -94,7 +94,6 @@ public class VideoLoaderController extends BasePlayerController {
     private final MediaServiceManager.AccountChangeListener mPrefetchAccountChange =
             account -> {
                 clearShortPrefetch();
-                cancelShortWindow();
                 mShortWarmCache.clear();
             };
     private final Runnable mReloadVideo = () -> {
@@ -951,6 +950,7 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     private void clearShortPrefetch() {
+        cancelShortWindow(); // Includes account switch; keep B6's pinned overlay anchor intact.
         Utils.removeCallbacks(mPrefetchSecondShort);
         mShortLookaheadDistance = 2;
         RxHelper.disposeActions(mShortSecondWarmAction);
