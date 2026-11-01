@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MT-012A: canonical MarsTube M paths from mars_logo_blue.xml.
+     Keep the pathData identical in Mars TV and MarsTube. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M0,0 H320 V180 H0 Z" />
+    <group android:translateX="100" android:translateY="30">
+        <group android:pivotX="60" android:pivotY="40"
+            android:scaleX="0.82" android:scaleY="1.10" android:translateY="21">
+    <path android:fillColor="#8048C7FF"
+        android:pathData="M7,64 L19,15 Q21,9 28,9 L37,9 L60,39 L83,9 L92,9 Q99,9 101,15 L113,64 Q114,70 107,70 L94,70 L87,35 L66,64 Q60,72 54,64 L33,35 L26,70 L13,70 Q6,70 7,64 Z"/>
+    <path android:fillColor="#FF189FFF"
+        android:pathData="M10,61 L22,17 Q23,13 29,13 L35,13 L60,45 L85,13 L91,13 Q97,13 98,18 L110,61 Q111,65 106,65 L97,65 L88,29 L65,60 Q60,66 55,60 L32,29 L23,65 L14,65 Q9,65 10,61 Z"/>
+    <path android:fillColor="#FF7AD7FF"
+        android:pathData="M22,17 L30,15 L35,28 L23,65 L14,65 Z"/>
+        </group>
+    </group>
+</vector>
