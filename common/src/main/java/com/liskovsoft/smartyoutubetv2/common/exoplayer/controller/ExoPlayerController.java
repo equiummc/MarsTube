@@ -465,6 +465,7 @@ public class ExoPlayerController implements Player.EventListener, VideoListener,
         Video video = getVideo();
         if (video != null) {
             PlaybackStartupMetrics.firstFrame(video.videoId);
+            mEventListener.onFirstFrame(video); // MT-019: actual frame for black-screen recovery
         }
     }
 
