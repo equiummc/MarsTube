@@ -112,7 +112,7 @@ jobs:
               throw "Destructive command in $($target.File)"
             }
             if(-not $script.Contains('ENABLE_SPECULATIVE_FORWARD_WARMUP') -or
-               -not $script.Contains('private boolean isShortWindowTarget')){
+               -not $script.Contains('MT-022 source not metadata-only / MT-019 missing')){
               throw "MT-022 missing current source guard in $($target.File)"
             }
             if($script.Contains("MT-022 warmup/MT-019 recovery safety guard failed") -or
