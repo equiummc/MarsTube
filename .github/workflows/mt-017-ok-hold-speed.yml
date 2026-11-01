@@ -1,0 +1,93 @@
+name: MT-017 OK hold temporary double-speed Fire + MT-016 Shorts regression
+on:
+  push:
+    branches:
+      - feature/mt-017-ok-hold-double-speed-fire-20261101
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  branding-and-playback-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Check safety and canonical identity
+        run: |
+          python3 scripts/mars/verify_fork.py --require-submodules
+          grep -F 'android:icon="@drawable/mars_brand_tile"' smarttubetv/src/main/AndroidManifest.xml
+          grep -F 'android:banner="@drawable/mars_brand_banner"' smarttubetv/src/main/AndroidManifest.xml
+          grep -F 'name="appLogo">@drawable/mars_brand_badge' smarttubetv/src/main/res/values/styles.xml
+          grep -q 'viewportWidth="1024"' smarttubetv/src/main/res/drawable/mars_brand_tile.xml
+          ! grep -q 'M18,0 H102' smarttubetv/src/main/res/drawable/mars_brand_tile.xml
+          grep -Fq 'section.getId() == MediaGroup.TYPE_HOME' smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/browse/BrowseFragment.java
+          grep -Fq 'return R.drawable.mars_brand_mark;' smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/browse/BrowseFragment.java
+          grep -Fq 'android:fillColor="#FF168DFF"' smarttubetv/src/main/res/drawable/mars_brand_mark.xml
+          test -f smarttubetv/src/main/res/drawable/mars_brand_tile.xml
+          test -f smarttubetv/src/main/res/drawable/mars_brand_banner.xml
+          test -f smarttubetv/src/main/res/drawable/mars_brand_badge.xml
+      - name: Guard MT-016 Fire TV Shorts recovery and visual treatment
+        run: |
+          grep -Fq 'SHORT_CONTINUATION_TIMEOUT_MS = 6_000L' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+          grep -Fq 'mShortRecovery.claimTimeoutRetry()' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+          grep -Fq 'mSuggestionsController.cancelShortContinuation()' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+          grep -Fq 'public void cancelShortContinuation()' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/SuggestionsController.java
+          grep -Fq 'setInitialDelay(video != null && video.isShorts ? 1_800L : 700L)' smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/PlaybackFragment.java
+          grep -Fq 'return mIsMarsShortPrefetchEnabled;' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/prefs/PlayerTweaksData.java
+          grep -Fq 'mIsMarsShortPrefetchEnabled = Helpers.parseBoolean(split, 63, false)' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/prefs/PlayerTweaksData.java
+          test -f common/src/test/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/ShortsContinuationRecoveryPolicyTest.java
+      - name: Guard MT-017 temporary OK long-hold without changing Short click or playback
+        run: |
+          grep -Fq 'ViewConfiguration.getLongPressTimeout()' smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/PlaybackActivity.java
+          grep -Fq 'mPlaybackFragment.setSpeed(2.0f)' smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/PlaybackActivity.java
+          grep -Fq 'mPlaybackFragment.setSpeed(mOkSpeed.previousSpeed())' smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/PlaybackActivity.java
+          grep -Fq 'super.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, key, 0))' smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/PlaybackActivity.java
+          grep -Fq 'resetMarsOkDoubleSpeed()' smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/PlaybackFragment.java
+          test -f smarttubetv/src/test/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback/MarsOkHoldSpeedStateTest.java
+      - name: Apply the exact pinned B6 overlays (unchanged)
+        run: |
+          python3 scripts/mars/mt008_probe_media_core.py
+          python3 scripts/mars/mt009_probe_signature_stages.py --check
+          python3 scripts/mars/mt009_probe_signature_stages.py
+          python3 scripts/mars/mt010a_decoder_cache.py --check
+          python3 scripts/mars/mt010a_decoder_cache.py
+          python3 scripts/mars/mt010a2_warm_runtime.py --check
+          python3 scripts/mars/mt010a2_warm_runtime.py
+          node scripts/mars/mt010a2_validate_solver.js
+          python3 scripts/mars/mt011a_tcl_stage_probes.py --check
+          python3 scripts/mars/mt011a_tcl_stage_probes.py
+          python3 scripts/mars/mt011ab_lowcopy_tcl.py --check
+          python3 scripts/mars/mt011ab_lowcopy_tcl.py
+          python3 scripts/mars/mt011ab_memory_source_cache.py --check
+          python3 scripts/mars/mt011ab_memory_source_cache.py
+          node scripts/mars/mt011ab_verify_challenges.js
+          python3 scripts/mars/mt011b3_queue_preloader.py --check
+          python3 scripts/mars/mt011b3_queue_preloader.py
+      - name: Execute Fire installer preflight and mocked startup metrics
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/mars/Test-MT017-FireInstaller.ps1
+      - name: Common unit tests
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest
+      - name: MarsTube remote-hold JVM tests
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:testStstableDebugUnitTest
+      - name: Build branded debug APK
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableDebug
+      - name: Build branded release APK
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableRelease
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: MT-017-MarsTube-CI-apks-not-install-signed
+          path: |
+            smarttubetv/build/outputs/apk/ststable/debug/*.apk
+            smarttubetv/build/outputs/apk/ststable/release/*.apk

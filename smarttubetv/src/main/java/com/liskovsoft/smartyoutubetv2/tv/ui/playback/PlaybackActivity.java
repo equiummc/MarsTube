@@ -4,9 +4,13 @@ import android.annotation.TargetApi;
 import android.app.PictureInPictureParams;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.ViewConfiguration;
 
 import androidx.fragment.app.Fragment;
 
@@ -35,6 +39,10 @@ public class PlaybackActivity extends LeanbackActivity {
     private static final float GAMEPAD_TRIGGER_INTENSITY_OFF = 0.45f;
     private boolean gamepadTriggerPressed = false;
     private PlaybackFragment mPlaybackFragment;
+    // MT-017: long-press OK (center/enter) gives temporary 2x; short click stays native.
+    private final MarsOkHoldSpeedState mOkSpeed = new MarsOkHoldSpeedState();
+    private final Handler mOkSpeedHandler = new Handler(Looper.getMainLooper());
+    private final Runnable mOkSpeedLongPress = this::startMarsOkDoubleSpeed;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,8 +68,68 @@ public class PlaybackActivity extends LeanbackActivity {
         if (mPlaybackFragment != null) {
             mPlaybackFragment.onDispatchKeyEvent(event);
         }
-
+        final int key = event.getKeyCode();
+        if (key == KeyEvent.KEYCODE_DPAD_CENTER || key == KeyEvent.KEYCODE_ENTER ||
+                key == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (mOkSpeed.owns(key)) return true; // Consume long-hold key repeats.
+                if (event.getRepeatCount() == 0 && canUseMarsOkDoubleSpeed()) {
+                    if (mOkSpeed.begin(key, mPlaybackFragment.getVideo().videoId)) {
+                        mOkSpeedHandler.postDelayed(mOkSpeedLongPress,
+                                ViewConfiguration.getLongPressTimeout());
+                        return true; // Defer normal OK click until release.
+                    }
+                }
+            } else if (event.getAction() == KeyEvent.ACTION_UP && mOkSpeed.owns(key)) {
+                final boolean wasBoosted = mOkSpeed.boosted();
+                final boolean sameVideo = mPlaybackFragment != null &&
+                        mPlaybackFragment.getVideo() != null &&
+                        mOkSpeed.isSameVideo(mPlaybackFragment.getVideo().videoId);
+                resetMarsOkDoubleSpeed();
+                if (!wasBoosted && sameVideo && !event.isCanceled()) {
+                    // Preserve normal short OK controls/pause behaviour. Only the
+                    // long hold is intercepted; overlay/menu controls are untouched.
+                    final long now = SystemClock.uptimeMillis();
+                    super.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_DOWN, key, 0));
+                    super.dispatchKeyEvent(new KeyEvent(now, now, KeyEvent.ACTION_UP, key, 0));
+                }
+                return true;
+            }
+        } else if (event.getAction() == KeyEvent.ACTION_DOWN && mOkSpeed.pending()) {
+            // A second remote key takes priority; do not leak accelerated speed.
+            resetMarsOkDoubleSpeed();
+        }
         return super.dispatchKeyEvent(event);
+    }
+
+    private boolean canUseMarsOkDoubleSpeed() {
+        return mPlaybackFragment != null && mPlaybackFragment.getVideo() != null &&
+                mPlaybackFragment.getVideo().videoId != null &&
+                mPlaybackFragment.isPlaying() && !mPlaybackFragment.isOverlayShown() &&
+                !AppDialogPresenter.instance(this).isDialogShown();
+    }
+
+    private void startMarsOkDoubleSpeed() {
+        if (!mOkSpeed.pending() || !canUseMarsOkDoubleSpeed() ||
+                !mOkSpeed.isSameVideo(mPlaybackFragment.getVideo().videoId)) {
+            return;
+        }
+        final float previous = mPlaybackFragment.getSpeed();
+        if (mOkSpeed.beginBoost(previous)) {
+            mPlaybackFragment.setSpeed(2.0f);
+            Log.d(TAG, "MT-017 OK hold: temporary 2x playback speed");
+        }
+    }
+
+    /** Called before changing video to guarantee that 2x never persists to another Short. */
+    public void resetMarsOkDoubleSpeed() {
+        mOkSpeedHandler.removeCallbacks(mOkSpeedLongPress);
+        if (mOkSpeed.boosted() && mPlaybackFragment != null &&
+                mPlaybackFragment.getVideo() != null &&
+                mOkSpeed.isSameVideo(mPlaybackFragment.getVideo().videoId)) {
+            mPlaybackFragment.setSpeed(mOkSpeed.previousSpeed());
+        }
+        mOkSpeed.reset();
     }
 
     @Override
@@ -201,6 +269,7 @@ public class PlaybackActivity extends LeanbackActivity {
 
     @Override
     protected void onPause() {
+        resetMarsOkDoubleSpeed();
         boolean hasDialogBug = AppDialogPresenter.instance(this).isDialogShown() && Build.VERSION.SDK_INT <= 23;
         boolean isScreenOff = getPlayerData().getBackgroundMode() != PlayerData.BACKGROUND_MODE_DEFAULT && Utils.isHardScreenOff(this);
 
