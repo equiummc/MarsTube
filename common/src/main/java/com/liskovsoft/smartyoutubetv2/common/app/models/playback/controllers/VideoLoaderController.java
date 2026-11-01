@@ -51,7 +51,7 @@ public class VideoLoaderController extends BasePlayerController {
         if (mFirstFrameRecovery.claimFreshRetry(selected.videoId)) {
             Log.i("MarsTubePerf", "MT-019 black_frame_recovery fresh_retry");
             cancelShortWindow(); // Never race background metadata against recovery.
-            mShortWarmCache.remove(selected.videoId);
+            invalidateCachedShortForRetry(selected);
             mFreshShortPlaybackId = selected.videoId;
             getPlayer().showProgressBar(false);
             loadFormatInfo(selected);
@@ -61,6 +61,11 @@ public class VideoLoaderController extends BasePlayerController {
             getPlayer().showProgressBar(true);
         }
     };
+    private void invalidateCachedShortForRetry(Video selected) {
+        // Access via a method: this cache is initialized below the watchdog field.
+        mShortWarmCache.remove(selected.videoId);
+    }
+
     private void scheduleFirstFrameWatchdog(long timeoutMs) {
         Utils.removeCallbacks(mFirstFrameWatchdog);
         Utils.postDelayed(mFirstFrameWatchdog, timeoutMs);
