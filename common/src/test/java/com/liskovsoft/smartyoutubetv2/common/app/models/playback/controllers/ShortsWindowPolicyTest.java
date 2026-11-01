@@ -4,6 +4,15 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ShortsWindowPolicyTest {
+    @Test public void noSpeculativeForwardRequestsInMt022Experiment() {
+        assertFalse(ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP);
+        // The three recently watched items are intentionally unaffected.
+        ShortsWindowPolicy policy = new ShortsWindowPolicy();
+        assertEquals(3, ShortsWindowPolicy.PREVIOUS_COUNT);
+        assertTrue(policy.withinPreviousWindow(1));
+        assertTrue(policy.withinPreviousWindow(3));
+    }
+
     @Test public void exactlyThreeNextMetadataSlots() {
         ShortsWindowPolicy policy = new ShortsWindowPolicy();
         assertEquals(1, policy.nextDistance());
