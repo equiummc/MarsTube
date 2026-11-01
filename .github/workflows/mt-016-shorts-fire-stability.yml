@@ -62,6 +62,10 @@ jobs:
           node scripts/mars/mt011ab_verify_challenges.js
           python3 scripts/mars/mt011b3_queue_preloader.py --check
           python3 scripts/mars/mt011b3_queue_preloader.py
+      - name: Execute Fire installer preflight and mocked startup metrics
+        shell: pwsh
+        run: |
+          & pwsh -NoProfile -File scripts/mars/Test-MT016-FireInstaller.ps1
       - name: Common unit tests
         run: |
           chmod +x gradlew
