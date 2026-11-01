@@ -852,6 +852,8 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     private void maybePreloadThomsonNextShort(int distance, Video target, MediaItemFormatInfo info) {
+        // MT-021: keep metadata lookahead; never allocate a Thomson sample queue.
+        if (!getPlayerTweaksData().isMarsShortMediaPreloadEnabled()) return;
         if (!isThomsonShortWindowTarget() || target == null || info == null ||
                 info.isLive() || !info.containsSabrFormats() || info.containsDashFormats() ||
                 getPlayer() == null) return;
