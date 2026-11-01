@@ -101,7 +101,7 @@ try {
             Assert-Exit 'APK-Sicherung'
             if(-not (Test-Path $backup) -or (Get-Item $backup).Length -lt 1000000){throw 'Backup unvollstaendig'}
         }
-        Write-Host 'Isolierten MT-019 Quellstand laden (Thomson)' -ForegroundColor Cyan
+        Write-Host 'Isolierten MT-022 Quellstand laden (Thomson)' -ForegroundColor Cyan
         & git -C $repo fetch origin "refs/heads/$($branch):refs/remotes/origin/$($branch)" | Out-Host
         Assert-Exit 'Git fetch'
         & git -C $repo merge-base --is-ancestor $codeSha "refs/remotes/origin/$branch"
