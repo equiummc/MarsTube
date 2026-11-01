@@ -42,6 +42,26 @@ public class VideoLoaderController extends BasePlayerController {
     private long mLastShortSwipeMs;
     private boolean mShortContinuationPending;
     private long mShortContinuationGeneration;
+    // MT-016: bounded rescue for Fire TV (and Android TV) Shorts pagination.
+    // A missing continuation callback must never lock DPAD_DOWN indefinitely.
+    private static final long SHORT_CONTINUATION_TIMEOUT_MS = 6_000L;
+    private int mShortContinuationTimeoutRetries;
+    private final Runnable mShortContinuationTimeout = () -> {
+        if (!mShortContinuationPending) return;
+        final Video playing = getVideo();
+        Log.i("MarsTubePerf", "MT-016 shorts_continue_timeout retry=" + mShortContinuationTimeoutRetries);
+        mSuggestionsController.cancelShortContinuation();
+        mShortContinuationPending = false;
+        mShortContinuationGeneration++; // Reject late callbacks from the cancelled request.
+        if (playing != null && playing.isShorts && playing.videoId != null &&
+                getPlayer() != null && mShortContinuationTimeoutRetries < 1) {
+            mShortContinuationTimeoutRetries++;
+            beginShortContinuation(playing); // Only one retry.
+        } else {
+            Log.i("MarsTubePerf", "MT-016 shorts_continue_exhausted");
+            MessageHelpers.showMessage(getContext(), R.string.mars_shorts_no_more);
+        }
+    };
     // In-memory only. At most one prefetched next Short, no persistent media URLs.
     private static final long SHORT_PREFETCH_TTL_MS = 15_000L;
     // MT-011B5: cheap, validated metadata, NOT decoded video sample buffers.
@@ -101,6 +121,7 @@ public class VideoLoaderController extends BasePlayerController {
 
     @Override
     public void onFinish() {
+        cancelShortContinuation();
         disposeActions();
         clearShortPrefetch();
         mShortWarmCache.clear();
@@ -117,7 +138,8 @@ public class VideoLoaderController extends BasePlayerController {
             mShortWarmCache.clear();
         }
 
-        mShortContinuationPending = false;
+        cancelShortContinuation();
+        mShortContinuationTimeoutRetries = 0;
         mShortContinuationGeneration++; // Invalidate callbacks from the previous Short.
         PlaybackStartupMetrics.videoSelected(item.videoId);
         item.isShuffled = false;
@@ -149,6 +171,7 @@ public class VideoLoaderController extends BasePlayerController {
 
     @Override
     public void onEngineReleased() {
+        cancelShortContinuation();
         disposeActions();
         clearShortPrefetch();
         mShortWarmCache.clear();
@@ -247,20 +270,37 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
+        mShortContinuationTimeoutRetries = 0;
+        beginShortContinuation(current);
+    }
+
+    private void beginShortContinuation(Video current) {
         mShortContinuationPending = true;
         final long requestGeneration = ++mShortContinuationGeneration;
         final String expectedVideoId = current.videoId;
+        Utils.removeCallbacks(mShortContinuationTimeout);
+        Utils.postDelayed(mShortContinuationTimeout, SHORT_CONTINUATION_TIMEOUT_MS);
+        Log.i("MarsTubePerf", "MT-016 shorts_continue_start retry=" + mShortContinuationTimeoutRetries);
         mSuggestionsController.requestNextShort(found -> {
             if (requestGeneration != mShortContinuationGeneration) return;
+            Utils.removeCallbacks(mShortContinuationTimeout);
             mShortContinuationPending = false;
             Video playing = getVideo();
             if (playing == null || !expectedVideoId.equals(playing.videoId)) return;
             if (found != null) {
+                Log.i("MarsTubePerf", "MT-016 shorts_continue_ready");
                 openVideoInt(found);
             } else {
+                Log.i("MarsTubePerf", "MT-016 shorts_continue_empty");
                 MessageHelpers.showMessage(getContext(), R.string.mars_shorts_no_more);
             }
         });
+    }
+
+    private void cancelShortContinuation() {
+        Utils.removeCallbacks(mShortContinuationTimeout);
+        if (mSuggestionsController != null) mSuggestionsController.cancelShortContinuation();
+        mShortContinuationPending = false;
     }
 
     @Override
