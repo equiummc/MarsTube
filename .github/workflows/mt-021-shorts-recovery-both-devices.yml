@@ -105,6 +105,10 @@ jobs:
             if($script -match 'pm uninstall|pm clear|cmd package set-home-activity|settings put'){
               throw "Destructive command in $($target.File)"
             }
+            if($script.Contains("ShortsDeviceWarmupPolicy.shouldPreloadThomsonSample") -or
+               -not $script.Contains("private boolean isShortWindowTarget")){
+              throw "MT-021 stale installer check in $($target.File)"
+            }
           }
       - name: Common unit tests
         run: |
