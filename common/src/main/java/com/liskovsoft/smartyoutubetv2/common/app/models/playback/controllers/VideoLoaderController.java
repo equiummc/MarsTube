@@ -412,9 +412,16 @@ public class VideoLoaderController extends BasePlayerController {
             return;
         }
 
-        // Stop the playback if the user is browsing options or reading comments
+        // Do not unexpectedly auto-advance while the user is reading a modal
+        // dialog/comments. The legacy Loop Shorts flag defaults to repeat-one,
+        // but Mars-Spezial must still defer until that dialog is dismissed.
         int playbackMode = getPlaybackMode();
-        if (getAppDialogPresenter().isDialogShown() && !getAppDialogPresenter().isOverlay() && playbackMode != PlayerConstants.PLAYBACK_MODE_ONE) {
+        Video ended = getVideo();
+        boolean marsEndAction = ended != null && !ended.isLive &&
+                !ended.finishOnEnded && !isEmbedPlayer() &&
+                (ended.isShorts || playbackMode != PlayerConstants.PLAYBACK_MODE_ONE);
+        if (getAppDialogPresenter().isDialogShown() && !getAppDialogPresenter().isOverlay() &&
+                (marsEndAction || playbackMode != PlayerConstants.PLAYBACK_MODE_ONE)) {
             getAppDialogPresenter().setOnFinish(mOnApplyPlaybackMode);
         } else {
             applyPlaybackMode(playbackMode);
