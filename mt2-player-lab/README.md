@@ -45,7 +45,7 @@ NewTube-Referenzplayer; DASH bleibt Standard, SABR wird nur für den Test gewäh
 
 ## Windows: Referenzbuild / ADB / Diagnose
 
-Auf einem Windows-PC mit Git, JDK 17, Android SDK (API 36 fuer den Referenztest) und installiertem Android SDK Platform Tools:
+Auf einem Windows-PC mit Git, JDK 17, Android SDK 37.0 (Paketname `platforms;android-37.0`) und installiertem Android SDK Platform Tools:
 
 ```powershell
 # Im Experiment-Branch des MarsTube-Repos:
@@ -60,8 +60,8 @@ Auf einem Windows-PC mit Git, JDK 17, Android SDK (API 36 fuer den Referenztest)
 
 Das Skript klont NewTube nach `E:\Mars-TV\Projekte\marstube2\player-lab\newtube-reference`,
 prüft den exakt festgehaltenen Git-Commit, initialisiert NewTube-Submodule,
-passt ausschließlich dort die Linux-Protoc-Dependency für Windows an sowie
-`compileSdk`/`targetSdk` auf die für den Test verfügbare API 36,
+passt ausschließlich dort die Linux-Protoc-Dependency für Windows an,
+installiert nötigenfalls die Android-SDK-Plattform 37.0 und prüft deren JAR,
 führt `:sabr-media3:testDebugUnitTest` und
 `:smarttubetv:assembleStmobileDebug` aus. Es installiert ausschließlich die
 **separate** Referenz-App (erwartete Paketkennung
