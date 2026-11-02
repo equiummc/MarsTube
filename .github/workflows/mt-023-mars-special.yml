@@ -200,7 +200,7 @@ jobs:
               'pm uninstall','pm clear','cmd package set-home-activity','settings put')){
             if($script.Contains($bad)){throw "Unsafe Sony installer content: $bad"}
           }
-          if($script -notmatch "\$"+"newVersion -ne 100012"){
+          if(-not $script.Contains('$newVersion -ne 100012')){
             throw 'Expected installed APK version not pinned'
           }
           Write-Host 'MT-023 Sony-only installer parsed, verified model, pinned version and signer safety.'
