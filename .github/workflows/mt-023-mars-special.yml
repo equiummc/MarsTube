@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - feature/mt-023-mars-special-autoplay-20261102
+  # MT-024 upstream watcher opens draft PRs against this exact feature base.
+  # Test preview code automatically without installing or publishing an APK.
+  pull_request:
+    branches:
+      - feature/mt-023-mars-special-autoplay-20261102
   workflow_dispatch:
 permissions:
   contents: read
