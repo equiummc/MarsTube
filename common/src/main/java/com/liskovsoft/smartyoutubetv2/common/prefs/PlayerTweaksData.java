@@ -119,6 +119,31 @@ public class PlayerTweaksData implements ProfileChangeListener {
     private boolean mIsMarsShortPrefetchEnabled;
     // MT-011B4 independent media-sample experiment, disabled by default.
     private boolean mIsMarsShortMediaPreloadEnabled;
+    // MT-023: two explicit, independent auto-next switches, default OFF.
+    private boolean mIsMarsAutoNextShortsEnabled;
+    private boolean mIsMarsAutoNextVideosEnabled;
+
+    public boolean isMarsAutoNextShortsEnabled() {
+        return mIsMarsAutoNextShortsEnabled;
+    }
+
+    public void setMarsAutoNextShortsEnabled(boolean enabled) {
+        if (mIsMarsAutoNextShortsEnabled != enabled) {
+            mIsMarsAutoNextShortsEnabled = enabled;
+            persistNow();
+        }
+    }
+
+    public boolean isMarsAutoNextVideosEnabled() {
+        return mIsMarsAutoNextVideosEnabled;
+    }
+
+    public void setMarsAutoNextVideosEnabled(boolean enabled) {
+        if (mIsMarsAutoNextVideosEnabled != enabled) {
+            mIsMarsAutoNextVideosEnabled = enabled;
+            persistNow();
+        }
+    }
     private final Runnable mPersistDataInt = this::persistDataInt;
 
     public boolean isMarsShortMediaPreloadEnabled() {
@@ -153,7 +178,9 @@ public class PlayerTweaksData implements ProfileChangeListener {
     }
 
     public boolean isMarsAdaptiveQualityEnabled() {
-        return mIsMarsAdaptiveQualityEnabled;
+        // MT-023: the unverified auto-quality experiment is disabled.
+        // Retain stored preference for possible rollback; no migration or reset.
+        return false;
     }
 
     public void setMarsAdaptiveQualityEnabled(boolean enabled) {
@@ -828,6 +855,8 @@ public class PlayerTweaksData implements ProfileChangeListener {
         mIsMarsAdaptiveQualityEnabled = Helpers.parseBoolean(split, 62, false); // opt-in until TV validated
         mIsMarsShortPrefetchEnabled = Helpers.parseBoolean(split, 63, false); // MT-008: foreground priority
         mIsMarsShortMediaPreloadEnabled = Helpers.parseBoolean(split, 64, false); // MT-011B4 opt-in
+        mIsMarsAutoNextShortsEnabled = Helpers.parseBoolean(split, 65, false);
+        mIsMarsAutoNextVideosEnabled = Helpers.parseBoolean(split, 66, false);
 
         updateDefaultValues();
     }
@@ -855,7 +884,8 @@ public class PlayerTweaksData implements ProfileChangeListener {
                 mIsUnsafeAudioFormatsEnabled, null, mIsLoopShortsEnabled, mIsQuickSkipShortsEnabled, mIsRememberPositionOfLiveVideosEnabled,
                 mIsOculusQuestFixEnabled, null, mIsExtraLongSpeedListEnabled, mIsQuickSkipVideosEnabled, mIsNetworkErrorFixingDisabled, mIsCommentsPlacedLeft,
                 null, mIsAudioFocusEnabled, mIsDontResizeVideoToFitDialogEnabled, mIsSuggestionsHorizontallyScrolled,
-                mIsQuickSkipShortsAltEnabled, mIsQuickSkipVideosAltEnabled, mIsAudioTimeStretchingEnabled, mIsQueueRespectsPlaybackMode, mIsSabrLiveEnabled, mIsMarsAdaptiveQualityEnabled, mIsMarsShortPrefetchEnabled, mIsMarsShortMediaPreloadEnabled
+                mIsQuickSkipShortsAltEnabled, mIsQuickSkipVideosAltEnabled, mIsAudioTimeStretchingEnabled, mIsQueueRespectsPlaybackMode, mIsSabrLiveEnabled, mIsMarsAdaptiveQualityEnabled, mIsMarsShortPrefetchEnabled, mIsMarsShortMediaPreloadEnabled,
+                mIsMarsAutoNextShortsEnabled, mIsMarsAutoNextVideosEnabled
                 ));
     }
 
