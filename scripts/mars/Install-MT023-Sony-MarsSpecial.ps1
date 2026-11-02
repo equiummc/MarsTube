@@ -8,7 +8,7 @@ $sonySerial='192.168.41.48:5555'
 $adbExe=Join-Path $HOME 'Android-Tools\platform-tools\adb.exe'
 $repo=Join-Path $HOME 'MarsTV\mars-smarttube'
 $branch='feature/mt-023-mars-special-autoplay-20261102'
-$codeSha='83f934ec667a4b5015edbd68910a59abd92367ce'
+$codeSha='c6b61af0952946add475e5779c179ad27cca93e1'
 $package='de.equiummc.mars.smarttube'
 $activity='com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity'
 $save=Join-Path $HOME ('MarsTV\backups\Sony-MT023\' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -151,6 +151,7 @@ try {
            $prefsSource -notmatch 'return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&' -or
            $loader -notmatch 'MT-022 forward_warmup=false previous_cache=preserved' -or
            $loader -notmatch 'MarsAutoNextPolicy.decide' -or
+           $loader -notmatch 'marsEndAction \|\| playbackMode' -or
            $prefsSource -notmatch 'isMarsAutoNextShortsEnabled' -or
            $prefsSource -notmatch 'isMarsAutoNextVideosEnabled' -or
            $prefsSource -notmatch 'Helpers.parseBoolean\(split, 65, false\)' -or
