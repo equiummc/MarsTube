@@ -1,38 +1,137 @@
-name: SmartTube Stable upstream monitor
+name: MT-024 SmartTube upstream safe review (never auto-install)
 on:
   schedule:
-    - cron: '15 7 * * *'
+    - cron: '17 */6 * * *'
   workflow_dispatch:
+
+# Runs on the default branch only. Creates a separate candidate PR or a
+# review issue. Never merges production branches, publishes APKs or touches TVs.
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
   issues: write
+
+concurrency:
+  group: mars-upstream-stable-review
+  cancel-in-progress: false
+
 jobs:
-  upstream:
+  detect-review:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      # Follow the tested MarsTube MT-023 development line, not old 32.68.11.
+      # Change this only after its successor is deliberately promoted.
+      MARS_BASE: feature/mt-023-mars-special-autoplay-20261102
     steps:
-      - name: Detect new upstream stable release and create review issue
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - name: Propose latest official stable as isolated review (no production merge)
         shell: bash
         run: |
           set -euo pipefail
-          current="$(gh api repos/yuliskov/SmartTube/releases/latest --jq '.tag_name')"
-          if [[ -z "$current" ]]; then exit 1; fi
-          title="[Mars Upstream] SmartTube stable $current pruefen"
-          if gh issue list --state all --limit 100 --json title --jq '.[].title' | grep -Fxq "$title"; then
-            echo "Already tracked: $current"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote add upstream https://github.com/yuliskov/SmartTube.git
+          git fetch origin "refs/heads/${MARS_BASE}:refs/remotes/origin/${MARS_BASE}"
+          base_ref="refs/remotes/origin/${MARS_BASE}"
+          git cat-file -e "${base_ref}^{commit}"
+
+          tag="$(gh api repos/yuliskov/SmartTube/releases/latest --jq '.tag_name')"
+          if [[ -z "$tag" || "$tag" == 'null' ]]; then
+            echo 'Latest official SmartTube Stable could not be resolved.' >&2
+            exit 1
+          fi
+          # Only permit tag names from our own GitHub release search; source
+          # remote is explicit, so other repositories cannot inject commits.
+          if [[ ! "$tag" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Unacceptable upstream release tag: $tag" >&2
+            exit 1
+          fi
+          git fetch --no-tags upstream "refs/tags/${tag}:refs/tags/${tag}"
+          upstream_sha="$(git rev-parse "refs/tags/${tag}^{commit}")"
+          base_sha="$(git rev-parse "$base_ref")"
+          echo "Upstream Stable: $tag / $upstream_sha"
+          echo "MarsTube review baseline: $MARS_BASE / $base_sha"
+          if git merge-base --is-ancestor "$upstream_sha" "$base_ref"; then
+            echo 'Release source already contained in MarsTube review baseline.'
             exit 0
           fi
-          cat > /tmp/update-review.md <<EOF
-          Neue offizielle stabile SmartTube-Version **$current** erkannt.
+          title="[MT-024] Review SmartTube Stable $tag"
+          if gh pr list --repo "$GH_REPO" --state all --limit 100 --json title \
+             --jq '.[].title' | grep -Fxq "$title"; then
+            echo 'Release already has a review PR.'
+            exit 0
+          fi
+          if gh issue list --repo "$GH_REPO" --state all --limit 100 --json title \
+             --jq '.[].title' | grep -Fxq "$title (merge conflict)"; then
+            echo 'Release already has a conflict issue.'
+            exit 0
+          fi
 
-          https://github.com/yuliskov/SmartTube/releases/tag/$current
+          candidate="mars-upstream/review-$tag"
+          git switch -c "$candidate" "$base_ref"
+          if ! git merge --no-ff --no-commit "$upstream_sha"; then
+            conflicts="$(git diff --name-only --diff-filter=U | head -50 || true)"
+            git merge --abort || true
+            cat > /tmp/mt024-conflict.md <<EOF
+          Official SmartTube Stable: https://github.com/yuliskov/SmartTube/releases/tag/$tag
 
-          To-do: Quellcode/Diff und Sicherheitsmeldungen pruefen; Updates gegen
-          mars/stable zusammenfuehren, Mars-Overlay-Tests ausfuehren, Build
-          pruefen, an Thomson und Fire TV testen, dann erst signiert veroeffentlichen.
+          Source commit: \`$upstream_sha\`
+          MarsTube baseline: \`$MARS_BASE\` at \`$base_sha\`
 
-          Kein automatisches Merge, keine ungepruefte APK auf Endgeraeten.
+          Automatic **preview merge only** was blocked by Git conflicts:
+          \`\`
+          $conflicts
+          \`\`
+
+          Manual porting and first-frame/Shorts/ADB safety tests required.
+          No MarsTube main branch, release or installed app was changed.
           EOF
-          gh issue create --title "$title" --body-file /tmp/update-review.md
+            gh issue create --repo "$GH_REPO" --title "$title (merge conflict)" \
+              --body-file /tmp/mt024-conflict.md
+            exit 0
+          fi
+
+          # Classify all touched files. Even a conflict-free Git merge is NOT
+          # proof that video decoding, Shorts and startup remain functional.
+          files="$(git diff --cached --name-only)"
+          critical="$(printf '%s\n' "$files" | grep -E \
+            '(MediaServiceCore|exoplayer|playback|player|VideoLoaderController|Shorts|build.gradle|gradle.properties|AndroidManifest.xml|scripts/mars)' || true)"
+          printf '%s\n' "$files" > /tmp/mt024-changed-files.txt
+          git commit -m "review(mt-024): stage official SmartTube Stable $tag for guarded tests"
+          if ! git push origin "HEAD:refs/heads/$candidate"; then
+            echo 'Unable to push preview branch. No production change.' >&2
+            exit 1
+          fi
+          {
+            echo "Upstream: https://github.com/yuliskov/SmartTube/releases/tag/$tag"
+            echo
+            echo "Source commit: \`$upstream_sha\`"
+            echo "Mars baseline: \`$MARS_BASE\` at \`$base_sha\`"
+            echo
+            echo "**Draft review only. Nothing is merged into MarsTube stable.**"
+            echo "Git merge succeeded, but behavior and compatibility are unverified."
+            echo
+            echo "Potentially high-risk changes:"
+            printf '%s\n' "${critical:-No matches in the predefined path patterns}" | sed 's/^/- /'
+            echo
+            echo "Required before accepting:"
+            echo "- MediaServiceCore and Android dependency compatibility"
+            echo "- MT-019/022 Shorts rewind, first frame and zero speculative prefetch"
+            echo "- MT-023 independent Shorts/normal-video auto-next"
+            echo "- Package ID, signature, launch/home, playback format, memory"
+            echo "- Sony/Thomson/Fire TV manual A/B smoke tests"
+            echo "- Human review and explicitly approved signed MarsTube release"
+            echo
+            echo "Never install upstream's APK on the MarsTube package."
+          } > /tmp/mt024-review.md
+          if ! gh pr create --repo "$GH_REPO" --head "$candidate" --base "$MARS_BASE" \
+              --draft --title "$title" --body-file /tmp/mt024-review.md; then
+            gh issue create --repo "$GH_REPO" --title "$title (manual review)" \
+              --body-file /tmp/mt024-review.md
+          fi
