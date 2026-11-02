@@ -164,6 +164,7 @@ jobs:
           assert 'setMarsAutoNextShortsEnabled' in settings
           assert 'setMarsAutoNextVideosEnabled' in settings
           assert 'MarsAutoNextPolicy.decide(' in loader
+          assert 'marsEndAction || playbackMode' in loader
           assert 'loadAdjacentShort(true)' in loader
           assert 'getPlayer().setPositionMs(0);' in loader
           assert 'getPlayer().setPlayWhenReady(false);' in loader
@@ -188,7 +189,7 @@ jobs:
           $script=Get-Content $file -Raw
           foreach($marker in @(
             '192.168.41.48:5555','BRAVIA 4K UR1',
-            '83f934ec667a4b5015edbd68910a59abd92367ce',
+            'c6b61af0952946add475e5779c179ad27cca93e1',
             'versionCode 100012','MarsAutoNextPolicy.decide',
             'MT-022 forward_warmup=false previous_cache=preserved',
             'Signatur abweichend; keine Installation',
