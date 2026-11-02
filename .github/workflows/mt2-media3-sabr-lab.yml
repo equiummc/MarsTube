@@ -46,14 +46,18 @@ jobs:
           test -f newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
           test "$(git -C newtube-reference rev-parse HEAD)" = "6f96a1b42bb9272935360d7e5aec34d35f2753f0"
 
-      - name: Android API 36 and licenses (isolated compat baseline)
+      - name: Android API 37.0 and licenses (actual SDK package ID)
         shell: bash
         run: |
           set -euo pipefail
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;21.0.6113669"
-          sed -i "s/compileSdkVersion = 37/compileSdkVersion = 36/;s/targetSdkVersion = 37/targetSdkVersion = 36/" newtube-reference/SharedModules/constants.gradle
-          # Avoid choosing the parent repository's unloaded SharedModules gitlink stub.
+          sdkmanager --channel=3 "platforms;android-37.0" "build-tools;37.0.0" "ndk;21.0.6113669"
+          test -f "$ANDROID_HOME/platforms/android-37.0/android.jar"
+          # AGP compileSdk=37 still searches android-37 (without .0) on some installations.
+          if [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s "$ANDROID_HOME/platforms/android-37.0" "$ANDROID_HOME/platforms/android-37"
+          fi
+          # Use pinned reference modules, never the unloaded parent MarsTube gitlinks.
           sed -i "s@'../SharedModules'@'./SharedModules'@g;s@'../MediaServiceCore'@'./MediaServiceCore'@g" newtube-reference/settings.gradle
 
       - name: Run SABR module unit tests and build standalone Media3 reference APK
