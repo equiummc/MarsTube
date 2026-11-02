@@ -177,6 +177,33 @@ jobs:
               assert name in strings and name in german
           print('MT-023 static behavior and MT-022 performance guards PASS')
           PY
+      - name: Verify SONY MT-023 in-place installer syntax and target isolation
+        shell: pwsh
+        run: |
+          $file='scripts/mars/Install-MT023-Sony-MarsSpecial.ps1'
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path $file).Path,[ref]$tokens,[ref]$errors) | Out-Null
+          if($errors.Count -gt 0){$errors | Format-List | Out-Host; throw 'Sony installer syntax invalid'}
+          $script=Get-Content $file -Raw
+          foreach($marker in @(
+            '192.168.41.48:5555','BRAVIA 4K UR1',
+            '83f934ec667a4b5015edbd68910a59abd92367ce',
+            'versionCode 100012','MarsAutoNextPolicy.decide',
+            'MT-022 forward_warmup=false previous_cache=preserved',
+            'Signatur abweichend; keine Installation',
+            'pm path $package'
+          )){
+            if(-not $script.Contains($marker)){throw "Missing Sony installer guard: $marker"}
+          }
+          foreach($bad in @('192.168.41.53:5555','192.168.41.24:5555',
+              'pm uninstall','pm clear','cmd package set-home-activity','settings put')){
+            if($script.Contains($bad)){throw "Unsafe Sony installer content: $bad"}
+          }
+          if($script -notmatch "\$"+"newVersion -ne 100012"){
+            throw 'Expected installed APK version not pinned'
+          }
+          Write-Host 'MT-023 Sony-only installer parsed, verified model, pinned version and signer safety.'
       - name: Common unit tests
         run: |
           chmod +x gradlew
