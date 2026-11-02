@@ -69,6 +69,13 @@ switch ($Mode) {
         }
         & git -C $Checkout -c core.longpaths=true submodule update --init --recursive
         Assert-Ok 'Git submodule update'
+        # Gradle must not pick a sibling MarsTube SharedModules gitlink stub.
+        $settings = Join-Path $Checkout 'settings.gradle'
+        $settingsSource = [System.IO.File]::ReadAllText($settings)
+        $settingsLocal = $settingsSource.Replace("'../SharedModules'","'./SharedModules'").Replace("'../MediaServiceCore'","'./MediaServiceCore'")
+        if ($settingsLocal -ne $settingsSource) {
+            [System.IO.File]::WriteAllText($settings,$settingsLocal,[System.Text.UTF8Encoding]::new($false))
+        }
         # Pinned Linux-Protoc fuer Windows ausschliesslich in der separaten Testkopie anpassen.
         $patched = 0
         foreach ($file in @((Join-Path $Checkout 'sabr-media3\build.gradle'),
