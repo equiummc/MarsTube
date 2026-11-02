@@ -1,7 +1,7 @@
 # MarsTube 2.0 – MT2-000: Media3 + YouTube SABR, isolierter Machbarkeitstest
 
 Stand: 02.11.2026. **Kein Umbau von MarsTube 1.x.** Experiment-Branch:
-\`experiment/mt2-media3-sabr-proof-20261102\` (Ausgang: \`mars/stable\`).
+`experiment/mt2-media3-sabr-proof-20261102` (Ausgang: `mars/stable`).
 
 ## Ziel und genaue Abgrenzung
 
@@ -19,23 +19,23 @@ ersetzt. Vor einer Freigabe stehen Geräte- und Dauerlaufprüfungen.
 ## Nachprüfbare Quellen / gewählter eingefrorener Stand
 
 - NewTube: https://github.com/aleixrodriala/newtube
-- Pinned Referenz-Commit: \`6f96a1b42bb9272935360d7e5aec34d35f2753f0\`
-- SABR-Media3-Modul: \`sabr-media3/\`
-- Player-Anbindung: \`smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java\`
-- Metadaten-Adapter: \`smarttubetv/src/stmobile/java/com/newtube/mobile/player/SabrFormatAdapter.java\`
-- Dokumentation: \`docs/mobile-port/SABR-MEDIA3-2026-09-08.md\`, \`HANDOFF.md\`
+- Pinned Referenz-Commit: `6f96a1b42bb9272935360d7e5aec34d35f2753f0`
+- SABR-Media3-Modul: `sabr-media3/`
+- Player-Anbindung: `smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java`
+- Metadaten-Adapter: `smarttubetv/src/stmobile/java/com/newtube/mobile/player/SabrFormatAdapter.java`
+- Dokumentation: `docs/mobile-port/SABR-MEDIA3-2026-09-08.md`, `HANDOFF.md`
 - NewTube implementiert SABR mit Media3 **1.10.1**. Diese API-Fassung wird für
   den ersten Machbarkeitsnachweis **nicht** gleichzeitig aktualisiert.
 - AndroidX Media3 **1.11.1** ist die vorgesehene stabile Zielversion.
-  Upgrade / Inkompatibilitäten (insbesondere \`SabrSubtitleSourceFactory\`) erhalten einen
+  Upgrade / Inkompatibilitäten (insbesondere `SabrSubtitleSourceFactory`) erhalten einen
   **separaten** Durchlauf nach dem 1.10.1-Basistest.
 
 ## Der kritische SABR-Haken
 
-SABR ist in Media3 **nicht** eingebaut. Nur \`media3-exoplayer\` zu deklarieren
+SABR ist in Media3 **nicht** eingebaut. Nur `media3-exoplayer` zu deklarieren
 reicht nicht. Für echten YouTube-SABR sind Metadaten, echte Formatidentitäten,
-\`serverAbrStreamingUrl\`, \`videoPlaybackUstreamerConfig\`, Protobuf/UMP, Abrufsteuerung,
-Segment-Demultiplexing und eine \`MediaSource\` erforderlich.
+`serverAbrStreamingUrl`, `videoPlaybackUstreamerConfig`, Protobuf/UMP, Abrufsteuerung,
+Segment-Demultiplexing und eine `MediaSource` erforderlich.
 
 NewTube dokumentiert funktionierende SABR-Wiedergabe mit bestimmten Clients.
 Andererseits fällt der SABR-ONLY-Fallback ohne erforderliche Attestation/PO-Token
@@ -48,7 +48,7 @@ NewTube-Referenzplayer; DASH bleibt Standard, SABR wird nur für den Test gewäh
 Auf einem Windows-PC mit Git, JDK 17, Android SDK (nach NewTube-
 Toolchain gegebenenfalls API 37) und installiertem Android SDK Platform Tools:
 
-\`\`\`powershell
+```powershell
 # Im Experiment-Branch des MarsTube-Repos:
 .\mt2-player-lab\Invoke-Media3SabrLab.ps1 -Mode Build
 
@@ -57,15 +57,15 @@ Toolchain gegebenenfalls API 37) und installiertem Android SDK Platform Tools:
 
 # Nach dem realen Playbacktest:
 .\mt2-player-lab\Invoke-Media3SabrLab.ps1 -Mode Logs -Device 192.168.41.53:5555
-\`\`\`
+```
 
-Das Skript klont NewTube nach \`E:\Mars-TV\Projekte\marstube2\player-lab\newtube-reference\`,
+Das Skript klont NewTube nach `E:\Mars-TV\Projekte\marstube2\player-lab\newtube-reference`,
 prüft den exakt festgehaltenen Git-Commit, initialisiert NewTube-Submodule,
 passt ausschließlich dort die Linux-Protoc-Dependency für Windows an,
-führt \`:sabr-media3:testDebugUnitTest\` und
-\`:smarttubetv:assembleStmobileDebug\` aus. Es installiert ausschließlich die
+führt `:sabr-media3:testDebugUnitTest` und
+`:smarttubetv:assembleStmobileDebug` aus. Es installiert ausschließlich die
 **separate** Referenz-App (erwartete Paketkennung
-\`io.github.aleixrodriala.arc.debug\`). Die NewTube-Oberfläche ist für
+`io.github.aleixrodriala.arc.debug`). Die NewTube-Oberfläche ist für
 Telefone ausgelegt und auf TV-Fernbedienungen möglicherweise eingeschränkt;
 gegebenenfalls per ADB starten oder mit angeschlossener Maus bedienen.
 
@@ -76,14 +76,14 @@ Die rohe Quelle oder Authentifizierungsdaten nicht unbesehen weitergeben.
 
 | Prüfschritt | Nachweis |
 | --- | --- |
-| Quellcode kompiliert | \`sabr-media3\`-Unit-Tests und Debug-APK erfolgreich |
+| Quellcode kompiliert | `sabr-media3`-Unit-Tests und Debug-APK erfolgreich |
 | Echte Quelle | Im Log ist **SABR** statt nur DASH für das Video nachgewiesen |
 | Anfang | Erstes sichtbares Bild, inklusive Bild/Ton-Synchronität |
 | Dauerlauf | Mindestens **120 Sekunden** ohne Stopp um die 60-s-Marke |
 | Spulen | Je drei Sprünge zurück und vor, keine schwarzen Dauerbilder |
 | Wiederholen | 5 direkt aufeinanderfolgende Videostarts |
 | Hardware/Qualität | Tatsächlicher Decoder, 1080p60; höhere Auflösungen nur, wenn Gerät sie unterstützt |
-| Fehler | HTTP 403, \`ATTESTATION_REQUIRED\`, Rebuffer, EOF, \`onPlayerError\` auswerten |
+| Fehler | HTTP 403, `ATTESTATION_REQUIRED`, Rebuffer, EOF, `onPlayerError` auswerten |
 | Geräte | Thomson Android 14; Fire TV Cube separat |
 
 **Erfolgskriterium**: SABR-Nutzung nachweisbar, 120-s-Dauerlauf und alle Seeks
