@@ -37,15 +37,15 @@ switch ($Mode) {
     'Sabr' {
         # Force the same ordinary reference client for controlled DASH/SABR comparison.
         # Never enable the SABR-only fallback that is known to hit attestation limits.
-        Invoke-EmulatorAdb @('shell','setprop','debug.arc.sabr_vod','1')
-        Invoke-EmulatorAdb @('shell','setprop','debug.arc.sabr_fallback','0')
-        Invoke-EmulatorAdb @('shell','setprop','debug.arc.player_client','VISIONOS')
+        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.sabr_vod','1')
+        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.sabr_fallback','0')
+        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.player_client','VISIONOS')
         Write-Host 'SABR-Versuch aktiviert (debug.arc.sabr_vod=1, Testclient=VISIONOS).' -ForegroundColor Cyan
     }
     'Dash' {
-        Invoke-EmulatorAdb @('shell','setprop','debug.arc.sabr_vod','0')
-        Invoke-EmulatorAdb @('shell','setprop','debug.arc.sabr_fallback','0')
-        Invoke-EmulatorAdb @('shell','setprop','debug.arc.player_client','VISIONOS')
+        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.sabr_vod','0')
+        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.sabr_fallback','0')
+        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.player_client','VISIONOS')
         Write-Host 'DASH-Vergleich aktiviert (Testclient=VISIONOS).' -ForegroundColor Cyan
     }
     'Report' {
@@ -91,9 +91,9 @@ if ($Mode -in @('Sabr','Dash')) {
         $client -ne 'VISIONOS') {
         throw "Einstellungen nicht gesetzt: sabr=$pref client=$client"
     }
-    Invoke-EmulatorAdb @('shell','am','force-stop',$Package)
-    Invoke-EmulatorAdb @('logcat','-c')
-    Invoke-EmulatorAdb @('shell','monkey','-p',$Package,'1')
+    Invoke-EmulatorAdb -Arguments @('shell','am','force-stop',$Package)
+    Invoke-EmulatorAdb -Arguments @('logcat','-c')
+    Invoke-EmulatorAdb -Arguments @('shell','monkey','-p',$Package,'1')
     Write-Host 'NewTube neu gestartet. Ein Video mindestens 120 Sekunden abspielen.' -ForegroundColor Green
     Write-Host 'Danach Test-Media3SabrEmulator.ps1 -Mode Report ausfuehren.'
     Write-Host 'Mit -Mode Dash denselben Test als DASH-Vergleich wiederholen.'
