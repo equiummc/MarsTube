@@ -53,6 +53,8 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;21.0.6113669"
           sed -i "s/compileSdkVersion = 37/compileSdkVersion = 36/;s/targetSdkVersion = 37/targetSdkVersion = 36/" newtube-reference/SharedModules/constants.gradle
+          # Avoid choosing the parent repository's unloaded SharedModules gitlink stub.
+          sed -i "s@'../SharedModules'@'./SharedModules'@g;s@'../MediaServiceCore'@'./MediaServiceCore'@g" newtube-reference/settings.gradle
 
       - name: Run SABR module unit tests and build standalone Media3 reference APK
         shell: bash
