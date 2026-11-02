@@ -58,7 +58,7 @@ public class PlayerSettingsPresenter extends BasePresenter<Void> {
 
         appendPlaybackModeCategory(settingsPresenter);
         appendVideoPresetsCategory(settingsPresenter);
-        appendMarsAdaptiveQualityCategory(settingsPresenter);
+        appendMarsSpecialCategory(settingsPresenter);
         appendPlayerButtonsCategory(settingsPresenter);
         appendNetworkEngineCategory(settingsPresenter);
         appendVideoBufferCategory(settingsPresenter);
@@ -490,32 +490,25 @@ public class PlayerSettingsPresenter extends BasePresenter<Void> {
         settingsPresenter.appendCheckedCategory(getContext().getString(R.string.player_other), options);
     }
 
-    private void appendMarsAdaptiveQualityCategory(AppDialogPresenter settingsPresenter) {
+    /**
+     * MT-023: keep Mars-specific controls understandable.
+     * Deprecated adaptive-quality and speculative preload experiments are not
+     * offered here; both play-end options are independent and default OFF.
+     */
+    private void appendMarsSpecialCategory(AppDialogPresenter settingsPresenter) {
         List<OptionItem> options = new ArrayList<>();
         options.add(UiOptionItem.from(
-                getContext().getString(R.string.mars_quality_auto_experimental),
-                getContext().getString(R.string.mars_quality_auto_experimental_desc),
-                option -> {
-                    // A fresh player is needed to clear prior fixed-quality overrides.
-                    mPlayerTweaksData.setMarsAdaptiveQualityEnabled(option.isSelected());
-                    mRestartApp = true;
-                },
-                mPlayerTweaksData.isMarsAdaptiveQualityEnabled()));
+                getContext().getString(R.string.mars_special_shorts_auto_next),
+                getContext().getString(R.string.mars_special_shorts_auto_next_desc),
+                option -> mPlayerTweaksData.setMarsAutoNextShortsEnabled(option.isSelected()),
+                mPlayerTweaksData.isMarsAutoNextShortsEnabled()));
         options.add(UiOptionItem.from(
-                getContext().getString(R.string.mars_short_prefetch_experimental),
-                getContext().getString(R.string.mars_short_prefetch_experimental_desc),
-                option -> mPlayerTweaksData.setMarsShortPrefetchEnabled(option.isSelected()),
-                mPlayerTweaksData.isMarsShortPrefetchEnabled()));
-        options.add(UiOptionItem.from(
-                getContext().getString(R.string.mars_short_media_preload_experimental),
-                getContext().getString(R.string.mars_short_media_preload_experimental_desc),
-                option -> {
-                    mPlayerTweaksData.setMarsShortMediaPreloadEnabled(option.isSelected());
-                    mRestartApp = true;
-                },
-                mPlayerTweaksData.isMarsShortMediaPreloadEnabled()));
+                getContext().getString(R.string.mars_special_videos_auto_next),
+                getContext().getString(R.string.mars_special_videos_auto_next_desc),
+                option -> mPlayerTweaksData.setMarsAutoNextVideosEnabled(option.isSelected()),
+                mPlayerTweaksData.isMarsAutoNextVideosEnabled()));
         settingsPresenter.appendCheckedCategory(
-                getContext().getString(R.string.mars_quality_category), options);
+                getContext().getString(R.string.mars_special_category), options);
     }
 
     private void appendDeveloperCategory(AppDialogPresenter settingsPresenter) {

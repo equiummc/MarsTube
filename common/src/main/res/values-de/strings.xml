@@ -762,6 +762,11 @@
         <item quantity="other">%s Sekunden</item>
     </plurals>
     <string name="color_scheme_mars_safe_glass">Mars Blauglas</string>
+    <string name="mars_special_category">Mars-Spezial</string>
+    <string name="mars_special_shorts_auto_next">Nächstes Short automatisch starten</string>
+    <string name="mars_special_shorts_auto_next_desc">Am Ende eines Shorts automatisch zum nächsten Short derselben Auswahl wechseln. Aus: Das aktuelle Short steht am Anfang bereit und kann erneut abgespielt oder manuell gewechselt werden. Kein zusätzliches Vorladen.</string>
+    <string name="mars_special_videos_auto_next">Nächstes Video automatisch starten</string>
+    <string name="mars_special_videos_auto_next_desc">Nach einem normalen Video das nächste aus der bestehenden Wiedergabeliste oder den Empfehlungen starten. Aus: Das Video steht am Anfang für Wiederholung oder manuellen Wechsel bereit. Wiederholung eines Videos und Livestreams behalten ihr eigenes Verhalten.</string>
     <string name="mars_quality_category">MarsTube Bildqualität (Test)</string>
     <string name="mars_quality_auto_experimental">Automatisch – beste stabile Qualität (experimentell)</string>
     <string name="mars_quality_auto_experimental_desc">Nutzt vom Gerät unterstützte Formate und passt die Bildqualität an die Verbindung an, sofern der Stream das unterstützt. Nach dem Ändern MarsTube neu starten. Experimentell: SABR-Livestreams sind noch nicht vollständig geprüft. Die bisherige manuelle Voreinstellung bleibt erhalten.</string>

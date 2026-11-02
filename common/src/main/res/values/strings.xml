@@ -762,6 +762,11 @@
         <item quantity="other">%s seconds</item>
     </plurals>
     <string name="color_scheme_mars_safe_glass">Mars Blue Glass</string>
+    <string name="mars_special_category">Mars Special</string>
+    <string name="mars_special_shorts_auto_next">Automatically play next Short</string>
+    <string name="mars_special_shorts_auto_next_desc">When a Short ends, play the next Short in the same Shorts feed. Off: pause at the start of this Short, ready to replay or skip manually. Does not enable background prefetch.</string>
+    <string name="mars_special_videos_auto_next">Automatically play next video</string>
+    <string name="mars_special_videos_auto_next_desc">When a normal video ends, play the next video from the existing queue or recommendations. Off: pause at the start to replay or choose the next video manually. Repeat-one and live streams retain their own behavior.</string>
     <string name="mars_quality_category">MarsTube automatic picture quality (test)</string>
     <string name="mars_quality_auto_experimental">Automatic – best stable quality (experimental)</string>
     <string name="mars_quality_auto_experimental_desc">Use hardware-supported formats and adapt video quality to network conditions when the stream supports switching. Restart MarsTube after changing. Experimental: may not work with all SABR live streams. Your previous manual preference is kept.</string>

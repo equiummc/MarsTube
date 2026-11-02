@@ -1,0 +1,225 @@
+name: MT-023 Mars-Spezial Shorts and video auto-next
+on:
+  push:
+    branches:
+      - feature/mt-023-mars-special-autoplay-20261102
+  # MT-024 upstream watcher opens draft PRs against this exact feature base.
+  # Test preview code automatically without installing or publishing an APK.
+  pull_request:
+    branches:
+      - feature/mt-023-mars-special-autoplay-20261102
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify canonical MarsTube identity and submodules
+        run: |
+          python3 scripts/mars/verify_fork.py --require-submodules
+          grep -Fq 'android:icon="@drawable/mars_brand_tile"' smarttubetv/src/main/AndroidManifest.xml
+          grep -Fq 'SHORT_CONTINUATION_TIMEOUT_MS = 6_000L' common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java
+      - name: Validate Fire MT-019 first-frame rescue and Thomson metadata-only rollback
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('common/src/main/java/com/liskovsoft/smartyoutubetv2/common')
+          loader=(root/'app/models/playback/controllers/VideoLoaderController.java').read_text()
+          prefs=(root/'prefs/PlayerTweaksData.java').read_text()
+          policy=(root/'app/models/playback/controllers/ShortsDeviceWarmupPolicy.java').read_text()
+          assert 'return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&' in loader
+          assert 'isShortWindowTarget()' in loader
+          assert 'MT-022 forward_warmup=false previous_cache=preserved' in loader
+          window=(root/'app/models/playback/controllers/ShortsWindowPolicy.java').read_text()
+          assert 'ENABLE_SPECULATIVE_FORWARD_WARMUP = false;' in window
+          assert 'PREVIOUS_COUNT = 3;' in window
+          assert prefs.count('return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&') == 2
+          assert 'getFormatInfoObserve(target.videoId)' in loader
+          assert 'maybePreloadThomsonNextShort(' not in loader
+          assert 'mShortWarmCache.put(target.videoId, info' in loader
+          assert 'return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&' in prefs
+          assert 'ShortsDeviceWarmupPolicy.isThomsonTarget(' in prefs
+          assert 'nagata' in policy
+          assert 'MT-019 black_frame_recovery fresh_retry' in loader
+          assert 'mFirstFrameRecovery.claimFreshRetry(selected.videoId)' in loader
+          assert 'mFreshShortPlaybackId = adjacent.videoId;' in loader
+          print('MT-021 base source rollback / MT-019 rescue PASS')
+          PY
+      - name: Apply B6 compatibility overlays (forward prefetch policy stays disabled)
+        run: |
+          python3 scripts/mars/mt008_probe_media_core.py
+          python3 scripts/mars/mt009_probe_signature_stages.py --check
+          python3 scripts/mars/mt009_probe_signature_stages.py
+          python3 scripts/mars/mt010a_decoder_cache.py --check
+          python3 scripts/mars/mt010a_decoder_cache.py
+          python3 scripts/mars/mt010a2_warm_runtime.py --check
+          python3 scripts/mars/mt010a2_warm_runtime.py
+          node scripts/mars/mt010a2_validate_solver.js
+          python3 scripts/mars/mt011a_tcl_stage_probes.py --check
+          python3 scripts/mars/mt011a_tcl_stage_probes.py
+          python3 scripts/mars/mt011ab_lowcopy_tcl.py --check
+          python3 scripts/mars/mt011ab_lowcopy_tcl.py
+          python3 scripts/mars/mt011ab_memory_source_cache.py --check
+          python3 scripts/mars/mt011ab_memory_source_cache.py
+          node scripts/mars/mt011ab_verify_challenges.js
+          python3 scripts/mars/mt011b3_queue_preloader.py --check
+          python3 scripts/mars/mt011b3_queue_preloader.py
+      - name: Check patched player and both-device recovery
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('common/src/main/java/com/liskovsoft/smartyoutubetv2/common')
+          loader=(root/'app/models/playback/controllers/VideoLoaderController.java').read_text()
+          exo=(root/'exoplayer/controller/ExoPlayerController.java').read_text()
+          prefs=(root/'prefs/PlayerTweaksData.java').read_text()
+          assert 'if (isThomsonShortWindowTarget() ||' in loader
+          assert 'MT-022 forward_warmup=false previous_cache=preserved' in loader
+          assert loader.count('!isThomsonShortWindowTarget()') >= 3
+          assert 'maybePreloadThomsonNextShort(' not in loader
+          assert 'return ShortsWindowPolicy.ENABLE_SPECULATIVE_FORWARD_WARMUP &&' in prefs
+          assert 'if (secondSlot && !ShortsDeviceWarmupPolicy.allowSecondSampleCandidate(' in exo
+          assert 'mEventListener.onFirstFrame(video)' in exo
+          assert 'hasThomsonSampleHeadroom()' in exo
+          print('MT-021 actual patched player PASS')
+          PY
+      - name: Check Fire and Thomson in-place installer safety
+        shell: pwsh
+        run: |
+          foreach($target in @(
+            @{File='scripts/mars/Install-MT022-Fire-NoForwardWarmup.ps1';Expected='192.168.41.24:5555';Other='192.168.41.53:5555'},
+            @{File='scripts/mars/Install-MT022-Thomson-NoForwardWarmup.ps1';Expected='192.168.41.53:5555';Other='192.168.41.24:5555'}
+          )){
+            $tokens=$null; $parseErrors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $target.File).Path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if($parseErrors.Count -gt 0){ throw "Invalid PowerShell syntax: $($target.File)" }
+            $script=Get-Content $target.File -Raw
+            if(-not $script.Contains($target.Expected) -or $script.Contains($target.Other)){
+              throw "Unsafe target in $($target.File)"
+            }
+            if(-not $script.Contains("$"+'codeSha='+[char]39+'96a1e017b782c0a0e36f386ec989325c05532907'+[char]39)){
+              throw "Incorrect code snapshot in $($target.File)"
+            }
+            if($script -match 'pm uninstall|pm clear|cmd package set-home-activity|settings put'){
+              throw "Destructive command in $($target.File)"
+            }
+            if(-not $script.Contains('ENABLE_SPECULATIVE_FORWARD_WARMUP') -or
+               -not $script.Contains('MT-022 source not metadata-only / MT-019 missing')){
+              throw "MT-022 missing current source guard in $($target.File)"
+            }
+            if($script.Contains("MT-022 warmup/MT-019 recovery safety guard failed") -or
+               $script.Contains("return isFireShortWindowTarget\\(\\) \\|\\| isThomsonShortWindowTarget\\(\\)")){
+              throw "MT-021 incompatible assertion still present in $($target.File)"
+            }
+            # Simulate the exact pre-installation gate against the real source
+            # for BOTH device scripts. A text-only presence check missed this bug.
+            $work=(Get-Location).Path
+            $loader=Get-Content 'common/src/main/java/com/liskovsoft/smartyoutubetv2/common/app/models/playback/controllers/VideoLoaderController.java' -Raw
+            $start=$script.IndexOf('        # MT-022 safety gate:')
+            $end=$script.IndexOf('        $sdkCandidates=', $start)
+            if($start -lt 0 -or $end -le $start){
+              throw "MT-022 guard could not be isolated in $($target.File)"
+            }
+            $guard=$script.Substring($start,$end-$start)
+            Invoke-Expression $guard
+            # Negative gate: make the required actual-frame recovery marker
+            # disappear; a valid installer MUST refuse this altered source.
+            $previous=$loader
+            $loader=$loader.Replace('MT-019 black_frame_recovery fresh_retry','MT-019 removed for test')
+            $blocked=$false
+            try { Invoke-Expression $guard } catch { $blocked=$true }
+            $loader=$previous
+            if(-not $blocked) { throw "Missing MT-019 guard was not rejected in $($target.File)" }
+            Write-Host "MT-022 installer gate executes and rejects broken source: $($target.File)"
+
+          }
+      - name: Verify MT-023 independent options, compatibility and old Mars experiments removed
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          base=Path('common/src/main/java/com/liskovsoft/smartyoutubetv2/common')
+          prefs=(base/'prefs/PlayerTweaksData.java').read_text()
+          settings=(base/'app/presenters/settings/PlayerSettingsPresenter.java').read_text()
+          loader=(base/'app/models/playback/controllers/VideoLoaderController.java').read_text()
+          policy=(base/'app/models/playback/controllers/MarsAutoNextPolicy.java').read_text()
+          strings=Path('common/src/main/res/values/strings.xml').read_text()
+          german=Path('common/src/main/res/values-de/strings.xml').read_text()
+          assert 'versionCode 100012' in Path('smarttubetv/build.gradle').read_text()
+          assert 'versionName "Mars-32.68.12"' in Path('smarttubetv/build.gradle').read_text()
+          assert 'Helpers.parseBoolean(split, 65, false)' in prefs
+          assert 'Helpers.parseBoolean(split, 66, false)' in prefs
+          assert 'mIsMarsAutoNextShortsEnabled, mIsMarsAutoNextVideosEnabled' in prefs
+          assert 'public boolean isMarsAutoNextVideosEnabled()' in prefs
+          assert 'public boolean isMarsAutoNextShortsEnabled()' in prefs
+          assert 'appendMarsSpecialCategory(settingsPresenter);' in settings
+          assert 'appendMarsAdaptiveQualityCategory(settingsPresenter);' not in settings
+          assert 'mars_quality_auto_experimental' not in settings
+          assert 'mars_short_prefetch_experimental' not in settings
+          assert 'mars_short_media_preload_experimental' not in settings
+          assert 'setMarsAutoNextShortsEnabled' in settings
+          assert 'setMarsAutoNextVideosEnabled' in settings
+          assert 'MarsAutoNextPolicy.decide(' in loader
+          assert 'marsEndAction || playbackMode' in loader
+          assert 'loadAdjacentShort(true)' in loader
+          assert 'getPlayer().setPositionMs(0);' in loader
+          assert 'getPlayer().setPlayWhenReady(false);' in loader
+          assert 'mMarsEndHandled' in loader
+          assert 'video.isLive, video.finishOnEnded, isEmbedPlayer()' in loader
+          assert 'return false;' in prefs[prefs.index('public boolean isMarsAdaptiveQualityEnabled'):prefs.index('public void setMarsAdaptiveQualityEnabled')]
+          assert 'MT-022 forward_warmup=false previous_cache=preserved' in loader
+          assert 'MT-019 black_frame_recovery fresh_retry' in loader
+          assert 'KEEP_ORIGINAL' in policy and 'PAUSE_FOR_REPLAY' in policy
+          for name in ('mars_special_category','mars_special_shorts_auto_next','mars_special_videos_auto_next'):
+              assert name in strings and name in german
+          print('MT-023 static behavior and MT-022 performance guards PASS')
+          PY
+      - name: Verify SONY MT-023 in-place installer syntax and target isolation
+        shell: pwsh
+        run: |
+          $file='scripts/mars/Install-MT023-Sony-MarsSpecial.ps1'
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path $file).Path,[ref]$tokens,[ref]$errors) | Out-Null
+          if($errors.Count -gt 0){$errors | Format-List | Out-Host; throw 'Sony installer syntax invalid'}
+          $script=Get-Content $file -Raw
+          foreach($marker in @(
+            '192.168.41.48:5555','BRAVIA 4K UR1',
+            'c6b61af0952946add475e5779c179ad27cca93e1',
+            'versionCode 100012','MarsAutoNextPolicy.decide',
+            'MT-022 forward_warmup=false previous_cache=preserved',
+            'Signatur abweichend; keine Installation',
+            'pm path $package'
+          )){
+            if(-not $script.Contains($marker)){throw "Missing Sony installer guard: $marker"}
+          }
+          foreach($bad in @('192.168.41.53:5555','192.168.41.24:5555',
+              'pm uninstall','pm clear','cmd package set-home-activity','settings put')){
+            if($script.Contains($bad)){throw "Unsafe Sony installer content: $bad"}
+          }
+          if(-not $script.Contains('$newVersion -ne 100012')){
+            throw 'Expected installed APK version not pinned'
+          }
+          Write-Host 'MT-023 Sony-only installer parsed, verified model, pinned version and signer safety.'
+      - name: Common unit tests
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace :common:testStstableDebugUnitTest
+      - name: Playback unit tests
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:testStstableDebugUnitTest
+      - name: Build branded universal release APK
+        run: ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStstableRelease
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: MT-023-MarsTube-autonext-CI-not-installed
+          path: smarttubetv/build/outputs/apk/ststable/release/*.apk

@@ -72,6 +72,8 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     private long mLastShortSwipeMs;
+    // MT-023: guard duplicate end events per active video playback cycle.
+    private boolean mMarsEndHandled;
     private boolean mShortContinuationPending;
     private long mShortContinuationGeneration;
     // MT-016: bounded rescue for Fire TV (and Android TV) Shorts pagination.
@@ -182,6 +184,7 @@ public class VideoLoaderController extends BasePlayerController {
         if (item == null) {
             return;
         }
+        mMarsEndHandled = false;
         // A new selection invalidates any old frame timeout and source recovery.
         Utils.removeCallbacks(mFirstFrameWatchdog);
         mFirstFrameRecovery.selected(item.isShorts ? item.videoId : null);
@@ -398,14 +401,27 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     @Override
+    public void onPlay() {
+        // A manual replay of the same item starts a fresh playback cycle.
+        mMarsEndHandled = false;
+    }
+
+    @Override
     public void onPlayEnd() {
         if (getPlayer() == null) {
             return;
         }
 
-        // Stop the playback if the user is browsing options or reading comments
+        // Do not unexpectedly auto-advance while the user is reading a modal
+        // dialog/comments. The legacy Loop Shorts flag defaults to repeat-one,
+        // but Mars-Spezial must still defer until that dialog is dismissed.
         int playbackMode = getPlaybackMode();
-        if (getAppDialogPresenter().isDialogShown() && !getAppDialogPresenter().isOverlay() && playbackMode != PlayerConstants.PLAYBACK_MODE_ONE) {
+        Video ended = getVideo();
+        boolean marsEndAction = ended != null && !ended.isLive &&
+                !ended.finishOnEnded && !isEmbedPlayer() &&
+                (ended.isShorts || playbackMode != PlayerConstants.PLAYBACK_MODE_ONE);
+        if (getAppDialogPresenter().isDialogShown() && !getAppDialogPresenter().isOverlay() &&
+                (marsEndAction || playbackMode != PlayerConstants.PLAYBACK_MODE_ONE)) {
             getAppDialogPresenter().setOnFinish(mOnApplyPlaybackMode);
         } else {
             applyPlaybackMode(playbackMode);
@@ -704,6 +720,38 @@ public class VideoLoaderController extends BasePlayerController {
 
         if (isEmbedPlayer()) {
             playbackMode = PlayerConstants.PLAYBACK_MODE_CLOSE;
+        }
+
+        // MT-023: act only on the real ended event (or deferred end-dialog
+        // callback). Never change foreground navigation or speculative caching.
+        int marsAction = MarsAutoNextPolicy.decide(
+                video.isShorts,
+                getPlayerTweaksData().isMarsAutoNextShortsEnabled(),
+                getPlayerTweaksData().isMarsAutoNextVideosEnabled(),
+                playbackMode == PlayerConstants.PLAYBACK_MODE_ONE,
+                video.isLive, video.finishOnEnded, isEmbedPlayer());
+        if (marsAction != MarsAutoNextPolicy.KEEP_ORIGINAL) {
+            if (mMarsEndHandled) return;
+            mMarsEndHandled = true;
+            if (marsAction == MarsAutoNextPolicy.NEXT) {
+                Log.i("MarsTubePerf", "MT-023 auto_next kind=" +
+                        (video.isShorts ? "shorts" : "video"));
+                if (video.isShorts) {
+                    // Use existing MT-019/022 guarded Shorts navigation, no
+                    // speculative media preloading and no mixed video queue.
+                    loadAdjacentShort(true);
+                } else {
+                    loadNext();
+                }
+            } else {
+                // Leave selected media ready to replay or skip deliberately.
+                Log.i("MarsTubePerf", "MT-023 manual_next kind=" +
+                        (video.isShorts ? "shorts" : "video"));
+                getPlayer().setPlayWhenReady(false);
+                getPlayer().setPositionMs(0);
+                getPlayer().showControls(true);
+            }
+            return;
         }
 
         switch (playbackMode) {
