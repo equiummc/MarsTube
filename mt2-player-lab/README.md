@@ -136,6 +136,19 @@ Test-Activity-Wrapper oder einen instrumentierten Geräte-Test.
 - Reproduzierbares Windows-Skript hinterlegt.
 - GitHub-Actions-Build/Unit-Test als zusätzlicher, geräteunabhängiger Check.
 - **Nachgewiesen:** Referenz-APK-Build erfolgreich, ARM64-App im Windows-Emulator,
-  Videowiedergabe mit Default-Streamingpfad.
-- **Nicht nachgewiesen:** SABR-Stream >120 s, reale TV-Installation oder
-  Übernahme in eigene MarsTube-Videostruktur.
+  Media3-DASH-Wiedergabe und **echte SABR-Quellenauswahl** (`prepare type=sabr-vod`).
+- SABR-1 (`fBVriTLty5M`): erstes Bild +1214 ms, nach +143529 ms terminaler
+  `SabrException(io_or_container_HttpDataSourceException)`; Ursache (Netzwerk,
+  Emulatorlast oder SABR-Implementierung) noch offen.
+- DASH-Vergleich (dieselbe ID): erstes Bild +2412 ms, knapp 4 Minuten
+  beobachteter Protokollzeitraum ohne Playerfehler.
+- SABR-Wiederholung: erstes Bild +2092 ms um 23:22:23, zweites Video
+  `EnTBM2xk9yA` mit neuer `type=sabr-vod`-Quelle um 23:28:30 und erstem Bild
+  +730 ms. **Keine `load[E]`- oder `error +`-Zeilen im gefilterten Testlog.**
+  Die 6:08 Minuten zwischen den Videostarts sind keine lückenlose
+  Playhead-/Buffer-Telemetrie und beweisen nicht allein eine ununterbrochene
+  6-Minuten-Wiedergabe. Eine momentane PC-Lastspitze beim ersten Fehler ist
+  möglich, aber nicht belegt.
+- **Noch ausstehend:** kontrollierter Seek-Test mit SABR, vollständiger
+  Dauerlauf/Qualitäts- und Decoder-Nachweis, reale Thomson-/Fire-TV-Tests,
+  Übernahme in eine eigene MarsTube-2.0-Videostruktur.
