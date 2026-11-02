@@ -106,6 +106,44 @@ Nur `NetPath prepare type=sabr-vod` beweist die SABR-Quelle; ein Bild oder
 eine aktivierte Option allein **nicht**. Der Report speichert eine gefilterte
 Ausgabe unter `Dokumente\MarsTube2\Logs` und laedt nichts hoch.
 
+## MT2-002: Isolierte TV-Eingabesteuerung (Quellpatch, nicht MarsTube 2.0 selbst)
+
+Der NewTube-Referenzcode ist **Phone-only**. MT2-002 ergänzt für die Test-APK
+mit `mt2-player-lab/patch_tv_input.py` zwei Aktivitäten im **temporären
+GitHub-Actions-NewTube-Klon** und kennzeichnet die APK als
+`MarsTube 2.0 Input Lab`. Die existierende MarsTube 1.x, ihre Paketkennung und
+der originale NewTube-Commit bleiben unangetastet. Die Referenz-App nutzt
+weiterhin `io.github.aleixrodriala.arc.debug` und Media3 1.10.1;
+die TV-Eingabesteuerung ist ein **Prototyp**, noch keine MarsTube-2.0-Architektur.
+
+| Seite | Eingabe | MT2-002-Funktion |
+| --- | --- | --- |
+| Startseite | D-pad | Mit sichtbarem blauem Rahmen zwischen Karten navigieren |
+| Startseite | OK / Enter | Markierte Karte auswaehlen |
+| Player | OK / Enter / Leertaste | Pause / Weiter |
+| Player | D-pad links/rechts | -10/+10 Sekunden (nur seekbare Quelle) |
+| Player | D-pad hoch/runter | App-interne Lautstaerke +/-10 Prozentpunkte |
+| Player | Ziffer 0 | Wieder 1.00x Wiedergabegeschwindigkeit |
+| Player | Taste S | 1.00x, 1.25x, 1.50x, 2.00x, 0.75x durchschalten |
+| Player | Taste I | Gewaehlte / effektive Geschwindigkeit, App-Lautstaerke anzeigen |
+| Player | Menue | Vorhandenes Player-Menue oeffnen |
+| Player | Zurueck / Escape | Bestehende NewTube-Backnavigation (unveraendert) |
+| Windows | `Save-MarsTubeEmulatorScreenshot.ps1` | PNG in `Bilder\MarsTube2` ablegen |
+
+Bei unbekannter Android-Emulator-Hardware-Tastenzuordnung koennen dieselben
+D-pad-Tasten ueber ADB `adb -s emulator-5554 shell input keyevent DPAD_RIGHT`
+getestet werden. Der Screenshot wird **vom Emulator** aufgenommen, nicht aus
+dem Media3-Decoder extrahiert. DRM-geschuetzte Videoinhalte koennen schwarz
+erscheinen. Externes `scrcpy` ist fuer echte Touch-Mauseingaben moeglich;
+diese Version enthaelt **noch keine native Maus->Touch-Abbildung**.
+
+Abnahme vor einer freigegebenen APK:
+- GitHub-Actions-Compile und SABR-Unit-Tests
+- Install in `emulator-5554` parallel zur alten MarsTube 1.x
+- Tasten und Fokus an mindestens 5 Karten; Pause/Seek/Lautstaerke/Speed
+- Test mit normalem DASH und SABR, je >120s, Fehlerprotokoll
+- Keine 1.x-App-IDs, Updater, Tokens oder Daten veraendern
+
 ## Testmatrix auf Thomson und Fire TV
 
 | Prüfschritt | Nachweis |
