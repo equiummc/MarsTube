@@ -94,7 +94,23 @@ if ($Mode -in @('Sabr','Dash')) {
     Invoke-EmulatorAdb -Arguments @('shell','am','force-stop',$Package)
     Invoke-EmulatorAdb -Arguments @('logcat','-c')
     Invoke-EmulatorAdb -Arguments @('shell','monkey','-p',$Package,'1')
-    Write-Host 'NewTube neu gestartet. Ein Video mindestens 120 Sekunden abspielen.' -ForegroundColor Green
+    Start-Sleep -Seconds 6
+    # Existing NewTube phone layout: select first thumbnail with a real touch event.
+    $size = (& $adb -s $Device shell wm size | Out-String).Trim()
+    $matchSize = [regex]::Match($size, '(\d+)x(\d+)\s*
+    Write-Host 'Danach Test-Media3SabrEmulator.ps1 -Mode Report ausfuehren.'
+    Write-Host 'Mit -Mode Dash denselben Test als DASH-Vergleich wiederholen.'
+}
+)
+    if ($matchSize.Success) {
+        $x = [int]([int]$matchSize.Groups[1].Value * 0.25)
+        $y = [int]([int]$matchSize.Groups[2].Value * 0.35)
+        Invoke-EmulatorAdb -Arguments @('shell','input','touchscreen','tap',"$x","$y")
+        Write-Host "Touch-Eingabe auf erstes Video bei x=$x y=$y gesendet."
+    } else {
+        Write-Warning 'Bildschirmgroesse nicht erkannt; Video bitte manuell starten.'
+    }
+    Write-Host 'NewTube gestartet. Pruefen, ob das Video spielt; mindestens 120 Sekunden abspielen.' -ForegroundColor Green
     Write-Host 'Danach Test-Media3SabrEmulator.ps1 -Mode Report ausfuehren.'
     Write-Host 'Mit -Mode Dash denselben Test als DASH-Vergleich wiederholen.'
 }
