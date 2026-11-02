@@ -87,11 +87,12 @@ Die rohe Quelle oder Authentifizierungsdaten nicht unbesehen weitergeben.
 
 Das Skript `Test-Media3SabrEmulator.ps1` schreibt nur Einstellungen auf
 **emulator-Serials**, stoppt nur die separate Debug-App und filtert Wiedergabe-Logs.
-Die experimentelle SABR-Option ist im Original ausgeschaltet. Für den
-reproduzierbaren A/B-Test nutzt das Skript denselben regulären Quellclient
-`VISIONOS` mit `debug.arc.sabr_vod=1` (SABR) bzw. `=0` (DASH); der
-problematische SABR-only-Fallback bleibt deaktiviert. Keine Kontotoken,
-PO-Token oder Schutzmechanismen umgehen.
+Die experimentelle SABR-Option ist im Original ausgeschaltet. Der Test
+setzt nur `debug.arc.sabr_vod=1` (SABR-Versuch) oder `=0` (DASH-Vergleich).
+Die Clientwahl bleibt bei NewTubes normaler Logik; der problematische
+SABR-only-Fallback ist deaktiviert. Keine Kontotoken, PO-Token oder
+Schutzmechanismen umgehen. Falls normale Metadaten keinen SABR-Pfad anbieten,
+ist das Ergebnis korrekt *DASH* und noch kein SABR-Nachweis.
 
 ```powershell
 .\mt2-player-lab\Test-Media3SabrEmulator.ps1 -Mode Sabr
