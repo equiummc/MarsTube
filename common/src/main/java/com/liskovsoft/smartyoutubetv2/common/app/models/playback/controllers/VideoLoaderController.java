@@ -72,6 +72,8 @@ public class VideoLoaderController extends BasePlayerController {
     }
 
     private long mLastShortSwipeMs;
+    // MT-023: guard duplicate end events per active video playback cycle.
+    private boolean mMarsEndHandled;
     private boolean mShortContinuationPending;
     private long mShortContinuationGeneration;
     // MT-016: bounded rescue for Fire TV (and Android TV) Shorts pagination.
@@ -182,6 +184,7 @@ public class VideoLoaderController extends BasePlayerController {
         if (item == null) {
             return;
         }
+        mMarsEndHandled = false;
         // A new selection invalidates any old frame timeout and source recovery.
         Utils.removeCallbacks(mFirstFrameWatchdog);
         mFirstFrameRecovery.selected(item.isShorts ? item.videoId : null);
@@ -395,6 +398,12 @@ public class VideoLoaderController extends BasePlayerController {
         Utils.removeCallbacks(mShortContinuationTimeout);
         if (mSuggestionsController != null) mSuggestionsController.cancelShortContinuation();
         mShortContinuationPending = false;
+    }
+
+    @Override
+    public void onPlay() {
+        // A manual replay of the same item starts a fresh playback cycle.
+        mMarsEndHandled = false;
     }
 
     @Override
@@ -704,6 +713,38 @@ public class VideoLoaderController extends BasePlayerController {
 
         if (isEmbedPlayer()) {
             playbackMode = PlayerConstants.PLAYBACK_MODE_CLOSE;
+        }
+
+        // MT-023: act only on the real ended event (or deferred end-dialog
+        // callback). Never change foreground navigation or speculative caching.
+        int marsAction = MarsAutoNextPolicy.decide(
+                video.isShorts,
+                getPlayerTweaksData().isMarsAutoNextShortsEnabled(),
+                getPlayerTweaksData().isMarsAutoNextVideosEnabled(),
+                playbackMode == PlayerConstants.PLAYBACK_MODE_ONE,
+                video.isLive, video.finishOnEnded, isEmbedPlayer());
+        if (marsAction != MarsAutoNextPolicy.KEEP_ORIGINAL) {
+            if (mMarsEndHandled) return;
+            mMarsEndHandled = true;
+            if (marsAction == MarsAutoNextPolicy.NEXT) {
+                Log.i("MarsTubePerf", "MT-023 auto_next kind=" +
+                        (video.isShorts ? "shorts" : "video"));
+                if (video.isShorts) {
+                    // Use existing MT-019/022 guarded Shorts navigation, no
+                    // speculative media preloading and no mixed video queue.
+                    loadAdjacentShort(true);
+                } else {
+                    loadNext();
+                }
+            } else {
+                // Leave selected media ready to replay or skip deliberately.
+                Log.i("MarsTubePerf", "MT-023 manual_next kind=" +
+                        (video.isShorts ? "shorts" : "video"));
+                getPlayer().setPlayWhenReady(false);
+                getPlayer().setPositionMs(0);
+                getPlayer().showControls(true);
+            }
+            return;
         }
 
         switch (playbackMode) {
