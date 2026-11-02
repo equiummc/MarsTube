@@ -35,18 +35,18 @@ if ($LASTEXITCODE -ne 0 -or $state -ne 'device') {
 
 switch ($Mode) {
     'Sabr' {
-        # Force the same ordinary reference client for controlled DASH/SABR comparison.
+        # Keep the app's native client selection. Do not override identities or tokens.
         # Never enable the SABR-only fallback that is known to hit attestation limits.
         Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.sabr_vod','1')
         Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.sabr_fallback','0')
-        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.player_client','VISIONOS')
-        Write-Host 'SABR-Versuch aktiviert (debug.arc.sabr_vod=1, Testclient=VISIONOS).' -ForegroundColor Cyan
+        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.player_client','none')
+        Write-Host 'SABR-Versuch aktiviert (debug.arc.sabr_vod=1, normale Clientwahl).' -ForegroundColor Cyan
     }
     'Dash' {
         Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.sabr_vod','0')
         Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.sabr_fallback','0')
-        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.player_client','VISIONOS')
-        Write-Host 'DASH-Vergleich aktiviert (Testclient=VISIONOS).' -ForegroundColor Cyan
+        Invoke-EmulatorAdb -Arguments @('shell','setprop','debug.arc.player_client','none')
+        Write-Host 'DASH-Vergleich aktiviert (normale Clientwahl).' -ForegroundColor Cyan
     }
     'Report' {
         $raw = @(& $adb -s $Device logcat -d -v time -s 'NetPath:D' 'AndroidRuntime:E' '*:S')
@@ -88,7 +88,7 @@ if ($Mode -in @('Sabr','Dash')) {
     $client = (& $adb -s $Device shell getprop debug.arc.player_client | Out-String).Trim()
     if (($Mode -eq 'Sabr' -and $pref -ne '1') -or
         ($Mode -eq 'Dash' -and $pref -ne '0') -or
-        $client -ne 'VISIONOS') {
+        $client -ne 'none') {
         throw "Einstellungen nicht gesetzt: sabr=$pref client=$client"
     }
     Invoke-EmulatorAdb -Arguments @('shell','am','force-stop',$Package)
