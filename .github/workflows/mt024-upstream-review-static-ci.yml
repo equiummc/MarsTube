@@ -1,0 +1,38 @@
+name: MT-024 validate safe upstream watcher
+on:
+  push:
+    branches:
+      - ops/mt-024-upstream-safe-review-20261102
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check scheduled watcher shell syntax and guarded review contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import textwrap
+          content = Path('.github/workflows/upstream-watch.yml').read_text()
+          assert "cron: '17 */6 * * *'" in content
+          assert 'feature/mt-023-mars-special-autoplay-20261102' in content
+          assert 'git merge --no-ff --no-commit' in content
+          assert 'git merge --abort' in content
+          assert 'gh pr create' in content and '--draft' in content
+          assert '--base "$MARS_BASE"' in content
+          assert 'repos/yuliskov/SmartTube/releases/latest' in content
+          assert 'git fetch --no-tags upstream' in content
+          assert 'No MarsTube main branch, release or installed app was changed.' in content
+          assert all(x not in content for x in (
+              'gh release create', 'adb install', 'pm install', 'git push origin master',
+              'git push origin main', 'git merge --ff-only origin/master'))
+          script = content.split('        run: |\n', 1)[1]
+          Path('/tmp/mt024-watcher.sh').write_text(textwrap.dedent(script))
+          PY
+          bash -n /tmp/mt024-watcher.sh
+          echo 'MT-024 watcher syntax and no-auto-deploy safety contract PASS'
