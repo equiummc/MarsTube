@@ -99,6 +99,10 @@ jobs:
 
           # Classify all touched files. Even a conflict-free Git merge is NOT
           # proof that video decoding, Shorts and startup remain functional.
+          if git diff --cached --quiet; then
+            echo 'Merge has no file changes; no review PR needed.'
+            exit 0
+          fi
           files="$(git diff --cached --name-only)"
           critical="$(printf '%s\n' "$files" | grep -E \
             '(MediaServiceCore|exoplayer|playback|player|VideoLoaderController|Shorts|build.gradle|gradle.properties|AndroidManifest.xml|scripts/mars)' || true)"
