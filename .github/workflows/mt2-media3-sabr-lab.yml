@@ -27,8 +27,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Android SDK
+      - name: Android SDK (no obsolete 'tools' package)
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: Pin independent NewTube reference (includes submodules)
         shell: bash
