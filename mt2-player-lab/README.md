@@ -72,6 +72,39 @@ gegebenenfalls per ADB starten oder mit angeschlossener Maus bedienen.
 Die Logfunktion speichert ausgewählte Wiedergabe-Fehler lokal; kein Upload.
 Die rohe Quelle oder Authentifizierungsdaten nicht unbesehen weitergeben.
 
+## Emulator-Versuch auf Windows (02.11.2026)
+
+- GitHub Actions Build der gepinnten NewTube-Referenz erfolgreich:
+  https://github.com/equiummc/mars-smarttube/actions/runs/41529437077
+- Windows-Android-TV-Emulator `MarsTube2_TV` / `emulator-5554` eingerichtet.
+- ARM64-Debug-App `io.github.aleixrodriala.arc.debug` erfolgreich installiert.
+- Startseite und normale YouTube-Wiedergabe im Emulator durch Nutzertest bestätigt.
+- **Noch kein SABR-Nachweis**: Ein funktionierendes Video kann DASH gewesen sein.
+- Native Emulator-Maus verarbeitet die Touch-UI nicht, ADB-**touchscreen tap** dagegen schon.
+  Für die PC-Tests `scrcpy --serial emulator-5554 --mouse=sdk --no-audio` verwenden.
+
+### SABR-Diagnose und kontrollierter DASH-Gegenversuch
+
+Das Skript `Test-Media3SabrEmulator.ps1` schreibt nur Einstellungen auf
+**emulator-Serials**, stoppt nur die separate Debug-App und filtert Wiedergabe-Logs.
+Die experimentelle SABR-Option ist im Original ausgeschaltet. Für den
+reproduzierbaren A/B-Test nutzt das Skript denselben regulären Quellclient
+`VISIONOS` mit `debug.arc.sabr_vod=1` (SABR) bzw. `=0` (DASH); der
+problematische SABR-only-Fallback bleibt deaktiviert. Keine Kontotoken,
+PO-Token oder Schutzmechanismen umgehen.
+
+```powershell
+.\mt2-player-lab\Test-Media3SabrEmulator.ps1 -Mode Sabr
+# Ein normales Video mindestens 120 s ansehen, vor/zurueck spulen
+.\mt2-player-lab\Test-Media3SabrEmulator.ps1 -Mode Report
+# Fuer Vergleich: -Mode Dash; nach neuem Video -Mode Report
+# Maus via scrcpy, sofern installiert: -Mode Mouse
+```
+
+Nur `NetPath prepare type=sabr-vod` beweist die SABR-Quelle; ein Bild oder
+eine aktivierte Option allein **nicht**. Der Report speichert eine gefilterte
+Ausgabe unter `Dokumente\MarsTube2\Logs` und laedt nichts hoch.
+
 ## Testmatrix auf Thomson und Fire TV
 
 | Prüfschritt | Nachweis |
@@ -101,5 +134,7 @@ Test-Activity-Wrapper oder einen instrumentierten Geräte-Test.
 - Isolierter Git-Branch angelegt.
 - Reproduzierbares Windows-Skript hinterlegt.
 - GitHub-Actions-Build/Unit-Test als zusätzlicher, geräteunabhängiger Check.
-- **Nicht nachgewiesen:** APK-Build erfolgreich, Installation auf TV, realer
-  SABR-Stream >120 s oder Übernahme in eigene MarsTube-Videostruktur.
+- **Nachgewiesen:** Referenz-APK-Build erfolgreich, ARM64-App im Windows-Emulator,
+  Videowiedergabe mit Default-Streamingpfad.
+- **Nicht nachgewiesen:** SABR-Stream >120 s, reale TV-Installation oder
+  Übernahme in eigene MarsTube-Videostruktur.
