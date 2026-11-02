@@ -88,14 +88,24 @@ switch ($Mode) {
                 $patched++
             }
         }
-        # Reference is pinned to API 37; use available API 36 only in the isolated lab copy.
-        $constants = Join-Path $Checkout 'SharedModules\constants.gradle'
-        if (-not (Test-Path $constants)) { throw "SharedModules constants fehlen: $constants" }
-        $source = [System.IO.File]::ReadAllText($constants)
-        $compat = $source.Replace('compileSdkVersion = 37','compileSdkVersion = 36').Replace('targetSdkVersion = 37','targetSdkVersion = 36')
-        if ($compat -ne $source) {
-            [System.IO.File]::WriteAllText($constants,$compat,[System.Text.UTF8Encoding]::new($false))
-            Write-Host 'API 36 compatibility patch: nur NewTube-Testkopie.' -ForegroundColor Yellow
+        # NewTube pinned dependencies need API 37; the SDK package is android-37.0.
+        $platform37 = Join-Path $sdk 'platforms\android-37.0'
+        if (-not (Test-Path (Join-Path $platform37 'android.jar'))) {
+            $managerCandidates = @(
+                (Join-Path $sdk 'cmdline-tools\latest\bin\sdkmanager.bat'),
+                (Join-Path $sdk 'cmdline-tools\16.0\bin\sdkmanager.bat')
+            )
+            $manager = @($managerCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1)
+            if ($manager.Count -eq 0) { throw 'sdkmanager.bat fehlt: Android SDK Command-Line Tools installieren.' }
+            & $manager[0] '--channel=3' 'platforms;android-37.0' 'build-tools;37.0.0' | Out-Host
+            Assert-Ok 'SDK Android 37.0'
+        }
+        if (-not (Test-Path (Join-Path $platform37 'android.jar'))) {
+            throw 'Android SDK Plattform 37.0 nicht vorhanden (sdkmanager-Paket: platforms;android-37.0).'
+        }
+        $platform37Alias = Join-Path $sdk 'platforms\android-37'
+        if (-not (Test-Path $platform37Alias)) {
+            New-Item -ItemType Junction -Path $platform37Alias -Target $platform37 | Out-Null
         }
         $moduleSource = Join-Path $Checkout 'sabr-media3\src\main\java\com\newtube\sabr\SabrMediaSource.java'
         $appBridge = Join-Path $Checkout 'smarttubetv\src\stmobile\java\com\newtube\mobile\player\Media3PlayerController.java'
