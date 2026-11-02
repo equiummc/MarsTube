@@ -97,11 +97,7 @@ if ($Mode -in @('Sabr','Dash')) {
     Start-Sleep -Seconds 6
     # Existing NewTube phone layout: select first thumbnail with a real touch event.
     $size = (& $adb -s $Device shell wm size | Out-String).Trim()
-    $matchSize = [regex]::Match($size, '(\d+)x(\d+)\s*
-    Write-Host 'Danach Test-Media3SabrEmulator.ps1 -Mode Report ausfuehren.'
-    Write-Host 'Mit -Mode Dash denselben Test als DASH-Vergleich wiederholen.'
-}
-)
+    $matchSize = [regex]::Match($size, '(\d+)x(\d+)')
     if ($matchSize.Success) {
         $x = [int]([int]$matchSize.Groups[1].Value * 0.25)
         $y = [int]([int]$matchSize.Groups[2].Value * 0.35)
