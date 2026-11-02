@@ -81,6 +81,15 @@ switch ($Mode) {
                 $patched++
             }
         }
+        # Reference is pinned to API 37; use available API 36 only in the isolated lab copy.
+        $constants = Join-Path $Checkout 'SharedModules\constants.gradle'
+        if (-not (Test-Path $constants)) { throw "SharedModules constants fehlen: $constants" }
+        $source = [System.IO.File]::ReadAllText($constants)
+        $compat = $source.Replace('compileSdkVersion = 37','compileSdkVersion = 36').Replace('targetSdkVersion = 37','targetSdkVersion = 36')
+        if ($compat -ne $source) {
+            [System.IO.File]::WriteAllText($constants,$compat,[System.Text.UTF8Encoding]::new($false))
+            Write-Host 'API 36 compatibility patch: nur NewTube-Testkopie.' -ForegroundColor Yellow
+        }
         $moduleSource = Join-Path $Checkout 'sabr-media3\src\main\java\com\newtube\sabr\SabrMediaSource.java'
         $appBridge = Join-Path $Checkout 'smarttubetv\src\stmobile\java\com\newtube\mobile\player\Media3PlayerController.java'
         if (-not (Test-Path $moduleSource) -or -not (Test-Path $appBridge)) {
