@@ -80,7 +80,6 @@ public final class MarsTvShell {
     private final TextView elapsed;
     private final TextView remaining;
     private final TextView clock;
-    private final ImageView cornerLogo;
     private int lastHighlightedCard = -1;
     private final TextView railHint;
     private final List<View> railButtons = new ArrayList<>();
@@ -128,16 +127,6 @@ public final class MarsTvShell {
         clockLp.rightMargin = dp(22);
         root.addView(clock, clockLp);
 
-        // Small standalone brand mark remains visible when the rail is collapsed.
-        cornerLogo = new ImageView(a);
-        cornerLogo.setImageResource(R.drawable.mars_m_logo);
-        cornerLogo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        FrameLayout.LayoutParams cornerLp = new FrameLayout.LayoutParams(dp(43), dp(43),
-                Gravity.TOP | Gravity.LEFT);
-        cornerLp.topMargin = dp(11);
-        cornerLp.leftMargin = dp(15);
-        root.addView(cornerLogo, cornerLp);
-
         // 66 dp rail, NOT the large left panel used by phone/navigation shells.
         rail = new LinearLayout(a);
         rail.setOrientation(LinearLayout.VERTICAL);
@@ -182,14 +171,15 @@ public final class MarsTvShell {
         panel.setBackground(new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[]{0x96051322, 0xF207121E}));
+        // 0.0.5: strip stays close to the lower image edge, not halfway up the video.
         FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(242) + thumbnailHeightPx,
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(151) + thumbnailHeightPx,
                 Gravity.BOTTOM);
         root.addView(panel, panelLp);
 
         LinearLayout panelContent = new LinearLayout(a);
         panelContent.setOrientation(LinearLayout.VERTICAL);
-        panelContent.setPadding(dp(30), dp(10), dp(30), dp(17));
+        panelContent.setPadding(dp(30), dp(7), dp(30), dp(9));
         panel.addView(panelContent, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -197,7 +187,7 @@ public final class MarsTvShell {
         LinearLayout progressRow = new LinearLayout(a);
         progressRow.setGravity(Gravity.CENTER_VERTICAL);
         panelContent.addView(progressRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(28)));
         elapsed = text(13, WHITE);
         progressRow.addView(elapsed, new LinearLayout.LayoutParams(dp(65), dp(29)));
         progress = new View(a) {
@@ -230,19 +220,19 @@ public final class MarsTvShell {
         controls.setGravity(Gravity.CENTER);
         controls.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams controlsLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(52));
-        controlsLp.bottomMargin = dp(9);
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(40));
+        controlsLp.bottomMargin = dp(7);
         panelContent.addView(controls, controlsLp);
 
         for (int i = 0; i < CONTROL_GLYPHS.length; i++) {
             final int index = i;
-            Glyph button = new Glyph(a, CONTROL_GLYPHS[i], dp(20));
+            Glyph button = new Glyph(a, CONTROL_GLYPHS[i], dp(17));
             button.setFocusable(false);
             button.setContentDescription(new String[]{
                     "Vorheriges", "10 Sekunden zurück", "Pause oder Wiedergabe",
                     "10 Sekunden vor", "Nächstes", "Untertitel", "Vollbild"
             }[i]);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(48), dp(42));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(44), dp(36));
             lp.leftMargin = dp(8);
             lp.rightMargin = dp(8);
             controls.addView(button, lp);
@@ -260,11 +250,10 @@ public final class MarsTvShell {
         adapter = new Carousel();
         cards.setAdapter(adapter);
         panelContent.addView(cards, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(69)));
+                ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(63)));
 
         root.bringChildToFront(rail);
         root.bringChildToFront(railHint);
-        root.bringChildToFront(cornerLogo);
         root.bringChildToFront(clock);
         render();
         tick();
@@ -386,7 +375,8 @@ public final class MarsTvShell {
                 break;
             case KeyEvent.KEYCODE_BACK:
                 if (focus == Focus.VIDEO) return false; // preserve app's video -> mini-player Back
-                if (focus == Focus.RAIL) focus = Focus.CARDS;
+                if (focus == Focus.RAIL) focus = adapter.getItemCount() > 0
+                        ? Focus.CARDS : Focus.CONTROLS;
                 else focus = Focus.VIDEO;
                 break;
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
@@ -432,7 +422,8 @@ public final class MarsTvShell {
         if (released) return;
         root.setVisibility(pip ? View.GONE : View.VISIBLE);
         panel.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
-        cornerLogo.setVisibility(pip || focus == Focus.RAIL ? View.GONE : View.VISIBLE);
+        // No station watermark in video-only mode. Clock appears only with menu.
+        clock.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
         rail.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
         railHint.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
         if (focus == Focus.RAIL) {
@@ -501,11 +492,14 @@ public final class MarsTvShell {
             lp.rightMargin = gapPx;
             card.setLayoutParams(lp);
 
+            // Real rounded corners, not a square preview under a floating selection border.
             FrameLayout imageFrame = new FrameLayout(activity);
-            imageFrame.setClipChildren(false);
+            imageFrame.setBackground(shape(0xFF0A1B2B, 0, 0));
+            imageFrame.setClipToOutline(true);
             ImageView image = new ImageView(activity);
             image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            image.setBackgroundColor(0xFF1C3447);
+            image.setBackground(shape(0xFF1C3447, 0, 0));
+            image.setClipToOutline(true);
             imageFrame.addView(image, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             TextView badge = text(11, WHITE);
@@ -547,9 +541,11 @@ public final class MarsTvShell {
             h.badge.setText(badgeText);
             h.badge.setVisibility(badgeText == null || badgeText.isEmpty()
                     ? View.GONE : View.VISIBLE);
-            h.imageFrame.setBackground(focus == Focus.CARDS && position == cardPosition
-                    ? shape(0xFF153653, BLUE, 3) : shape(0xFF0A1B2B, 0, 0));
+            boolean selected = focus == Focus.CARDS && position == cardPosition;
+            h.imageFrame.setBackground(selected
+                    ? shape(0xFF153653, BLUE, 2) : shape(0xFF0A1B2B, 0, 0));
             h.imageFrame.setPadding(dp(3), dp(3), dp(3), dp(3));
+            h.image.setClipToOutline(true);
             Glide.with(activity).load(v.getCardImageUrl())
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .format(DecodeFormat.PREFER_RGB_565)
