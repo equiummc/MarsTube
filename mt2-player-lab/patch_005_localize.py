@@ -376,6 +376,33 @@ for old, new in [
     if text.count(old) != 1:
         raise SystemExit(f"Unsafe version identity anchor: {old} [{text.count(old)}]")
     text = text.replace(old, new, 1)
+# The pinned reference updater points at upstream NewTube releases. A branded lab
+# MUST NOT offer to install APKs from that different package/signature.
+old_updater = 'buildConfigField "boolean", "IN_APP_UPDATES", project.hasProperty(\x27fdroid\x27) ? "false" : "true"'
+old_updater = old_updater.replace("\\x27", "'")
+if text.count(old_updater) != 1:
+    raise SystemExit("Unable to disable upstream updater safely")
+text = text.replace(old_updater, 'buildConfigField "boolean", "IN_APP_UPDATES", "false"')
 gradle.write_text(text, encoding="utf-8")
+
+updater = root / "smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java"
+code = updater.read_text(encoding="utf-8")
+for needle, replacement in [
+    ('    public void check() {\n',
+     '    public void check() {\n'
+     '        if (!BuildConfig.IN_APP_UPDATES) {\n'
+     '            setPhase(Phase.UP_TO_DATE);\n'
+     '            return; // MarsTube 0.0.5 is distributed only as a separately signed lab APK.\n'
+     '        }\n'),
+    ('    public void download() {\n',
+     '    public void download() {\n'
+     '        if (!BuildConfig.IN_APP_UPDATES) return;\n')
+]:
+    if code.count(needle) != 1:
+        raise SystemExit(f"Updater anchor mismatch: {needle!r}")
+    code = code.replace(needle, replacement)
+updater.write_text(code, encoding="utf-8")
+
 print("MarsTube 0.0.5: 251 German settings, 35 search translations,"
-      f" {len(changed)} branding resources; independent de.equiummc.marstube2.v005.debug")
+      f" {len(changed)} branding resources, upstream updater disabled;"
+      " independent de.equiummc.marstube2.v005.debug")
