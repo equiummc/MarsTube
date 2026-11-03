@@ -106,6 +106,39 @@ Nur `NetPath prepare type=sabr-vod` beweist die SABR-Quelle; ein Bild oder
 eine aktivierte Option allein **nicht**. Der Report speichert eine gefilterte
 Ausgabe unter `Dokumente\MarsTube2\Logs` und laedt nichts hoch.
 
+## MT2-003: Fehler beim Fortsetzen eines zuvor gesehenen Videos
+
+Nutzerbefund 03.11.2026: Die frisch gestartete MT2-002-App zeigte direkt
+die SABR-Fehlermeldung bei **12:13 / 53:36** auf dem Video aus dem
+vorherigen Test. Bei diesem Start hat das Video **nicht** zwölf Minuten
+gespielt. Die Position kann aus der Wiedergabehistorie stammen.
+Ein erneuter SABR-Streamabbruch nach 12 Minuten ist aus dem Screenshot
+**nicht** ableitbar. Der konkrete Fehler (Transport vs. wiederhergestellter
+Playerzustand) bleibt ohne neues ADB-Log offen.
+
+Technischer Befund im gepinnten NewTube-Controller: Der experimentelle,
+bevorzugte SABR-Pfad behandelt seine Fehler in onPlayerError **absichtlich
+als terminal** (sabrTerminalError), obwohl der VISIONOS-Quellantwort
+funktionierende DASH-URLs beiliegen. Das erklärt, weshalb die UI
+stoppte statt automatisch weiterzuspielen. Es erklärt allein noch nicht
+den Auslöser des Fehlers.
+
+Der optionale MT2-003-Patch \`patch_sabr_recovery.py\` baut genau dort
+einen einmaligen, pro Video begrenzten DASH-Rettungsversuch ein:
+- Kein Öffnen der Original-App, keine Veränderung der YouTube-Clientwahl.
+- Nur wenn dieselbe MediaItemFormatInfo tatsächlich DASH-URLs enthält.
+- Sichere Übernahme der Playerposition und playWhenReady-Einstellung.
+- Keine wiederholte Rückkehr zu SABR beim selben Titel (kein Wechsel-Loop).
+- Unverändert: SABR-only ohne DASH-URLs und andere Fehlerpfade.
+- Logs \`mt2-003 sabr-error -> dash-once\` und
+  \`mt2-003 sabr-to-dash resumed\` erlauben den Nachweis.
+
+Der Patch ist eine **unbestätigte Entwicklungsmaßnahme**, bis ein
+GitHub-Actions-Build und der Emulator-Wiederholungstest positiv sind.
+Abnahme: zuvor gespeichertes Video bei ca. 12:13 öffnen, Fehlerfall
+eintreten lassen, \`type=dash-mpd\` im selben Video nachweisen, weiter
+ab exakt dieser Position spielen; Tasten- und Speed-Tests separat.
+
 ## MT2-002: Isolierte TV-Eingabesteuerung (Quellpatch, nicht MarsTube 2.0 selbst)
 
 Der NewTube-Referenzcode ist **Phone-only**. MT2-002 ergänzt für die Test-APK
