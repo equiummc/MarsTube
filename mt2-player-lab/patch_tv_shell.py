@@ -34,6 +34,10 @@ replace_once(gradle, 'applicationId "de.equiummc.marstube2.lab"',
 replace_once(manifest, 'android:label="MarsTube 2.0 Recovery Lab"',
              'android:label="MarsTube"')
 
+# Remove old upstream wordmark from the real Home UI and system title.
+strings = root / "smarttubetv/src/main/res/values/strings.xml"
+replace_once(strings, '<![CDATA[NewTube]]>', '<![CDATA[MarsTube]]>')
+
 java = repo / "mt2-player-lab/MarsTvShell.java"
 dest = mobile / "java/com/newtube/mobile/ui/playback/MarsTvShell.java"
 dest.write_text(java.read_text(encoding="utf-8"), encoding="utf-8")
