@@ -399,6 +399,7 @@ for old, new in [
     ('versionName "1.17.1"', 'versionName "0.0.5"'),
     # The release is targeted only at Fire TV Cube AFTR. Three more APKs
     # (x86, arm64, universal) needlessly exhausted Actions' Java heap.
+    ("abiFilters 'armeabi-v7a', 'arm64-v8a'", "abiFilters 'armeabi-v7a'"),
     ("include 'armeabi-v7a', 'arm64-v8a', 'x86' // v7a main build, x86 for WSL, v8a for Pixel Tablet (no 32 bit support)",
      "include 'armeabi-v7a' // MarsTube 0.0.5: only tested Fire TV Cube ABI"),
     ('universalApk = true //generate an additional APK that contains all the ABIs',
