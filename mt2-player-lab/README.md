@@ -293,3 +293,33 @@ Test-Activity-Wrapper oder einen instrumentierten Geräte-Test.
 - **Noch ausstehend:** kontrollierter Seek-Test mit SABR, vollständiger
   Dauerlauf/Qualitäts- und Decoder-Nachweis, reale Thomson-/Fire-TV-Tests,
   Übernahme in eine eigene MarsTube-2.0-Videostruktur.
+
+## MT2-004: Fire-TV-Cube als primäres Testgerät (Nutzerabnahme 03.11.2026)
+
+Praxisbericht auf echtem Fire TV Cube (2019, AFTR) mit der separat installierten
+MT2-004 32-Bit-Media3-Testversion:
+
+- Videowiedergabe und Wechsel zu einem anderen angeklickten Video: sehr flüssig,
+  Start praktisch unmittelbar, kein auffälliges Kratzen oder beschleunigtes Tempo.
+- Bild-in-Bild/Miniplayer: kleines laufendes Video unten, während oben
+  weitere Videos durchsucht und gestartet werden können; positiv beobachtet.
+- Fernbedienung: grundsätzliche Bedienung funktioniert, aber holprig;
+  unteres Navigationsmenü per Fernbedienung nicht erreichbar.
+- Shorts: im getesteten Bereich nicht angezeigt. Noch offen, ob Feed/Navigation,
+  Datenlage oder eigener Defekt; keine Diagnose ohne konkreten Feed/Log.
+- PC-/Android-TV-Emulator zuvor: kratzender Ton, scheinbar ca. 1.5x-2x
+  Wiedergabe trotz Media3 speed 1.0x, fehlerhafte direkte Host-Tasten.
+  Unterschied deutet auf Emulator-/Host-Konfiguration als Ursache hin,
+  beweist aber nicht, dass alle PCs betroffen wären.
+
+**Verbindliche weitere Teststrategie:** Fire TV Cube (AFTR) ist ab sofort
+Haupttestgerät für Wiedergabe, Audio, Navigation, Startzeiten und reale
+Fernbedienung. Thomson-TV bleibt sekundäres Kompatibilitäts-/Performanceziel.
+Android-Emulator nur noch ergänzend für schnelle Regressionen, kontrollierte
+Fehlerfälle und Instrumentierung; keine finale Qualitätsbewertung anhand
+von Emulator-Audio oder Emulator-Wiedergabetempo.
+
+**Priorisierte MT2-005 UI-Arbeit:** native TV-Fokusnavigation für untenliegendes
+Menü, Richtung/Enter/Back, klar erkennbarer Fokus und kontrollierte
+Miniplayer-Fokusübergabe. Shorts anschließend gezielt mit eigener Navigation
+und Wiedergabe testen. Keine Veränderung der stabilen MarsTube-1.x-App.
