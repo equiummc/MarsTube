@@ -365,6 +365,31 @@ for base in [root / "smarttubetv/src/stmobile/res",
             path.write_text(updated, encoding="utf-8")
             changed.append(str(path.relative_to(root)))
 
+# On real Fire TV the reference's phone-only manifest required a touchscreen
+# and never advertised a LEANBACK launcher activity. This made sideloaded apps
+# difficult to find after exiting the player. MarsTube 0.0.5 is a TV test APK.
+manifest = root / "smarttubetv/src/stmobile/AndroidManifest.xml"
+m = manifest.read_text(encoding="utf-8")
+for before, after in [
+    ('android:name="android.hardware.touchscreen"\n        android:required="true"',
+     'android:name="android.hardware.touchscreen"\n        android:required="false"'),
+    ('android:label="MarsTube"\n        tools:replace="android:name,android:theme,android:label"',
+     'android:label="MarsTube"\n        android:icon="@drawable/mars_m_logo"\n'
+     '        tools:replace="android:name,android:theme,android:label,android:icon"'),
+    ('android:theme="@style/Theme.NewTube"\n            tools:replace="android:launchMode,android:configChanges" />',
+     'android:theme="@style/Theme.NewTube"\n'
+     '            tools:replace="android:launchMode,android:configChanges">\n'
+     '            <intent-filter>\n'
+     '                <action android:name="android.intent.action.MAIN" />\n'
+     '                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />\n'
+     '            </intent-filter>\n'
+     '        </activity>')
+]:
+    if m.count(before) != 1:
+        raise SystemExit(f"Unsafe TV launcher manifest anchor {before[:60]!r}: {m.count(before)}")
+    m = m.replace(before, after)
+manifest.write_text(m, encoding="utf-8")
+
 # Unique version and independent package prevent debug-signing conflicts with 0.0.4 and 1.x.
 gradle = root / "smarttubetv/build.gradle"
 text = gradle.read_text(encoding="utf-8")
