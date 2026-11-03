@@ -1,4 +1,4 @@
-name: MT2-002 Media3 TV input preview (isolated)
+name: MT2-003 Media3 TV input and SABR recovery (isolated)
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   newtube-media3-sabr-reference:
-    name: Build native Media3 SABR with TV remote bridge
+    name: Build Media3 remote lab with bounded SABR to DASH fallback
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
@@ -65,11 +65,13 @@ jobs:
         run: |
           set -euo pipefail
           python3 mt2-player-lab/patch_tv_input.py newtube-reference
+          python3 mt2-player-lab/patch_sabr_recovery.py newtube-reference
+          grep -q 'mt2-003 sabr-error -> dash-once' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
           grep -q 'marsTvPlaybackKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q 'marsTvBrowseKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
           grep -q 'MarsTube 2.0 Input Lab' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
 
-      - name: Run SABR module unit tests and build MT2-002 TV remote preview APK
+      - name: Run SABR tests and build MT2-003 recovery APK
         shell: bash
         working-directory: newtube-reference
         run: |
@@ -84,10 +86,11 @@ jobs:
           set -euo pipefail
           mkdir -p mt2-proof
           {
-            echo "MarsTube 2.0 MT2-002 (NewTube TV remote input lab, NOT independent MarsTube 2.0)"
+            echo "MarsTube 2.0 MT2-003 (NewTube SABR recovery lab, NOT independent MarsTube 2.0)"
             echo "NewTube: $(git -C newtube-reference rev-parse HEAD)"
             echo "Build: $GITHUB_RUN_ID"
             echo "MT2 TV Input patch: $(sha256sum mt2-player-lab/patch_tv_input.py)"
+            echo "MT2 SABR rescue patch: $(sha256sum mt2-player-lab/patch_sabr_recovery.py)"
             find newtube-reference/smarttubetv/build/outputs/apk -name '*.apk' -path '*stmobile*' -print -exec sha256sum {} \;
           } > mt2-proof/build-manifest.txt
 
@@ -95,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: mt2-002-newtube-tv-remote-media3-sabr-debug
+          name: mt2-003-newtube-tv-remote-media3-sabr-recovery-debug
           path: |
             newtube-reference/smarttubetv/build/outputs/apk/**/debug/*.apk
             mt2-proof/build-manifest.txt
@@ -106,7 +109,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mt2-002-sabr-unit-test-reports
+          name: mt2-003-sabr-unit-test-reports
           path: newtube-reference/sabr-media3/build/reports/tests/**
           if-no-files-found: ignore
           retention-days: 7
