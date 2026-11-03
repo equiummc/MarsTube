@@ -91,6 +91,7 @@ navigation = r'''
     }
 
     private boolean marsTvNavigationKey(KeyEvent event) {
+        if (mBottomNav == null || mBottomNav.getMenu().size() == 0) return false;
         int key = event.getKeyCode();
         if (key == KeyEvent.KEYCODE_MENU) {
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -160,7 +161,35 @@ navigation + '''
 once(browse,
 '''        if (marsTvBrowseKey(event)) return true;''',
 '''        if (marsTvNavigationKey(event)) return true;
-        if (marsTvBrowseKey(event)) return true;''')
+        // The native profile/settings panel must receive its own D-pad focus.
+        if (!mYouShowing && marsTvBrowseKey(event)) return true;''')
+
+# The profile panel was completely unreachable because the temporary TV grid
+# swallowed all arrows/Enter even while the panel covered it.
+once(browse,
+'''        mYouPanel.setVisibility(View.VISIBLE);
+        onYouPanelToggled();''',
+'''        mYouPanel.setVisibility(View.VISIBLE);
+        onYouPanelToggled();
+        mYouRows.post(() -> {
+            if (!mYouShowing) return;
+            for (int i = 0; i < mYouRows.getChildCount(); i++) {
+                android.view.View row = mYouRows.getChildAt(i);
+                if (row.isFocusable()) { row.requestFocus(); break; }
+            }
+        });''')
+once(browse,
+'''        row.setOnClickListener(v -> action.run());
+        mYouRows.addView(row);''',
+'''        row.setFocusable(true); // 0.0.5: Fire TV remote can select profile options
+        row.setOnClickListener(v -> action.run());
+        mYouRows.addView(row);''')
+once(browse,
+'''        mYouPanel.setVisibility(View.GONE);
+        onYouPanelToggled();''',
+'''        mYouPanel.setVisibility(View.GONE);
+        onYouPanelToggled();
+        mContentGrid.post(() -> marsTvFocusCard(mMarsTvSelection));''')
 
 # Newly routed Browse from player should not use its stale 'You' panel from an
 # unrelated tab; on Back, a You panel should close first instead of task exit.
