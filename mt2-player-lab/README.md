@@ -137,12 +137,33 @@ Der Patch hat den **GitHub-Actions-Build und die SABR-Unit-Tests** bestanden:
 https://github.com/equiummc/mars-smarttube/actions/runs/41552329669
 (Referenz APK ARM64 SHA256 `e35c05c711e8319964ae4fb77dc0212bd557e7eecc4a1f61c2317fbc9e203c23`).
 **Die dynamische Fehlerbehandlung im Emulator ist noch nicht abgenommen.**
-Die Test-APK wird ggf. anders signiert als MT2-002. Ein Signaturkonflikt
-kann nur durch Entfernen der alten Debug-App behoben werden – dabei gehen
-**alle gespeicherten Video-Wiedergabepositionen** der Test-App verloren.
+Die Test-APK wird ggf. anders signiert als MT2-002. Ein Signaturkonflikt bei **identischer Paketkennung** erfordert entweder dieselbe
+Signatur oder den Verlust der bisherigen Appdaten; deshalb wird der alte
+Referenz-Build **NICHT deinstalliert**. MT2-003R hat eine eigene Paketkennung.
 Abnahme: zuvor gespeichertes Video bei ca. 12:13 öffnen, Fehlerfall
 eintreten lassen, \`type=dash-mpd\` im selben Video nachweisen, weiter
 ab exakt dieser Position spielen; Tasten- und Speed-Tests separat.
+
+### MT2-003R: sichere parallele Test-App (03.11.2026)
+
+Nach INSTALL_FAILED_UPDATE_INCOMPATIBLE fuer
+`io.github.aleixrodriala.arc.debug` wurde ausschliesslich in der
+isolierten Test-Checkout-Gradle-Flavour-Datei die Anwendungkennung ersetzt:
+`de.equiummc.marstube2.lab.debug`. Label: `MarsTube 2.0 Recovery Lab`.
+Die alte Referenz-App inklusive der historischen 12:13-Position bleibt auf
+dem Android-TV-Emulator bestehen; die neue App hat **eigene leere Daten**.
+Testen der Fortsetzung bei 12:13 erfordert deshalb eine frische
+Wiedergabehistorie in der neuen App oder manuelles Springen zur Stelle.
+
+- GitHub Actions Build (SABR-Unit-Tests gruen):
+  https://github.com/equiummc/mars-smarttube/actions/runs/41554493217
+- ARM64 SHA256: `13deadf110c1776b85b2c8bf3cb6ace938dce82f5621c9c8297fe52908e5702a`.
+- Verifiziert im kompilierten AndroidManifest: package
+  `de.equiummc.marstube2.lab.debug` und neue app-spezifische Authorities.
+- Der sichere Installer nutzt **nur emulator-5554**, prueft SHA256,
+  entfernt kein Paket, startet bei Bedarf AVD `MarsTube2_TV`.
+- Der TV-Remote- und SABR-zu-DASH-Rettungscode ist identisch mit MT2-003.
+- Noch offen: Live-Abnahme der Installation, TV-Tasten, echte SABR-Fehlerrettung.
 
 ## MT2-002: Isolierte TV-Eingabesteuerung (Quellpatch, nicht MarsTube 2.0 selbst)
 
