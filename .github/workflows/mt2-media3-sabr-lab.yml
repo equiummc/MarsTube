@@ -90,7 +90,7 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x gradlew
-          ./gradlew --no-daemon :sabr-media3:testDebugUnitTest :smarttubetv:assembleStmobileDebug --stacktrace
+          ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m :sabr-media3:testDebugUnitTest :smarttubetv:assembleStmobileDebug --stacktrace
 
       - name: Record source and APK checksums
         shell: bash
