@@ -87,13 +87,13 @@ public final class MarsTvShell {
     private final List<View> controlButtons = new ArrayList<>();
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable ticker = this::tick;
+    private Focus focus = Focus.VIDEO;
     private final Runnable autoHide = () -> {
         if (focus == Focus.CARDS || focus == Focus.CONTROLS) {
             focus = Focus.VIDEO;
             render();
         }
     };
-    private Focus focus = Focus.VIDEO;
     private int cardPosition;
     private int controlPosition = 2;
     private int railPosition;
