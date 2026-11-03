@@ -72,7 +72,7 @@ jobs:
           grep -q 'mt2-003 sabr-error -> dash-once' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
           grep -q 'marsTvPlaybackKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q 'marsTvBrowseKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
-          grep -q 'MarsTube 2.0 Recovery Lab' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
+          grep -q 'android:label="MarsTube"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
           grep -q 'applicationId "de.equiummc.marstube2.tvui"' newtube-reference/smarttubetv/build.gradle
           test -s newtube-reference/smarttubetv/src/stmobile/res/drawable-nodpi/mars_m_logo.png
           grep -q 'mMarsTvShell.handle(event)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
