@@ -149,12 +149,6 @@ browse_code = r"""
         }
     }
 
-    @Override
-    protected void onNewIntent(android.content.Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-        marsTvHandleDestination(intent);
-    }
 """
 # Insert where setupBottomNav begins; openSettings and toMenuItemId are in same class.
 replace_once(browse,
@@ -165,5 +159,11 @@ replace_once(browse,
              '        setupBottomNav();',
              '        setupBottomNav();\n'
              '        mBottomNav.post(() -> marsTvHandleDestination(getIntent()));')
+
+# An existing onNewIntent() handles download notifications: extend it, never duplicate it.
+replace_once(browse,
+             '        handleOpenDownloads(intent);\n    }\n\n    @Override\n    protected void onDestroy()',
+             '        handleOpenDownloads(intent);\n'
+             '        marsTvHandleDestination(intent);\n    }\n\n    @Override\n    protected void onDestroy()')
 
 print("MT2-005 TV UI integrated; six-card rail, true M logo, independent package.")
