@@ -1,4 +1,4 @@
-name: MT2-005 MarsTube Native TV UI (Fire TV Cube)
+name: MarsTube 0.0.5 Fire TV localization and D-pad navigation
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   newtube-media3-sabr-reference:
-    name: Build six-card native TV shell, D-pad rail and Media3
+    name: Build localized MarsTube TV v0.0.5, safe independent package
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
@@ -69,15 +69,20 @@ jobs:
           python3 mt2-player-lab/patch_sabr_recovery.py newtube-reference
           python3 mt2-player-lab/patch_lab_identity.py newtube-reference
           python3 mt2-player-lab/patch_tv_shell.py newtube-reference
+          python3 mt2-player-lab/patch_005_navigation.py newtube-reference
+          python3 mt2-player-lab/patch_005_localize.py newtube-reference
           grep -q 'mt2-003 sabr-error -> dash-once' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
           grep -q 'marsTvPlaybackKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q 'marsTvBrowseKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
           grep -q 'android:label="MarsTube"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
-          grep -q 'applicationId "de.equiummc.marstube2.tvui"' newtube-reference/smarttubetv/build.gradle
+          grep -q 'applicationId "de.equiummc.marstube2.v005"' newtube-reference/smarttubetv/build.gradle
+          grep -q 'versionName "0.0.5"' newtube-reference/smarttubetv/build.gradle
+          test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_settings.xml) -eq 251
+          test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_settings_search.xml) -eq 35
           test -s newtube-reference/smarttubetv/src/stmobile/res/drawable-nodpi/mars_m_logo.png
           grep -q 'mMarsTvShell.handle(event)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
 
-      - name: Verify SABR tests and compile MT2-005 TV UI APK
+      - name: Verify SABR tests and compile MarsTube v0.0.5 Fire TV APK
         shell: bash
         working-directory: newtube-reference
         run: |
@@ -92,7 +97,7 @@ jobs:
           set -euo pipefail
           mkdir -p mt2-proof
           {
-            echo "MT2-005 / de.equiummc.marstube2.tvui.debug / SAFELY SIDE BY SIDE"
+            echo "MarsTube 0.0.5 / de.equiummc.marstube2.v005.debug / SAFELY SIDE BY SIDE"
             echo "NewTube: $(git -C newtube-reference rev-parse HEAD)"
             echo "Build: $GITHUB_RUN_ID"
             echo "MT2 TV Input patch: $(sha256sum mt2-player-lab/patch_tv_input.py)"
@@ -105,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: mt2-005-native-tvui-firetv-media3-debug
+          name: marstube-v0.0.5-de-firetv-armv7-debug
           path: |
             newtube-reference/smarttubetv/build/outputs/apk/**/debug/*.apk
             mt2-proof/build-manifest.txt
@@ -116,7 +121,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mt2-005-sabr-unit-test-reports
+          name: marstube-v0.0.5-sabr-unit-test-reports
           path: newtube-reference/sabr-media3/build/reports/tests/**
           if-no-files-found: ignore
           retention-days: 7
