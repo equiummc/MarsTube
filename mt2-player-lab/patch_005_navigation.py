@@ -161,21 +161,15 @@ once(browse,
 # Newly routed Browse from player should not use its stale 'You' panel from an
 # unrelated tab; on Back, a You panel should close first instead of task exit.
 once(browse,
-'''    private void setupBottomNav() {
-        mBottomNav.setOnItemSelectedListener''',
-'''    private void setupBottomNav() {
-        // TV remote Back closes the You-submenu before leaving this screen.
-        registerBackHandler(() -> {
-            if (mMarsNavFocused) {
-                mMarsNavFocused = false;
-                marsHighlightNav();
-            } else if (mYouShowing) {
-                hideYouPanel();
-            } else {
-                finish();
-            }
-        });
-        mBottomNav.setOnItemSelectedListener''')
+'''    private void handleBack() {
+        // A grid section opened from a You-panel row:''',
+'''    private void handleBack() {
+        if (mMarsNavFocused) {
+            mMarsNavFocused = false;
+            marsHighlightNav();
+            return;
+        }
+        // A grid section opened from a You-panel row:''')
 
 # Make settings rows genuinely focusable with the remote. Their click listener is
 # already connected to the real settings actions: no duplicate business logic.
