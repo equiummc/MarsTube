@@ -80,6 +80,8 @@ public final class MarsTvShell {
     private final TextView elapsed;
     private final TextView remaining;
     private final TextView clock;
+    private final ImageView cornerLogo;
+    private int lastHighlightedCard = -1;
     private final TextView railHint;
     private final List<View> railButtons = new ArrayList<>();
     private final List<View> controlButtons = new ArrayList<>();
@@ -125,6 +127,16 @@ public final class MarsTvShell {
         clockLp.topMargin = dp(8);
         clockLp.rightMargin = dp(22);
         root.addView(clock, clockLp);
+
+        // Small standalone brand mark remains visible when the rail is collapsed.
+        cornerLogo = new ImageView(a);
+        cornerLogo.setImageResource(R.drawable.mars_m_logo);
+        cornerLogo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        FrameLayout.LayoutParams cornerLp = new FrameLayout.LayoutParams(dp(43), dp(43),
+                Gravity.TOP | Gravity.LEFT);
+        cornerLp.topMargin = dp(11);
+        cornerLp.leftMargin = dp(15);
+        root.addView(cornerLogo, cornerLp);
 
         // 66 dp rail, NOT the large left panel used by phone/navigation shells.
         rail = new LinearLayout(a);
@@ -250,6 +262,10 @@ public final class MarsTvShell {
         panelContent.addView(cards, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(69)));
 
+        root.bringChildToFront(rail);
+        root.bringChildToFront(railHint);
+        root.bringChildToFront(cornerLogo);
+        root.bringChildToFront(clock);
         render();
         tick();
     }
@@ -416,6 +432,7 @@ public final class MarsTvShell {
         if (released) return;
         root.setVisibility(pip ? View.GONE : View.VISIBLE);
         panel.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
+        cornerLogo.setVisibility(pip || focus == Focus.RAIL ? View.GONE : View.VISIBLE);
         rail.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
         railHint.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
         if (focus == Focus.RAIL) {
@@ -430,7 +447,14 @@ public final class MarsTvShell {
         for (int i = 0; i < controlButtons.size(); i++)
             controlButtons.get(i).setBackground(focus == Focus.CONTROLS && controlPosition == i
                     ? shape(0x99225072, BLUE, 2) : null);
-        adapter.notifyDataSetChanged(); // at most six visible; avoids separate GPU glow/shadows
+        int newHighlight = focus == Focus.CARDS ? cardPosition : -1;
+        if (lastHighlightedCard != newHighlight) {
+            if (lastHighlightedCard >= 0 && lastHighlightedCard < adapter.getItemCount())
+                adapter.notifyItemChanged(lastHighlightedCard);
+            if (newHighlight >= 0 && newHighlight < adapter.getItemCount())
+                adapter.notifyItemChanged(newHighlight);
+            lastHighlightedCard = newHighlight;
+        }
         handler.removeCallbacks(autoHide);
         if (focus == Focus.CARDS || focus == Focus.CONTROLS) handler.postDelayed(autoHide, 12000);
     }
