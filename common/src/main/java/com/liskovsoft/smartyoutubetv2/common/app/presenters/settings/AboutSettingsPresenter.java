@@ -44,21 +44,12 @@ public class AboutSettingsPresenter extends BasePresenter<Void> {
 
         String country = LocaleUtility.getCurrentLocale(getContext()).getCountry();
 
-        appendUpdateCheckButton(settingsPresenter);
-
-        appendAutoUpdateSwitch(settingsPresenter);
-
-        appendUpdateChangelogButton(settingsPresenter);
-
-        appendUpdateSource(settingsPresenter);
-
+        // MarsTube native: only our own project links. No reference app updater.
+        settingsPresenter.appendSingleButton(UiOptionItem.from(
+                "MarsTube auf GitHub",
+                option -> Utils.openLink(getContext(),
+                        Utils.toQrCodeLink("https://github.com/equiummc/mars-smarttube"))));
         appendInstallBridge(settingsPresenter);
-
-        if (!Helpers.equalsAny(country, "RU", "UA")) {
-            appendDonation(settingsPresenter);
-            appendFeedback(settingsPresenter);
-            appendLinks(settingsPresenter);
-        }
 
         settingsPresenter.showDialog(mainTitle);
     }

@@ -28,15 +28,17 @@ public class AboutSimpleSettingsPresenter extends BasePresenter<Void> {
 
     public void show() {
         String mainTitle = String.format("%s %s",
-                getContext().getString(R.string.app_name) + " MOD",
+                getContext().getString(R.string.app_name),
                 AppInfoHelpers.getAppVersionName(getContext()));
 
         AppDialogPresenter settingsPresenter = AppDialogPresenter.instance(getContext());
 
-        appendAutoUpdateSwitch(settingsPresenter);
-
-        appendUpdateCheckButton(settingsPresenter);
-
+        // MarsTube native: never advertise an updater for another app.
+        settingsPresenter.appendSingleButton(UiOptionItem.from(
+                "MarsTube auf GitHub",
+                option -> com.liskovsoft.smartyoutubetv2.common.utils.Utils.openLink(
+                        getContext(), com.liskovsoft.smartyoutubetv2.common.utils.Utils.toQrCodeLink(
+                                "https://github.com/equiummc/mars-smarttube"))));
         appendInstallBridge(settingsPresenter);
 
         settingsPresenter.showDialog(mainTitle);

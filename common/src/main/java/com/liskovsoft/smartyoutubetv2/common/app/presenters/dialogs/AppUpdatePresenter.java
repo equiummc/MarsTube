@@ -26,6 +26,10 @@ public class AppUpdatePresenter extends BasePresenter<Void> implements AppUpdate
     private final AppDialogPresenter mSettingsPresenter;
     private final String[] mUpdateManifestUrls;
     private boolean mIsForceCheck;
+    // No independent, signed MarsTube 2.0 release endpoint yet.
+    // Keep this non-final so the code below stays reachable for future wiring.
+    private static boolean sOwnSignedMarsTubeFeedReady = false;
+
 
     public AppUpdatePresenter(Context context) {
         super(context);
@@ -49,6 +53,13 @@ public class AppUpdatePresenter extends BasePresenter<Void> implements AppUpdate
     }
 
     public void start(boolean forceCheck) {
+        if (!sOwnSignedMarsTubeFeedReady) {
+            if (forceCheck) {
+                MessageHelpers.showMessage(getContext(),
+                        "Für diese MarsTube-Version gibt es noch keine eigene Updatequelle.");
+            }
+            return;
+        }
         mIsForceCheck = forceCheck;
 
         if (forceCheck) {
@@ -61,6 +72,8 @@ public class AppUpdatePresenter extends BasePresenter<Void> implements AppUpdate
 
     @Override
     public void onUpdateFound(String versionName, List<String> changelog, String apkPath) {
+        // Defense-in-depth: never install a different app's APK from delayed callbacks.
+        if (!sOwnSignedMarsTubeFeedReady) return;
         if (mIsForceCheck) {
             LoadingManager.showLoading(getContext(), false);
             showUpdateDialog(versionName, changelog, apkPath);
