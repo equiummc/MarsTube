@@ -106,6 +106,50 @@ Nur `NetPath prepare type=sabr-vod` beweist die SABR-Quelle; ein Bild oder
 eine aktivierte Option allein **nicht**. Der Report speichert eine gefilterte
 Ausgabe unter `Dokumente\MarsTube2\Logs` und laedt nichts hoch.
 
+## MT2-004 Vorbefund: AVD Audio-Clock und physische Eingabe (03.11.2026)
+
+Nutzerbericht bei MT2-003R: Audio kratzt; Ton und Bild subjektiv
+1.5-2.0x; Maus-/Tastatur-/Emulator-Fernbedienung direkt nicht bedienbar.
+Beweisstand aus `MT2-003R-Playerlog.txt` (ep=1, `fBVriTLty5M`):
+
+- `prepare +471 type=dash-mpd`: **DASH**, nicht SABR; kein SABR-Fehler im Log.
+- Erstes Bild `+1331ms`, Media3 Player `READY +1387ms`.
+- Videodecoder `c2.goldfish.vp9.decoder`, Audio `c2.android.opus.decoder`.
+- Um 00:32:31.472 meldet `MarsTube2TV key=37`
+  `Tempo aktuell 1,00x | gewählt 1,00x | Lautstärke 100%`.
+- Um 00:32:32.551 bei Seek vorwärts: vorheriger Playhead `18155ms`.
+  Zwischen erstem Bild um 00:32:20.713 und diesem Seek liegen 11.84s
+  Wanduhr, aber 18.155s Inhalt. **Hinweis auf ca. 1.53-fachen Clock-Drift**,
+  kein reproduzierter kontrollierter Ticker und deshalb kein endgültiger
+  Messwert. Diese Diskrepanz ist mit einer Android-Emulator-Audio-Clock-
+  Fehlfunktion kompatibel, nicht mit der App-Einstellung 1.00x.
+- ADB-Tasten wurden vom **Player** verarbeitet: `key=37`,
+  `key=22 +10s`, `key=21 -10s`; `position-discontinuity` beweist
+  echte Seek-Auslösung. Diese Signale waren **ADB-injiziert** und beweisen
+  NICHT die Funktionsfähigkeit einer physischen Host-Tastatur oder der
+  grafischen Emulator-Fernbedienung.
+- Aus diesem gefilterten NetPath-Log sind **keine AudioTrack-Underruns,
+  PCM-Sample-Raten oder Audio-Ausgabezeitstempel** ablesbar. Die genaue
+  Ursache des kratzenden Tons ist daher nicht bewiesen.
+
+Bekannte analoge öffentliche Android-Emulator-Fehler:
+- androidx/media#5: Wear-AVD spielt Media3 ~2x, obwohl Normaltempo;
+  Ursache dort Emulator-Hardwaredecoder; kein Beweis für unseren Android-TV-AVD.
+  https://github.com/androidx/media/issues/5
+- androidx/media#3210 (2026): AudioTrack-Unterläufe, Glitches und unruhiges
+  Pacing bei Media3; auf anderen Geräten, nicht unser Nachweis.
+  https://github.com/androidx/media/issues/3210
+- Emulator Settings > General > Send keyboard shortcuts to > Virtual device
+  prüfen, danach tatsächliche Fensterfokussierung; Android-Doku
+  https://developer.android.com/studio/run/emulator-extended-controls
+
+**Nächste Entwicklung:** eigenständige Android-TV-D-pad-Navigation mit
+sichtbarem Fokus; kein Phone-UI-Touch als TV-Foundation. Instrumentierte
+Audiozeit (AudioTrack timestamp / underruns), monotone Playerposition und
+Speed alle 1s im Lab; Emulator-vs-physischer-TV A/B bei gleichem Video.
+Kein pauschales Erhöhen/Verringern der Geschwindigkeit, keine Änderungen
+an der stabilen MarsTube-1.x.
+
 ## MT2-003: Fehler beim Fortsetzen eines zuvor gesehenen Videos
 
 Nutzerbefund 03.11.2026: Die frisch gestartete MT2-002-App zeigte direkt
