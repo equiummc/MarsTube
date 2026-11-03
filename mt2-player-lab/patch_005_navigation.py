@@ -47,6 +47,10 @@ once(mobile, '''    @Override
                 || (getIntent() != null
                     && getIntent().getBooleanExtra("mars_tv_return_to_player", false));
         if (tvChild && !isTaskRoot()) {
+            if (this instanceof com.newtube.mobile.ui.search.MobileSearchActivity) {
+                ((com.newtube.mobile.ui.search.MobileSearchActivity) this)
+                        .marsTvBeforeFinish();
+            }
             super.finish();
             return;
         }
@@ -178,5 +182,21 @@ once(adapter,
 '''            itemView.setFocusable(enabled);
             itemView.setFocusableInTouchMode(false);
             itemView.setOnClickListener(enabled ? v -> listener.onRowClicked(row) : null);''')
+
+# SearchPresenter needs its own onFinish() once even when we bypass the old
+# ViewManager parent launch (which was causing the back-navigation problem).
+search = base / "search/MobileSearchActivity.java"
+once(search,
+'''    @Override
+    public void finishReally() {''',
+'''    // MarsTube 0.0.5: cleanup when returning via Android's real Activity stack.
+    public void marsTvBeforeFinish() {
+        if (mPresenter != null && mPresenter.getView() == this) {
+            mPresenter.onFinish();
+        }
+    }
+
+    @Override
+    public void finishReally() {''')
 
 print("MarsTube 0.0.5 TV navigation: native Back preserved + browse tabs accessible + settings row D-pad focus.")
