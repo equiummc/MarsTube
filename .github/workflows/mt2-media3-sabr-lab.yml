@@ -1,4 +1,4 @@
-name: MT2-003 Media3 TV input and SABR recovery (isolated)
+name: MT2-003R Media3 TV Lab (safe parallel package)
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   newtube-media3-sabr-reference:
-    name: Build Media3 remote lab with bounded SABR to DASH fallback
+    name: Build TV input and SABR rescue into independent install
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
@@ -66,12 +66,14 @@ jobs:
           set -euo pipefail
           python3 mt2-player-lab/patch_tv_input.py newtube-reference
           python3 mt2-player-lab/patch_sabr_recovery.py newtube-reference
+          python3 mt2-player-lab/patch_lab_identity.py newtube-reference
           grep -q 'mt2-003 sabr-error -> dash-once' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
           grep -q 'marsTvPlaybackKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q 'marsTvBrowseKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
-          grep -q 'MarsTube 2.0 Input Lab' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
+          grep -q 'MarsTube 2.0 Recovery Lab' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
+          grep -q 'applicationId "de.equiummc.marstube2.lab"' newtube-reference/smarttubetv/build.gradle
 
-      - name: Run SABR tests and build MT2-003 recovery APK
+      - name: Verify SABR tests and compile MT2-003R side-by-side APK
         shell: bash
         working-directory: newtube-reference
         run: |
@@ -86,11 +88,12 @@ jobs:
           set -euo pipefail
           mkdir -p mt2-proof
           {
-            echo "MarsTube 2.0 MT2-003 (NewTube SABR recovery lab, NOT independent MarsTube 2.0)"
+            echo "MT2-003R / de.equiummc.marstube2.lab.debug / SAFELY SIDE BY SIDE"
             echo "NewTube: $(git -C newtube-reference rev-parse HEAD)"
             echo "Build: $GITHUB_RUN_ID"
             echo "MT2 TV Input patch: $(sha256sum mt2-player-lab/patch_tv_input.py)"
             echo "MT2 SABR rescue patch: $(sha256sum mt2-player-lab/patch_sabr_recovery.py)"
+            echo "MT2 parallel package patch: $(sha256sum mt2-player-lab/patch_lab_identity.py)"
             find newtube-reference/smarttubetv/build/outputs/apk -name '*.apk' -path '*stmobile*' -print -exec sha256sum {} \;
           } > mt2-proof/build-manifest.txt
 
@@ -98,7 +101,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: mt2-003-newtube-tv-remote-media3-sabr-recovery-debug
+          name: mt2-003r-parallel-media3-tv-sabr-recovery-debug
           path: |
             newtube-reference/smarttubetv/build/outputs/apk/**/debug/*.apk
             mt2-proof/build-manifest.txt
@@ -109,7 +112,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mt2-003-sabr-unit-test-reports
+          name: mt2-003r-sabr-unit-test-reports
           path: newtube-reference/sabr-media3/build/reports/tests/**
           if-no-files-found: ignore
           retention-days: 7
