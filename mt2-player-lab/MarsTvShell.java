@@ -290,6 +290,11 @@ public final class MarsTvShell {
         render();
     }
 
+    public void hideUi() {
+        focus = Focus.VIDEO;
+        render();
+    }
+
     public void setPictureInPicture(boolean value) {
         pip = value;
         if (pip) focus = Focus.VIDEO;
