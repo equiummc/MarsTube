@@ -1,0 +1,190 @@
+180|Aus dem Profil gelöst
+181|Abonnieren
+182|Abo beenden
+183|Abonnieren oder Abo beenden
+184|Link teilen
+185|Angeheftet
+186|Im Profil anheften
+187|Experimentell
+188|Gesten
+189|Mit Wischen Helligkeit und Lautstärke steuern
+190|Im Vollbild links oder rechts nach oben oder unten wischen
+191|Durch Wischen spulen
+192|Seitlich über das Video wischen
+193|Kanal abonniert
+194|Kanalabo beendet
+195|Einstellungen
+196|Weitere Optionen für %1$s
+197|Kanal %1$s öffnen
+198|%1$s positive Bewertungen
+199|Player schließen
+200|Einmalige Einrichtung – Videodienst wird vorbereitet…
+201|An Fernseher übertragen
+202|Übertragen an
+203|Geräte werden gesucht…
+204|In diesem WLAN wurden keine Geräte gefunden
+205|Qualität auf dem Telefon steuern
+206|Video-App auf dem Fernseher
+207|Übertragen an %1$s
+208|Direkt übertragen
+209|Qualität über das Telefon steuern · keine Untertitel
+210|Über TV-App abspielen
+211|Für Live und Untertitel nötig · Qualität über TV-Fernbedienung steuern
+212|Verbindung zur Video-App auf dem Fernseher wird hergestellt…
+213|Livestreams erfordern eine kompatible TV-App
+214|Dieses Video kann nicht direkt übertragen werden. Der Fernseher unterstützt das Format nicht
+215|Direktes Übertragen konnte nicht vorbereitet werden
+216|Für direktes Übertragen müssen Telefon und Fernseher im selben WLAN sein
+217|Mit TV-Code verbinden
+218|Funktioniert mit kompatiblen TV-Apps
+219|Zwölfstelliger Code
+220|Fernseher verbinden
+221|TV-App
+222|Wähle die auf deinem Fernseher geöffnete App aus.
+223|Öffne auf dem Fernseher in SmartTube:
+224|Öffne auf dem Fernseher in der Video-App:
+225|Den Code findest du in einer der TV-Apps:
+226|Video-App
+227|Einstellungen → Mit TV-Code verbinden
+228|SmartTube
+229|Einstellungen → Fernbedienung
+230|Bindestriche und Leerzeichen sind erlaubt
+231|Hinweis: SmartTube bietet Qualitäts- und Untertitelsteuerung am Fernseher.
+232|Verbinden
+233|Der Code muss zwölf Ziffern haben
+234|Fernseher wird verbunden…
+235|Verbindung mit diesem Code fehlgeschlagen. Bitte prüfen und erneut versuchen.
+236|Verbindung zu %1$s wird hergestellt…
+237|TV-App nicht erreichbar. Versuche die Verbindung über einen TV-Code.
+238|Übertragung ist in dieser Testversion noch nicht verfügbar
+239|Wird auf %1$s abgespielt
+240|Trennen
+241|Übertragung
+242|Steuerung der Übertragung an den Fernseher
+243|TV-Video-App wird ausprobiert…
+244|SmartTube wird ausprobiert…
+245|Direkte Übertragung wird ausprobiert…
+246|Gespeicherte TV-App wird ausprobiert…
+247|Fernseher wird geprüft…
+248|SmartTube
+249|SmartTube · Telefon kann getrennt werden
+250|Video-App
+251|Video-App · Ersatzverbindung
+252|Gespeicherte TV-App
+253|TV-App nicht erkannt · über das Optionsmenü festlegen
+254|Zu welcher TV-App gehört dieser Code?
+255|SmartTube auf deinem Fernseher?
+256|Einmal verbinden. Danach werden übertragene Videos in SmartTube geöffnet.
+257|SmartTube verbinden
+258|Die Wiedergabe wurde auf dem Fernseher nicht gestartet
+259|Die TV-Bedienung wird geöffnet…
+260|Übertragungsart wählen
+261|TV-Wiedergabeoptionen
+262|TV-Wiedergabeoptionen
+263|Direkt übertragen · Qualität vom Telefon · Untertitel über TV-App
+264|TV-App · Untertitel vom Telefon · Qualität über TV-Fernbedienung
+265|Automatisch (bis 1080p)
+266|Bis %1$dp
+267|TV-Fernbedienung verwenden
+268|Zur TV-App wechseln
+269|Qualität in den Player-Einstellungen des Fernsehers wählen.
+270|Untertitelauswahl an den Fernseher gesendet
+271|Untertitel konnten auf diesem Gerät nicht geändert werden
+272|Für Untertitel zur TV-App wechseln?
+273|Die TV-App unterstützt Untertitel und die Qualitätswahl per Fernbedienung. Zunächst wird SmartTube ausprobiert, danach die Video-App.
+274|Wechseln
+275|TV-Lautstärke
+276|Zum Bewerten von Videos anmelden
+277|%1$s abonniert
+278|Abo für %1$s beendet
+279|Abonniert
+280|Abo beendet
+281|Rückgängig
+282|Zu den positiv bewerteten Videos hinzugefügt
+283|Aus den positiv bewerteten Videos entfernt
+284|Du hast dieses Video negativ bewertet
+285|Negative Bewertung entfernt
+286|Video wird noch geladen. Versuche es gleich erneut.
+287|Bewertung konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es erneut.
+288|Download gestartet
+289|Download gestartet · %1$s
+290|Heruntergeladen
+291|Heruntergeladen · %1$s
+292|Bereits heruntergeladen
+293|Ansehen
+294|Download wird vorbereitet…
+295|Dieses Video kann nicht heruntergeladen werden
+296|Livestreams können nicht heruntergeladen werden
+297|Nur Audio
+298|Bereits heruntergeladen
+299|Wartet auf Download
+300|Wird heruntergeladen · %1$d%% · %2$s von %3$s
+301|Wird heruntergeladen · %1$s
+302|Wird abgeschlossen…
+303|Download fehlgeschlagen. Zum Wiederholen auswählen.
+304|Download-Link abgelaufen. Zum Wiederholen auswählen.
+305|Download abgeschlossen
+306|Abspielen
+307|Download wiederholen
+308|Download abbrechen
+309|Download löschen
+310|Die heruntergeladene Datei ist nicht mehr auf diesem Gerät vorhanden
+311|Heruntergeladen
+312|Heruntergeladene Videos erscheinen hier.\nWähle Herunterladen im Videomenü oder unter dem Player.
+313|In Warteschlange
+314|Wird heruntergeladen
+315|Fehlgeschlagen
+316|Downloads
+317|Fortschritt der Video-Downloads
+318|Suche nach Updates…
+319|MarsTube ist aktuell
+320|Version %1$s
+321|Updateprüfung fehlgeschlagen
+322|Verbindung prüfen und erneut versuchen.
+323|Update verfügbar
+324|MarsTube %1$s
+325|MarsTube %1$s · %2$s
+326|Du verwendest mobile Daten.
+327|Neuerungen in %1$s
+328|Vollständige Versionshinweise
+329|Später
+330|Aktualisieren
+331|Update wird heruntergeladen
+332|%1$s von %2$s
+333|Abbrechen
+334|Download wurde nicht abgeschlossen
+335|Erneut versuchen oder MarsTube %1$s von GitHub beziehen.
+336|Installationsprogramm konnte nicht geöffnet werden
+337|GitHub öffnen
+338|Erneut versuchen
+339|Bereit zur Installation
+340|Installieren
+341|MarsTube darf Updates installieren
+342|Android fragt einmalig nach der Berechtigung. Aktiviere auf der nächsten Seite Aus dieser Quelle zulassen und kehre zurück.
+343|Einstellungen öffnen
+344|Nicht jetzt
+345|Fertig
+346|Neuerungen
+347|Auf MarsTube %1$s aktualisiert
+348|Update heruntergeladen
+349|Update verfügbar
+350|Update wird heruntergeladen
+351|MarsTube %1$s · %2$d%%
+352|Update bereit zur Installation
+353|App-Updates
+354|MarsTube-Update wird heruntergeladen
+355|Design
+356|Systemstandard
+357|Hell
+358|Dunkel
+359|Tiefschwarz
+360|Schwarz statt Dunkelgrau im dunklen Design. Spart auf OLED-Bildschirmen Energie
+361|MarsTube auf GitHub ansehen
+362|Kostenlos und quelloffen. Eine Bewertung hilft anderen, das Projekt zu finden
+363|MarsTube teilen
+364|Sende den Link an jemanden, dem die App gefallen könnte
+365|MarsTube – TV-Videoplayer: %1$s
+366|https://github.com/equiummc/mars-smarttube
+367|https://github.com/equiummc/mars-smarttube
+368|SABR bevorzugen, auch wenn andere Streams funktionieren (experimentell; ab nächstem Video)
+369|Experimentelle SABR-Wiedergabe beendet. Zum Wiederholen Play drücken oder SABR in den Einstellungen deaktivieren.
