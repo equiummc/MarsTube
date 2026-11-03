@@ -133,8 +133,13 @@ einen einmaligen, pro Video begrenzten DASH-Rettungsversuch ein:
 - Logs \`mt2-003 sabr-error -> dash-once\` und
   \`mt2-003 sabr-to-dash resumed\` erlauben den Nachweis.
 
-Der Patch ist eine **unbestätigte Entwicklungsmaßnahme**, bis ein
-GitHub-Actions-Build und der Emulator-Wiederholungstest positiv sind.
+Der Patch hat den **GitHub-Actions-Build und die SABR-Unit-Tests** bestanden:
+https://github.com/equiummc/mars-smarttube/actions/runs/41552329669
+(Referenz APK ARM64 SHA256 `e35c05c711e8319964ae4fb77dc0212bd557e7eecc4a1f61c2317fbc9e203c23`).
+**Die dynamische Fehlerbehandlung im Emulator ist noch nicht abgenommen.**
+Die Test-APK wird ggf. anders signiert als MT2-002. Ein Signaturkonflikt
+kann nur durch Entfernen der alten Debug-App behoben werden – dabei gehen
+**alle gespeicherten Video-Wiedergabepositionen** der Test-App verloren.
 Abnahme: zuvor gespeichertes Video bei ca. 12:13 öffnen, Fehlerfall
 eintreten lassen, \`type=dash-mpd\` im selben Video nachweisen, weiter
 ab exakt dieser Position spielen; Tasten- und Speed-Tests separat.
