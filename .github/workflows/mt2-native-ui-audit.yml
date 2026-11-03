@@ -1,0 +1,24 @@
+name: MarsTube native UI branding and German menu audit
+
+on:
+  push:
+    branches:
+      - feature/mt2-native-marstube-shell-20261104
+    paths:
+      - "mt2-native/**"
+      - "smarttubetv/src/**"
+      - "common/src/main/res/values-de/**"
+      - ".github/workflows/mt2-native-ui-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-source-audit:
+    name: Original MarsTube TV sources and localization
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert MarsTube is native TV source with German menu and M launcher
+        run: python3 mt2-native/verify_mars_native.py
