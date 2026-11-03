@@ -1,0 +1,180 @@
+0|MarsTube
+1|Zurück
+2|Minimieren
+3|Abspielen
+4|Pause
+5|Erneut abspielen
+6|Vollbild umschalten
+7|0:00
+8|LIVE
+9|Qualität
+10|Tonspur
+11|Untertitel
+12|Wiedergabetempo
+13|Kapitel: %1$s. Alle Kapitel anzeigen
+14|\u0020/ %1$s
+15|·\u0020%1$s
+16|Loslassen zum Abbrechen
+17|2×
+18|Bild im Bild
+19|Vorheriges
+20|Nächstes
+21|Alle abspielen
+22|Zufällig abspielen
+23|Bildschirm ausfüllen
+24|Originalgröße
+25|Weitere Optionen
+26|Mehr
+27|Automatisch (%1$s)
+28|Automatisch
+29|Wiederholungsmodus
+30|Zufällige Wiedergabe
+31|Zoom
+32|Im Hintergrund abspielen
+33|Technische Wiedergabedaten
+34|In Wiedergabeliste speichern
+35|Warteschlange
+36|Ein
+37|Aus
+38|Wiedergabe
+39|Mediensteuerung für die Hintergrundwiedergabe
+40|Gefällt mir
+41|Gefällt mir nicht
+42|Teilen
+43|Speichern
+44|Gespeichert
+45|Abonnieren
+46|Abonniert
+47|Als Nächstes
+48|Du bist offline
+49|Wiedergabe aus %1$s
+50|%1$d / %2$d
+51|Warteschlange
+52|Wird gerade abgespielt
+53|Beschreibung
+54|–
+55|Dieses Video ansehen
+56|Kommentare
+57|Kommentare
+58|Antworten
+59|Noch keine Kommentare
+60|Kommentare konnten nicht geladen werden.
+61|Antworten konnten nicht geladen werden.
+62|Beliebteste
+63|Mit den meisten positiven Bewertungen zuerst
+64|Neueste
+65|Kann mögliche Spamnachrichten enthalten
+66|Kommentare sortieren: %1$s
+67|Kommentare schließen
+68|Zurück zu den Kommentaren
+69|Mehr lesen
+70|Weniger anzeigen
+71|Antworten öffnen
+72|Kommentar kopieren
+73|Kommentar kopiert
+74|Kommentar positiv bewerten
+75|Bewertung entfernen
+76|Positiv bewertet
+77|Zum Bewerten von Kommentaren anmelden
+78|Kommentar hinzufügen…
+79|Antwort hinzufügen…
+80|Antworten
+81|Veröffentlichen
+82|Kommentar veröffentlicht
+83|Antwort veröffentlicht
+84|Anzeigen
+85|Kommentar konnte nicht veröffentlicht werden
+86|Veröffentlichen fehlgeschlagen: %1$s
+87|Erneut versuchen
+88|Zum Kommentieren anmelden
+89|Weitere Aktionen
+90|Löschen
+91|Kommentar löschen?
+92|Antwort löschen?
+93|Der Eintrag wird für alle entfernt.
+94|Abbrechen
+95|Kommentar gelöscht
+96|Kommentar konnte nicht gelöscht werden
+97|Livechat
+98|Livechat
+99|Warten auf Nachrichten…
+100|Schließen
+101|Zurück
+102|Auf diesem Gerät noch nicht verfügbar.
+103|Zurück
+104|Videos suchen
+105|Suche
+106|Sprachsuche
+107|Diese Suche verfeinern
+108|Suche löschen
+109|Keine Ergebnisse für %1$s
+110|Ergebnisse konnten nicht geladen werden.
+111|Videos
+112|Mehr
+113|Profil
+114|Entdecken
+115|Keine App zum Öffnen dieses Links gefunden
+116|Gerät verbinden
+117|Fertig
+118|Qualität
+119|Automatisch (empfohlen)
+120|Standard
+121|Original
+122|Synchronisiert
+123|Automatisch synchronisiert
+124|Audiodeskription
+125|Tonspur: %1$s
+126|Untertitel ausschalten
+127|Für dieses Video sind keine Untertitel verfügbar
+128|Untertitelstil und -größe
+129|Untertitel an (%1$s)
+130|Untertitel aus
+131|Normal
+132|Weitere Geschwindigkeiten
+133|Wiedergabetempo: %1$s
+134|Anmelden
+135|Verbinde dein Google-Konto, um Abos, Wiedergabelisten und Verlauf aufzurufen.
+136|Auf Mit Google fortfahren tippen
+137|Die Google-Anmeldeseite wird direkt geöffnet.
+138|Konto auswählen und Zugriff erlauben
+139|Es kann ein Fernseher oder anderes Gerät genannt werden. Das ist normal: MarsTube verwendet eine TV-Anmeldung und verarbeitet dein Passwort nicht selbst.
+140|Zu MarsTube zurückkehren
+141|Die Anmeldung wird automatisch abgeschlossen.
+142|Google zeigt diesen Code an. Prüfe, ob er übereinstimmt:
+143|Zum Kopieren auf den Code tippen
+144|Code in die Zwischenablage kopiert
+145|Mit Google fortfahren
+146|Funktioniert die Taste nicht? Öffne diese Adresse im Browser und gib den Code ein:
+147|Anmeldung bei Google…
+148|Warten auf Google…
+149|Schließe die Anmeldung auf der Google-Seite ab. Anschließend wirst du hier automatisch angemeldet.
+150|Anmeldeseite erneut öffnen
+151|Du bist angemeldet!
+152|Anmeldung fehlgeschlagen. Verbindung prüfen und mit neuem Code erneut versuchen.
+153|Erneut versuchen
+154|Konten
+155|Ohne Konto verwenden
+156|Abmelden
+157|Abmelden?
+158|%1$s wird von diesem Gerät entfernt. Du kannst dich jederzeit erneut anmelden.
+159|Anmelden, um %1$s zu sehen
+160|Anmelden, um diesen Inhalt zu sehen
+161|Anmelden, um deine Abos zu sehen
+162|Anmelden, um abonnierte Kanäle zu sehen
+163|Anmelden, um deine Wiedergabelisten zu sehen
+164|Anmelden, um deine Videos zu sehen
+165|Anmelden, um deinen Wiedergabeverlauf zu sehen
+166|Anmelden, um Benachrichtigungen zu sehen
+167|Anmelden
+168|Hier gibt es noch nichts anzuzeigen
+169|Videos aus abonnierten Kanälen erscheinen hier
+170|Keine Verbindung. Prüfe dein Netzwerk und versuche es erneut.
+171|Seite konnte nicht geladen werden.
+172|Weitere Inhalte konnten nicht geladen werden.
+173|Aktualisieren fehlgeschlagen.
+174|Abspielen oder pausieren
+175|Player vergrößern
+176|Wiedergabeliste im Profil anheften
+177|Kanal im Profil anheften
+178|Im Profil angeheftet
+179|Aus dem Profil lösen
