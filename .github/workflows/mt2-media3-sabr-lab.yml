@@ -1,4 +1,4 @@
-name: MarsTube 0.0.6 unified Phone and TV Media3
+name: MarsTube 0.0.6 isolated Fire TV Media3 test
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - experiment/mt2-media3-sabr-proof-20261102
       - feature/mt2-005-native-tv-ui-20261103
       - feature/mt2-006-unified-phone-tv-20261104
+      - feature/mt2-006-isolated-firetv-20261104
     paths:
       - "mt2-player-lab/**"
       - ".github/workflows/mt2-media3-sabr-lab.yml"
@@ -74,11 +75,12 @@ jobs:
           python3 mt2-player-lab/patch_005_localize.py newtube-reference
           python3 mt2-player-lab/patch_005_mobile_de.py newtube-reference
           python3 mt2-player-lab/patch_006_unified.py newtube-reference
+          python3 mt2-player-lab/patch_006_isolated_firetv.py newtube-reference
           grep -q 'mt2-003 sabr-error -> dash-once' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
           grep -q 'marsTvPlaybackKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q 'marsTvBrowseKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
-          grep -q 'android:label="MarsTube"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
-          grep -q 'applicationId "de.equiummc.marstube2.beta"' newtube-reference/smarttubetv/build.gradle
+          grep -q 'android:label="MarsTube TV-Test 006"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
+          grep -q 'applicationId "de.equiummc.marstube2.firetest006"' newtube-reference/smarttubetv/build.gradle
           grep -q 'versionName "0.0.6"' newtube-reference/smarttubetv/build.gradle
           test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_settings.xml) -eq 251
           test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_settings_search.xml) -eq 35
@@ -116,7 +118,8 @@ jobs:
             fi
           done
           "$aapt" dump badging "$apk" | grep -m 1 "^package:"
-          echo "Security permission gate passed."
+          "$aapt" dump badging "$apk" | grep -q "^package: name=\x27de.equiummc.marstube2.firetest006.debug\x27"
+          echo "Security and isolated package gate passed."
 
       - name: Record source and APK checksums
         shell: bash
@@ -125,7 +128,7 @@ jobs:
           set -euo pipefail
           mkdir -p mt2-proof
           {
-            echo "MarsTube 0.0.6 / de.equiummc.marstube2.beta.debug / TV+Phone universal test APK"
+            echo "MarsTube 0.0.6 / de.equiummc.marstube2.firetest006.debug / isolated Fire TV test APK"
             echo "NewTube: $(git -C newtube-reference rev-parse HEAD)"
             echo "Build: $GITHUB_RUN_ID"
             echo "MT2 TV Input patch: $(sha256sum mt2-player-lab/patch_tv_input.py)"
@@ -138,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: marstube-v0.0.6-universal-phone-tv-debug
+          name: marstube-v0.0.6-firetv-isolated-debug
           path: |
             newtube-reference/smarttubetv/build/outputs/apk/**/debug/*.apk
             mt2-proof/build-manifest.txt
@@ -149,7 +152,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: marstube-v0.0.6-sabr-unit-test-reports
+          name: marstube-v0.0.6-firetv-sabr-unit-test-reports
           path: newtube-reference/sabr-media3/build/reports/tests/**
           if-no-files-found: ignore
           retention-days: 7
