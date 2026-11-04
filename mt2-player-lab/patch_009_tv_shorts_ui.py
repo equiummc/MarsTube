@@ -151,4 +151,43 @@ replace_once(browse,
         }
         return video != null
                 && !ShortsFilter.isShort(video)''')
-print("MT2-009 verified patch: Shorts provider + TV-only filter bypass, version 0.0.9, blue TV theme, video control order.")
+# Portrait thumbnails in the dedicated TV Shorts feed, with recycler-safe
+# aspect-ratio reset for regular clips. This uses existing card views and
+# clickable presenter actions; no duplicate thumbnail downloader.
+cards = tv / "browse/VideoCardAdapter.java"
+replace_once(cards,
+'''            mTitle.setText(video.getTitle());
+
+            // "Channel · 1.2M views''',
+'''            marsTvBindShortsAspect(video);
+            mTitle.setText(video.getTitle());
+
+            // "Channel · 1.2M views''')
+replace_once(cards,
+'''            mTitle.setText(video.getTitle());
+            CharSequence meta = video.getSecondTitle();''',
+'''            marsTvBindShortsAspect(video);
+            mTitle.setText(video.getTitle());
+            CharSequence meta = video.getSecondTitle();''')
+replace_once(cards,
+'''        private void bindBadge(Context context, Video video) {''',
+'''        private void marsTvBindShortsAspect(Video video) {
+            if (!com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(itemView.getContext())) {
+                return;
+            }
+            android.view.ViewGroup.LayoutParams old = mThumbnailFrame.getLayoutParams();
+            if (!(old instanceof androidx.constraintlayout.widget.ConstraintLayout.LayoutParams)) {
+                return;
+            }
+            androidx.constraintlayout.widget.ConstraintLayout.LayoutParams lp =
+                    (androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) old;
+            String desired = video != null && video.isShorts ? "9:16" : "16:9";
+            if (!desired.equals(lp.dimensionRatio)) {
+                lp.dimensionRatio = desired;
+                mThumbnailFrame.setLayoutParams(lp);
+            }
+        }
+
+        private void bindBadge(Context context, Video video) {''')
+
+print("MT2-009 verified patch: Shorts provider, portrait TV tiles, blue theme, version and control order.")
