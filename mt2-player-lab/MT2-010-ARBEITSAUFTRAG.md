@@ -72,3 +72,17 @@ Downloads: auf TV nicht anbieten/anzeigen, auch wenn verborgenes Alt-Menü den Z
 ## Lieferdefinition
 
 Eine echte, reproduzierbar gebaute **MarsTube 0.0.10**-Test-APK samt Änderungsbericht, Git-Commit/PR und Teststatus. Die bestehenden 0.0.9-Installationen bleiben als Rückfalloption erhalten.
+
+## G. Dauerhafte Produktziele und Sicherheits-To-dos
+
+**Verbindliche Grundlage:** [docs/PRODUKTZIEL.md](../docs/PRODUKTZIEL.md). Diese fünf Eigenschaften müssen gemeinsam erreicht werden; ein erfolgreicher Build allein ist keine Freigabe. Die Kontrollkästchen sind bewusst offen und erst nach nachgewiesener Prüfung abzuhaken.
+
+- [ ] **Hohe Videoqualität ohne pauschales Limit:** Automatisch die beste mit Quelle, Bildschirm, Hardwaredecoder und Netzwerk kompatible Qualität wählen; 4K/60 FPS/HDR zulassen, wenn verfügbar. 1080p oder 10 Mbit/s nicht hart als Standardlimit codieren. Manuelle Bitratenobergrenzen nur optional.
+- [ ] **Schnelle, schlanke Wiedergabe:** Startzeiten, Shorts-Wechsel, Pufferverhalten, RAM- und CPU-Verbrauch auf Thomson und Fire TV messen; keine Verzerrung oder unscharfe Startbilder und keine unnötig schweren UI-Effekte.
+- [ ] **Hochwertige, freigegebene Optik:** Den festgelegten neonblauen Player-Entwurf umsetzen; Transparenzen, Vektorsymbole, Steuerleiste, Fokusrahmen, Kacheln und Untermenüs durch echte Gerätescreenshots prüfen.
+- [ ] **Einfache, zuverlässige Bedienung:** Fernbedienung, BACK, temporäre 2×-Wiedergabe, Shorts-Navigation, Abos, Verlauf, Profile und alle Einstellungsdialoge ohne Fokusfallen prüfen.
+- [ ] **Solide App-Sicherheit:** Angriffsfläche minimieren; Android-Berechtigungen und exportierte Komponenten prüfen; TLS-/Zertifikatsprüfung, Eingabevalidierung, sichere Speicherung sensibler Daten, Geheimnisfreiheit in Git/Logs, Update-/APK-Signaturen und Herkunft der Build-Werkzeuge kontrollieren.
+- [ ] **Automatisierte Sicherheitskontrollen:** Dependency-/Schwachstellenscan, Secret-Scan und Android-Lint/Manifest-Prüfung in den Entwicklungs-/Releaseprozess integrieren; Fundstellen mit Schweregrad, Maßnahme und Ergebnis dokumentieren.
+- [ ] **Sichere Freigabeentscheidung:** Bekannte schwerwiegende Sicherheitsprobleme vor einem öffentlichen Release beheben oder wirksam mitigieren; APK-Build, Testergebnisse und Gerätechecks dokumentieren. Sicherheit darf nicht zugunsten der Optik oder Geschwindigkeit entfallen.
+
+**Hinweis für OpenCode:** Das Dokument ist eine verbindliche To-do-Liste, nicht die Behauptung, die Prüfungen seien schon abgeschlossen. Während einer laufenden lokalen Entwicklungsaufgabe Änderungen von GitHub erst kontrolliert übernehmen; keinen unvorbereiteten Pull/Merge in eine bearbeitete Arbeitskopie erzwingen.
