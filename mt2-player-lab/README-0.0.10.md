@@ -132,6 +132,8 @@ applied in CI order, followed by `patch_010_player_settings_ui.py`.
 | APK signature via `apksigner` | PASS (V2 Android Debug) |
 | Risky permissions | PASS (none of install-packages, delete-packages, overlay, record-audio) |
 | Checksum | PASS (recorded above) |
+| GitHub Actions | PASS, run [41927632833](https://github.com/equiummc/MarsTube/actions/runs/41927632833), 6m13s |
+| CI artifact | `marstube-v0.0.10-firetv-player-settings-ui-debug`, 81,054,684 bytes, SHA-256 `4fc18f903d46136bb899ec436c7f4597549119233d4af85861c34a4ac62622f2` for that run |
 
 Test report totals include the new `MarsTvPlayerPrefsTest` (8 Robolectric tests
 covering defaults, start gate, buffer mapping, codec MIME preference, bitrate
@@ -160,8 +162,12 @@ devices:
 - profile, history and subscriptions grids plus the channel filter;
 - returning from every settings submenu without a focus trap.
 
-The CI workflow has also not yet run for this commit; its artifact will be the
-reproducible APK for device testing.
+CI run [41927632833](https://github.com/equiummc/MarsTube/actions/runs/41927632833)
+passed and published the artifact named above. That CI APK has the same
+package, version, label and ABI set as the local APK. Its checksum differs from
+the local build because debug APKs carry build/signing metadata and the local
+working tree uses CRLF; the committed overlay hash in the CI manifest
+(`890ae9ca...`) matches the committed `patch_010_player_settings_ui.py`.
 
 ## Reproduce the build
 

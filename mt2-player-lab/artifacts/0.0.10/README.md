@@ -16,6 +16,12 @@ and the `.sha256` file are committed. The same build is published by the
 `mt2-media3-sabr-lab` workflow as artifact
 `marstube-v0.0.10-firetv-player-settings-ui-debug`.
 
+CI run [41927632833](https://github.com/equiummc/MarsTube/actions/runs/41927632833)
+passed. Its APK is 81,054,684 bytes with SHA-256
+`4fc18f903d46136bb899ec436c7f4597549119233d4af85861c34a4ac62622f2`.
+That checksum is specific to that CI build; the local APK above has a different
+debug-build checksum with the same package, version, label and ABIs.
+
 ## Verify
 
 ```powershell
