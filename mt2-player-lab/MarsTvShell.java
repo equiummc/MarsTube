@@ -406,11 +406,9 @@ public final class MarsTvShell {
                 else focus = Focus.CONTROLS;
                 break;
             case KeyEvent.KEYCODE_BACK:
-                if (focus == Focus.VIDEO) return false; // preserve app's video -> mini-player Back
-                if (focus == Focus.RAIL) focus = adapter.getItemCount() > 0
-                        ? Focus.CARDS : Focus.CONTROLS;
-                else focus = Focus.VIDEO;
-                break;
+                // TV BACK always docks the current video into the in-app mini-player.
+                actions.backToBrowse();
+                return true;
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                 actions.toggle(); break;
             case KeyEvent.KEYCODE_MEDIA_REWIND:
@@ -441,8 +439,11 @@ public final class MarsTvShell {
             case 2: actions.toggle(); break;
             case 3: seek(10000); break;
             case 4: actions.next(); break;
-            case 5: actions.captions(); break;
-            case 6: actions.fullscreen(); break;
+            case 5: actions.like(); break;
+            case 6: actions.dislike(); break;
+            case 7: actions.quality(); break;
+            case 8: actions.captions(); break;
+            case 9: actions.fullscreen(); break;
         }
     }
 
@@ -454,6 +455,9 @@ public final class MarsTvShell {
         if (released) return;
         root.setVisibility(pip ? View.GONE : View.VISIBLE);
         panel.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
+        floatingHud.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
+        qualityInfo.setVisibility(!pip && !TextUtils.isEmpty(qualityInfo.getText()) ? View.VISIBLE : View.GONE);
+        qualityInfo.setAlpha(focus == Focus.VIDEO ? 0.76f : 1f);
         // No station watermark in video-only mode. Clock appears only with menu.
         clock.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
         rail.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
@@ -499,6 +503,25 @@ public final class MarsTvShell {
         remaining.setText(duration <= 0 || duration == C.TIME_UNSET
                 ? "--:--" : format(Math.max(0L, duration - position)));
         clock.setText(new SimpleDateFormat("HH:mm", Locale.GERMANY).format(new Date()));
+        androidx.media3.common.Format f = exo != null ? exo.getVideoFormat() : null;
+        String actual = "";
+        if (f != null && f.height > 0) {
+            String codec = f.sampleMimeType == null ? "Codec ?" :
+                    f.sampleMimeType.contains("vp9") ? "VP9" :
+                    f.sampleMimeType.contains("av01") ? "AV1" :
+                    f.sampleMimeType.contains("avc") ? "H.264" : f.sampleMimeType;
+            boolean hdr = f.colorInfo != null &&
+                    (f.colorInfo.colorTransfer == C.COLOR_TRANSFER_ST2084 ||
+                     f.colorInfo.colorTransfer == C.COLOR_TRANSFER_HLG);
+            actual = f.height + "p" + (f.frameRate > 0 ? Math.round(f.frameRate) : "")
+                    + " · " + codec + (hdr ? " · HDR" : " · SDR")
+                    + (f.bitrate > 0 ? String.format(Locale.GERMANY, " · %.1f Mbit/s",
+                            f.bitrate / 1000000d) : "");
+        }
+        if (!TextUtils.equals(qualityInfo.getText(), actual)) {
+            qualityInfo.setText(actual);
+            qualityInfo.setVisibility(!pip && !actual.isEmpty() ? View.VISIBLE : View.GONE);
+        }
         if (focus != Focus.VIDEO) progress.invalidate();
         handler.postDelayed(ticker, 1000);
     }
@@ -520,7 +543,7 @@ public final class MarsTvShell {
             card.setOrientation(LinearLayout.VERTICAL);
             card.setFocusable(false);
             RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
-                    cardWidthPx, thumbnailHeightPx + dp(65));
+                    cardWidthPx, thumbnailHeightPx + dp(38));
             lp.rightMargin = gapPx;
             card.setLayoutParams(lp);
 
@@ -546,13 +569,14 @@ public final class MarsTvShell {
                     ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx));
             TextView title = text(13, WHITE);
             title.setGravity(Gravity.TOP);
-            title.setMaxLines(2);
-            title.setMinLines(2);
+            title.setMaxLines(1);
+            title.setSingleLine(true);
             title.setEllipsize(TextUtils.TruncateAt.END);
-            title.setLineSpacing(dp(2), 1f);
+            title.setTextSize(12);
+            title.setLineSpacing(0, 1f);
             LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(56));
-            titleLp.topMargin = dp(6);
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(30));
+            titleLp.topMargin = dp(4);
             card.addView(title, titleLp);
             Holder h = new Holder(card, imageFrame, image, badge, title);
             card.setOnClickListener(v -> {
@@ -653,6 +677,18 @@ public final class MarsTvShell {
                 case 11: c.drawRoundRect(2,6,22,18,2,2,p);
                     p.setStyle(Paint.Style.FILL);p.setTextSize(9);
                     c.drawText("CC",5,15,p);break;
+                case 13: case 14: // Thumbs up/down
+                    if (id == 14) c.rotate(180, 12, 12);
+                    c.drawRoundRect(2, 10, 7, 21, 1, 1, p);
+                    path.moveTo(9,21); path.lineTo(19,21);
+                    path.quadTo(21,20,21,18); path.lineTo(21,11);
+                    path.quadTo(21,9,19,9); path.lineTo(14,9);
+                    path.lineTo(15,4); path.quadTo(15,2,13,2);
+                    path.lineTo(9,10); path.close(); break;
+                case 15: // quality
+                    c.drawRoundRect(2,5,22,19,2,2,p);
+                    p.setStyle(Paint.Style.FILL); p.setTextSize(9);
+                    c.drawText("HD",5,15,p); break;
                 case 12:
                     path.moveTo(3,9);path.lineTo(3,3);path.lineTo(9,3);
                     path.moveTo(15,3);path.lineTo(21,3);path.lineTo(21,9);
