@@ -77,7 +77,21 @@ public final class MarsTvRail extends LinearLayout {
     private void addAction(String label, int destination) {
         TextView button = new TextView(activity);
         button.setText(label);
-        button.setTextSize(13);
+        button.setTextSize(11);
+        int iconRes;
+        switch (destination) {
+            case 0: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_home; break;
+            case 1: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_mobile_search; break;
+            case 2: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_subscriptions; break;
+            case 3: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_history; break;
+            case 4: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_downloads; break;
+            case 5: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_mobile_settings; break;
+            case 6: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_you; break;
+            default: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_player_fullscreen; break;
+        }
+        button.setCompoundDrawablesWithIntrinsicBounds(0, iconRes, 0, 0);
+        button.setCompoundDrawableTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
+        button.setCompoundDrawablePadding(dp(2));
         button.setTextColor(Color.WHITE);
         button.setGravity(Gravity.CENTER);
         button.setContentDescription(label.equals("Einst.") ? "Einstellungen" : label);
