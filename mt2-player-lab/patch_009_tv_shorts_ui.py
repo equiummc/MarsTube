@@ -54,7 +54,7 @@ theme_file.write_text("""<?xml version="1.0" encoding="utf-8"?>
     <color name="mars_tv_card_009">#173556</color>
     <color name="mars_tv_field_009">#102946</color>
     <color name="mars_tv_accent_009">#149EFF</color>
-    <style name="ThemeOverlay.MarsTube.Tv009">
+    <style name="ThemeOverlay.MarsTube.Tv009" parent="">
         <item name="newtubeColorBackground">@color/mars_tv_bg_009</item>
         <item name="newtubeColorNavigationBar">@color/mars_tv_bg_009</item>
         <item name="newtubeColorBackgroundScrim">@color/mars_tv_bg_009</item>
