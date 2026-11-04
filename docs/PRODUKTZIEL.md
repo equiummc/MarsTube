@@ -33,3 +33,18 @@
 Diese Produktziele sind der Maßstab für technische Entscheidungen. **Keine Abkürzung über einen pauschalen Qualitätsdeckel, keine kosmetischen Änderungen auf Kosten der Startzeit und keine neuen Optionen, die nur angezeigt werden, aber nichts tun.** Bei Zielkonflikten den Trade-off dokumentieren und anhand realer Tests entscheiden.
 
 Aktive Umsetzung: `mt2-player-lab/MT2-010-ARBEITSAUFTRAG.md`.
+
+## Sicherheit und Vertrauenswürdigkeit – verpflichtendes Produktziel
+
+MarsTube soll eine **grundsolide, möglichst wenig angreifbare Android-App** sein. Absolute Schwachstellenfreiheit kann niemand garantieren; unser Ziel ist eine kleine Angriffsfläche, frühzeitiges Erkennen von Fehlern, sichere Voreinstellungen und schnelle nachvollziehbare Korrekturen. Sicherheit ist ein Freigabekriterium, kein späteres Zusatzfeature.
+
+1. **Minimale Angriffsfläche:** Nur erforderliche Android-Berechtigungen, exportierte Activities/Services/Receiver/Provider bewusst begrenzen und explizit absichern. Keine unnötigen lokalen Server, offenen Ports, Debugschnittstellen oder unsicheren WebViews in Release-Builds.
+2. **Vertrauenswürdiger Netzwerkverkehr:** HTTPS/TLS mit korrekter Zertifikatsprüfung; niemals globale Zertifikatsprüfung deaktivieren. Keine ungeprüften URL-Weiterleitungen oder ungesicherten Download-/Dateipfade. Daten von YouTube, Medien-URLs, Untertiteln und Metadaten immer als nicht vertrauenswürdige Eingaben behandeln und robust verarbeiten.
+3. **Abhängigkeiten und Lieferkette absichern:** NewTube-, Media3-, SABR-, Gradle- und andere Drittanbieterquellen mit festgehaltenen Versionen/Commits, Herkunft, Lizenz und Schwachstellenprüfung verwenden. Unbekannte oder manipulierte Gradle-Wrapper/JARs nicht blind freigeben. Patches reproduzierbar anwenden. Automatisierte Dependency- und Secret-Scans in CI vorsehen.
+4. **Datenschutz und Geheimnisse:** Tokens/Anmeldedaten weder in GitHub noch in Logs oder APK-Quelltext einchecken. Zugangsdaten sicher speichern (z. B. Android Keystore, wo passend), nur notwendige Nutzerdaten erfassen und sensible Logs in Release-Builds abschalten. Keine versteckten Telemetrie- oder Werbe-SDKs.
+5. **APK-Integrität und Updates:** Signierte Releases mit kontrolliertem Signaturschlüssel, eindeutiger Paketkennung, Versions- und Prüfsummenprüfung, nachvollziehbarem Build und überprüfbaren Updatequellen. Keine heimlichen Selbstupdates aus beliebigen URLs; Test- und Produktivkanal trennen.
+6. **Abwehr von Fehlern und Missbrauch:** Eingaben, Intents, Deeplinks, Dateizugriffe und Navigation validieren; Exceptions sauber abfangen; keine Abstürze oder Hänger durch fehlerhafte Netzwerkantworten. Puffer- und Ressourcenlimits vermeiden Speichererschöpfung, Endlosschleifen und unkontrolliertes Nachladen.
+7. **Regelmäßige Sicherheitsprüfungen:** Lint/statische Codeanalyse, Dependency- und Secret-Scanning, Android-Manifest-/Netzwerkkonfigurationsprüfung, Tests auf TV und Smartphone, regelmäßige Upstream-Sicherheitsupdates sowie dokumentierte Behandlung gefundener Schwachstellen.
+8. **Klare Release-Regel:** Bekannte kritische oder hochriskante Schwachstellen in tatsächlich verwendeten Komponenten müssen vor einer allgemeinen Freigabe behoben, ersetzt oder nachweisbar mitigiert sein. Keine Freigabe allein aufgrund eines erfolgreichen Gradle-Builds.
+
+**Einordnung:** PHP-Schwachstellen sind nur relevant, wenn MarsTube tatsächlich einen PHP-basierten Server oder eine entsprechende Webkomponente einsetzt. Für unsere Android-App stehen insbesondere Java/Kotlin-Code, Android-Komponenten, Media3/SABR, Netzwerkkommunikation, Zugangsdaten, Updateprozess und Drittanbieter-Abhängigkeiten im Fokus.
