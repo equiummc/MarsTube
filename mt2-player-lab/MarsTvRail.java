@@ -40,13 +40,17 @@ public final class MarsTvRail extends LinearLayout {
         setClipToPadding(false);
         setPadding(dp(6), dp(16), dp(6), dp(8));
 
-        TextView branding = new TextView(activity);
-        branding.setText("M");
-        branding.setTextSize(27);
-        branding.setTypeface(null, android.graphics.Typeface.BOLD);
-        branding.setTextColor(BLUE);
-        branding.setGravity(Gravity.CENTER);
-        addView(branding, new LinearLayout.LayoutParams(-1, dp(54)));
+        android.widget.ImageView branding = new android.widget.ImageView(activity);
+        branding.setImageResource(com.liskovsoft.smartyoutubetv2.tv.R.drawable.mars_m_logo);
+        branding.setContentDescription("MarsTube");
+        branding.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        addView(branding, new LinearLayout.LayoutParams(-1, dp(46)));
+        TextView version = new TextView(activity);
+        version.setText("0.0.8");
+        version.setTextSize(11);
+        version.setTextColor(Color.LTGRAY);
+        version.setGravity(Gravity.CENTER);
+        addView(version, new LinearLayout.LayoutParams(-1, dp(22)));
 
         addAction("Start", 0);
         addAction("Suche", 1);
