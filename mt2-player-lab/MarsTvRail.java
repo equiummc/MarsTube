@@ -21,7 +21,7 @@ import java.util.List;
  * data/section controller; a single vertical rail is the TV control surface.
  */
 public final class MarsTvRail extends LinearLayout {
-    private static final String TAG = "mars.tv.rail.v007";
+    private static final String TAG = "mars.tv.rail.v009";
     private static final int BLUE = Color.rgb(48, 157, 250);
     private static final int BG = Color.rgb(13, 21, 37);
     private static final int SELECTED = Color.rgb(24, 55, 93);
@@ -35,7 +35,8 @@ public final class MarsTvRail extends LinearLayout {
         setTag(TAG);
         setOrientation(VERTICAL);
         setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        setBackgroundColor(BG);
+        setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[] {0xFF112D52, 0xFF08182F}));
         setFocusable(false);
         setClipToPadding(false);
         setPadding(dp(6), dp(16), dp(6), dp(8));
@@ -46,13 +47,14 @@ public final class MarsTvRail extends LinearLayout {
         branding.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
         addView(branding, new LinearLayout.LayoutParams(-1, dp(46)));
         TextView version = new TextView(activity);
-        version.setText("0.0.8");
+        version.setText("0.0.9");
         version.setTextSize(11);
         version.setTextColor(Color.LTGRAY);
         version.setGravity(Gravity.CENTER);
         addView(version, new LinearLayout.LayoutParams(-1, dp(22)));
 
         addAction("Start", 0);
+        addAction("Shorts", 8);
         addAction("Suche", 1);
         addAction("Abos", 2);
         addAction("Verlauf", 3);
@@ -87,6 +89,7 @@ public final class MarsTvRail extends LinearLayout {
             case 4: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_downloads; break;
             case 5: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_mobile_settings; break;
             case 6: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_you; break;
+            case 8: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.icon_shorts; break;
             default: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_player_fullscreen; break;
         }
         button.setCompoundDrawablesWithIntrinsicBounds(0, iconRes, 0, 0);
