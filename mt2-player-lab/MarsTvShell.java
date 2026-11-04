@@ -496,7 +496,7 @@ public final class MarsTvShell {
                     lower.contains("av01") ? "AV1" : lower.contains("avc") ? "H.264" : codec;
             String hdr = video.colorInfo != null
                     && video.colorInfo.colorTransfer != C.COLOR_TRANSFER_SDR
-                    && video.colorInfo.colorTransfer != C.NO_VALUE ? " · HDR" : "";
+                    && video.colorInfo.colorTransfer != androidx.media3.common.Format.NO_VALUE ? " · HDR" : "";
             qualityStatus.setText(video.height + "p" + (video.frameRate > 40 ? "60" : "")
                     + " · " + codecLabel + hdr
                     + (video.bitrate > 0 ? String.format(Locale.GERMANY,
