@@ -118,7 +118,7 @@ jobs:
             fi
           done
           "$aapt" dump badging "$apk" | grep -m 1 "^package:"
-          "$aapt" dump badging "$apk" | grep -q "^package: name=\x27de.equiummc.marstube2.firetest006.debug\x27"
+          "$aapt" dump badging "$apk" | grep -Fq "package: name='de.equiummc.marstube2.firetest006.debug'"
           echo "Security and isolated package gate passed."
 
       - name: Record source and APK checksums
