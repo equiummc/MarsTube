@@ -54,6 +54,10 @@ public final class MarsTvShell {
         void toggle();
         void captions();
         void fullscreen();
+        void like();
+        void dislike();
+        void quality();
+        void backToBrowse();
     }
 
     private enum Focus { VIDEO, CARDS, CONTROLS, RAIL }
@@ -65,7 +69,7 @@ public final class MarsTvShell {
     private static final String[] RAIL_LABELS = {
             "Start", "Suche", "Abos", "Verlauf", "Bibliothek", "Einstellungen"
     };
-    private static final int[] CONTROL_GLYPHS = {6, 7, 8, 9, 10, 11, 12};
+    private static final int[] CONTROL_GLYPHS = {6, 7, 8, 9, 10, 13, 14, 15, 11, 12};
 
     private final Activity activity;
     private final PlayerSource player;
@@ -74,6 +78,8 @@ public final class MarsTvShell {
     private final LinearLayout rail;
     private final LinearLayout controls;
     private final FrameLayout panel;
+    private final LinearLayout floatingHud;
+    private final TextView qualityInfo;
     private final RecyclerView cards;
     private final Carousel adapter;
     private final View progress;
@@ -166,28 +172,50 @@ public final class MarsTvShell {
         hintLp.topMargin = dp(77);
         root.addView(railHint, hintLp);
 
+        // The real media3 video format. Not a guessed bandwidth or selected ceiling.
+        qualityInfo = text(13, WHITE);
+        qualityInfo.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        qualityInfo.setPadding(dp(9), 0, dp(9), 0);
+        qualityInfo.setBackground(shape(0x9E071521, 0, 0));
+        FrameLayout.LayoutParams qualityLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(30), Gravity.TOP | Gravity.RIGHT);
+        qualityLp.topMargin = dp(49);
+        qualityLp.rightMargin = dp(16);
+        root.addView(qualityInfo, qualityLp);
+
+        // Compact thumbnails; seek and actions float ABOVE the strip.
         // Bottom panel is translucent paint, not GPU-expensive blur/glow.
         panel = new FrameLayout(a);
         panel.setBackground(new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{0x96051322, 0xF207121E}));
+                new int[]{0x78051322, 0xE407121E}));
         // 0.0.5: strip stays close to the lower image edge, not halfway up the video.
         FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(151) + thumbnailHeightPx,
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(47) + thumbnailHeightPx,
                 Gravity.BOTTOM);
         root.addView(panel, panelLp);
 
         LinearLayout panelContent = new LinearLayout(a);
         panelContent.setOrientation(LinearLayout.VERTICAL);
-        panelContent.setPadding(dp(30), dp(7), dp(30), dp(9));
+        panelContent.setPadding(dp(30), dp(5), dp(30), dp(4));
         panel.addView(panelContent, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        // One slim BLUE seek line, real progress and clock; seek driven by key events.
+        floatingHud = new LinearLayout(a);
+        floatingHud.setOrientation(LinearLayout.VERTICAL);
+        floatingHud.setGravity(Gravity.BOTTOM);
+        floatingHud.setPadding(dp(30), dp(3), dp(30), dp(2));
+        floatingHud.setBackground(new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0x00071321, 0xAF071321}));
+        FrameLayout.LayoutParams hudLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(82), Gravity.BOTTOM);
+        hudLp.bottomMargin = dp(46) + thumbnailHeightPx;
+        root.addView(floatingHud, hudLp);
+
+        // Real seek progress directly over the thumbnail strip.
         LinearLayout progressRow = new LinearLayout(a);
         progressRow.setGravity(Gravity.CENTER_VERTICAL);
-        panelContent.addView(progressRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(28)));
         elapsed = text(13, WHITE);
         progressRow.addView(elapsed, new LinearLayout.LayoutParams(dp(65), dp(29)));
         progress = new View(a) {
@@ -221,8 +249,10 @@ public final class MarsTvShell {
         controls.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams controlsLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(40));
-        controlsLp.bottomMargin = dp(7);
-        panelContent.addView(controls, controlsLp);
+        controlsLp.bottomMargin = dp(1);
+        floatingHud.addView(controls, controlsLp);
+        floatingHud.addView(progressRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(30)));
 
         for (int i = 0; i < CONTROL_GLYPHS.length; i++) {
             final int index = i;
@@ -230,11 +260,12 @@ public final class MarsTvShell {
             button.setFocusable(false);
             button.setContentDescription(new String[]{
                     "Vorheriges", "10 Sekunden zurück", "Pause oder Wiedergabe",
-                    "10 Sekunden vor", "Nächstes", "Untertitel", "Vollbild"
+                    "10 Sekunden vor", "Nächstes", "Gefällt mir", "Gefällt mir nicht",
+                    "Videoqualität", "Untertitel", "Vollbild"
             }[i]);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(44), dp(36));
-            lp.leftMargin = dp(8);
-            lp.rightMargin = dp(8);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(42), dp(36));
+            lp.leftMargin = dp(5);
+            lp.rightMargin = dp(5);
             controls.addView(button, lp);
             button.setOnClickListener(v -> { controlPosition = index; executeControl(); });
             controlButtons.add(button);
@@ -250,11 +281,12 @@ public final class MarsTvShell {
         adapter = new Carousel();
         cards.setAdapter(adapter);
         panelContent.addView(cards, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(63)));
+                ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(38)));
 
         root.bringChildToFront(rail);
         root.bringChildToFront(railHint);
         root.bringChildToFront(clock);
+        root.bringChildToFront(qualityInfo);
         render();
         tick();
     }
