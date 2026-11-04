@@ -41,6 +41,13 @@ if not shorts.is_file():
     raise SystemExit("MT2-011: MarsShortsSession.java missing")
 dst.write_text(shorts.read_text(encoding="utf-8"), encoding="utf-8")
 
+shorts_test = Path(__file__).resolve().parent / "MarsShortsSessionTest.java"
+if not shorts_test.is_file():
+    raise SystemExit("MT2-011: MarsShortsSessionTest.java missing")
+test_dest = root / "smarttubetv/src/test/java/com/newtube/mobile/ui/common/MarsShortsSessionTest.java"
+test_dest.parent.mkdir(parents=True, exist_ok=True)
+test_dest.write_text(shorts_test.read_text(encoding="utf-8"), encoding="utf-8")
+
 playback = tv / "playback/MobilePlaybackActivity.java"
 once(playback,
 '''                    @Override public void previous() {
