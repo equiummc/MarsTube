@@ -26,3 +26,34 @@
 - [ ] **Dokumentation:** Diese Datei + `docs/PROJEKTSTATUS.md` um tatsächliche Änderungen, Logs und Geräteabnahme ergänzen. Offene Testfälle ausdrücklich als offen kennzeichnen.
 
 **Keine Behauptung, dass die Korrektur bereits umgesetzt ist.** Dies ist die priorisierte Fehlerbeschreibung für den nächsten Entwicklungsdurchlauf.
+
+## P0-Ergänzung: Miniplayer auf Fire TV nicht erreichbar
+
+**Nutzerbefund vom 05.11.2026:** Nach BACK/Rückkehr in den Browse-Bereich läuft das Video teils als kleines Fenster **rechts über den Inhalten/Menübuttons** weiter. Dieses Fenster lässt sich mit der Fire-TV-Fernbedienung **nicht zuverlässig fokussieren und mit OK zum Vollbild vergrößern**. Nutzer muss blind an verdeckten Menüelementen navigieren. Gewünschtes Verhalten: Optional **weiterlaufender, bedienbarer Miniplayer beim Suchen/Browsen**, nicht pauschal abschaffen.
+
+### Nachgewiesene Code-Stolpersteine
+
+- `mt2-player-lab/patch_008_tv_player.py`: `marsTvMiniPlayerKey()` erreicht den Mini-Fokus über `KEYCODE_DPAD_UP` **nur** aus der ersten Videozeile und nur wenn `!mYouShowing` und `mMarsTvSelection` im ersten Rasterabschnitt liegt; `mMiniPlayerBar` muss sichtbar sein und `MiniPlayerBridge.isActive()`. Ein leicht erreichbarer Weg von beliebigen Browse-/Suchpositionen existiert damit nicht nachweislich.
+- `mt2-player-lab/MarsTvRail.java`: Navigation zu Miniplayer (`destination == 7`) ist noch implementiert, der Menüeintrag wird in 0.0.10 jedoch **nicht** angelegt. Die Kommentierung erwähnt bewusst eine stets leere Mini-Zeile; das rechtfertigt nur, den Eintrag **ohne aktiven Miniplayer auszublenden**, nicht die Funktion bei aktiver Wiedergabe unzugänglich zu machen.
+- `mt2-player-lab/MarsTvSettingsPages.java`: Es gibt bereits einen Miniplayer-Ein/Aus-Schalter. Die feste Overlay-Position und Fokuswege auf allen TV-Seiten sind bei der Geräteprüfung offen. Die Nutzerbeobachtung „überlagert rechts Menütasten“ muss per Screenshot/Focus-Trace bestätigt und dann behoben werden.
+- Hier ist **der app-interne Miniplayer gemeint**, nicht zwangsläufig Android-System-Picture-in-Picture. Beide Funktionen nicht verwechseln.
+
+### Verbindliches TV-UX-Ziel
+
+1. **Sicher erreichbar:** Solange Mini-Playback aktiv und Miniplayer aktiviert ist, gibt es auf jeder Browse-/Suchseite einen eindeutigen Fernbedienungsweg zum Mini-Fenster, z. B. über einen **dynamischen „Laufendes Video“-/Miniplayer-Eintrag** in der linken TV-Rail; dieser Eintrag erscheint **nur bei aktiver Wiedergabe**, nicht als leere permanente Zeile. Alternativ ein ebenso zuverlässiger klar beschrifteter Shortcut; kein Zwang, zur ersten Kartenzeile zurückzuspringen.
+2. **Sichtbarer Fokus:** Der aktive Fokus bekommt einen deutlich erkennbaren abgerundeten cyanfarbenen Rahmen. Mit **OK** öffnet sich unmittelbar derselbe Film wieder im Vollbildplayer, an der bisherigen Position und ohne unnötigen Neustart/Audio-Unterbrechung.
+3. **Abdeckungsfrei:** Miniplayer in einer TV-sicheren Fläche positionieren; niemals wichtige Menüs, fokussierte Kacheln, Schaltflächen oder Suchergebnisse verdecken. Je nach Layout Inhalte sinnvoll einrücken/mit Abstand ausstatten, statt ein nicht fokussierbares Floating-Overlay über ihnen abzulegen.
+4. **Navigation eindeutig:** D-Pad links/rechts/oben/unten, BACK, Wechsel zwischen Suche/Browse und Player stabil; wenn Mini fokussiert ist, führt BACK zum vorherigen Fokus zurück, ohne endloses Zurückspringen. Fokus nach Verkleinern an sinnvolle Position setzen.
+5. **Bewusste Wahl:** Miniplayer per vorhandener Einstellung an/aus. Wenn deaktiviert, kein unfokussierbares schwebendes Videofenster und kein leerer Menüeintrag. Verhalten von Playback beim Zurückkehren (Stop oder Hintergrundaudio) explizit festlegen und prüfen, nicht stillschweigend ändern.
+6. **Keine Doppel-Player:** Vorhandene Media3-Session weiterverwenden; keine neue Videoengine und möglichst keine zweite Decoderinstanz für die Vorschau starten.
+
+### P0-Gerätetests und Akzeptanz
+
+- [ ] Normalvideo starten → BACK zur Startseite → Miniplayer sichtbar → eindeutig fokussierbar → **ein OK** wieder Vollbild; gleicher Zeitstempel, Wiedergabe weiter.
+- [ ] Suche öffnen, mehrere Ergebnisse durchblättern → Miniplayer erreichen, ohne blind zu navigieren; Suche und Navigation sichtbar und anklickbar.
+- [ ] Nach Aktivierung/Deaktivierung Miniplayer: dynamische Navigation und Playback-/Overlay-Verhalten korrekt.
+- [ ] D-Pad-Fokusrahmen auf Fire TV Cube und Thomson klar sichtbar; BACK-Pfad ohne Fokusfalle oder unerwünschtes Verlassen der App.
+- [ ] Wechsel zwischen Browse, Suche, Profil, Abos und Verlauf, wenn Wiedergabe läuft; Player wieder öffnen, keine Mehrfachdecoder, kein Tonverlust.
+- [ ] TV-Screenshots belegen, dass das Minifenster die Bedienung nicht überdeckt.
+
+**P0: Zusammen mit BACK und Shorts vor weiteren kosmetischen Arbeiten beheben.** Dokumentierter Bug, **keine bereits umgesetzte Korrektur**.
