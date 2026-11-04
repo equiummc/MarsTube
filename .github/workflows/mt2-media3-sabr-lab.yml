@@ -70,7 +70,7 @@ jobs:
       - name: Apply MT2-002 TV remote overlay to isolated NewTube checkout
         shell: bash
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           python3 mt2-player-lab/patch_tv_input.py newtube-reference
           python3 mt2-player-lab/patch_sabr_recovery.py newtube-reference
           python3 mt2-player-lab/patch_lab_identity.py newtube-reference
@@ -140,7 +140,7 @@ jobs:
           grep -q 'mars_tv_shorts_009' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/MobileMainApplication.java
           grep -q 'ThemeOverlay_MarsTube_Tv009' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MobileActivity.java
           test -s newtube-reference/smarttubetv/src/stmobile/res/values/mars_tv_theme_009.xml
-          grep -q 'new android.graphics.LinearGradient' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
+          grep -q 'new LinearGradient' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
           grep -q 'marsTvBindShortsAspect(video)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
           grep -q 'lp.dimensionRatio = desired' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
           grep -q 'shortsHighResUrl' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
