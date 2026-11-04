@@ -59,6 +59,7 @@ public final class MarsTvRail extends LinearLayout {
         addAction("Downloads", 4);
         addAction("Profil", 6);
         addAction("Einst.", 5);
+        addAction("Miniplayer", 7);
     }
 
     private int dp(float d) {
@@ -96,7 +97,16 @@ public final class MarsTvRail extends LinearLayout {
     }
 
     private void navigate(int destination) {
-        if (destination == 1) {
+        if (destination == 7) {
+            View mini = activity.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.mobile_mini_player);
+            if (mini != null && mini.getVisibility() == View.VISIBLE
+                    && com.newtube.mobile.ui.playback.MiniPlayerBridge.isActive()) {
+                mini.performClick();
+            } else {
+                android.widget.Toast.makeText(activity, "Kein Miniplayer aktiv",
+                        android.widget.Toast.LENGTH_SHORT).show();
+            }
+        } else if (destination == 1) {
             activity.startActivity(new Intent(activity,
                     com.newtube.mobile.ui.search.MobileSearchActivity.class));
         } else if (destination == 5) {
