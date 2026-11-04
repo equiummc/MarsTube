@@ -117,6 +117,8 @@ jobs:
           test -s newtube-reference/smarttubetv/src/stmobile/res/values/mars_tv_theme_009.xml
           grep -q 'floating playback buttons, blue progress line' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
           grep -q 'new android.graphics.LinearGradient' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
+          grep -q 'marsTvBindShortsAspect(video)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
+          grep -q 'lp.dimensionRatio = desired' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
 
       - name: Verify SABR tests and compile MarsTube 0.0.9 multi-device APK
         shell: bash
