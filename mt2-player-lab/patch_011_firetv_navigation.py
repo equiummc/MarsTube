@@ -117,7 +117,7 @@ once(browse,
         // Cards without a videoId''',
 '''        // Explicit TV Shorts feed handoff: index and identity, not frame aspect ratio.
         if (com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(this)
-                && mCurrentSectionId == MediaGroup.TYPE_SHORTS && video.isShorts) {
+                && mCurrentSectionId == MediaGroup.TYPE_SHORTS && video.hasVideo()) {
             com.newtube.mobile.ui.common.MarsShortsSession.begin(mCurrentVideos, video);
         } else {
             com.newtube.mobile.ui.common.MarsShortsSession.clear();
