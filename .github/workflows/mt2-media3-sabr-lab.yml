@@ -109,7 +109,7 @@ jobs:
           test -s "$apk"
           "$aapt" dump permissions "$apk" > "$RUNNER_TEMP/mt2-permissions.txt"
           cat "$RUNNER_TEMP/mt2-permissions.txt"
-          for forbidden in REQUEST_INSTALL_PACKAGES REQUEST_DELETE_PACKAGES SYSTEM_ALERT_WINDOW ACTION_MANAGE_OVERLAY_PERMISSION; do
+          for forbidden in REQUEST_INSTALL_PACKAGES REQUEST_DELETE_PACKAGES SYSTEM_ALERT_WINDOW ACTION_MANAGE_OVERLAY_PERMISSION RECORD_AUDIO; do
             if grep -q "android.permission.$forbidden" "$RUNNER_TEMP/mt2-permissions.txt"; then
               echo "::error::Unexpected permission in APK: $forbidden"
               exit 1
