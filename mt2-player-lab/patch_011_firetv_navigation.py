@@ -75,7 +75,6 @@ once(playback,
      * Never delegate Shorts UP/DOWN to the generic video recommendations.
      */
     private boolean marsTvStepShort(int direction) {
-        com.newtube.mobile.ui.common.MarsShortsSession session = null; // namespace only
         if (!com.newtube.mobile.ui.common.MarsShortsSession.isActiveFor(getVideo())) {
             return false;
         }
@@ -129,10 +128,10 @@ once(browse,
         updateMiniPlayPauseIcon(player);''')
 once(browse,
 '''        mMiniPlayerBar.setVisibility(View.GONE);
-        mMiniPlayerBar.setAlpha(1f);''',
+        unwatchMiniScreenOn();''',
 '''        mMiniPlayerBar.setVisibility(View.GONE);
         marsTvUpdateMiniDock();
-        mMiniPlayerBar.setAlpha(1f);''')
+        unwatchMiniScreenOn();''')
 
 once(browse,
 '''    private void syncMiniPlayer() {
