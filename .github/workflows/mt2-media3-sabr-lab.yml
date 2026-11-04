@@ -17,6 +17,10 @@ on:
       - ".github/workflows/mt2-media3-sabr-lab.yml"
   workflow_dispatch:
 
+concurrency:
+  group: mt2-tv-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -162,7 +166,7 @@ jobs:
           set -euo pipefail
           chmod +x gradlew
           ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m :sabr-media3:testDebugUnitTest :smarttubetv:assembleStmobileDebug --stacktrace
-          ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m :smarttubetv:testStmobileDebugUnitTest --tests com.newtube.mobile.player.MarsTvPlayerPrefsTest --stacktrace
+          ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m :smarttubetv:testStmobileDebugUnitTest --tests com.newtube.mobile.player.MarsTvPlayerPrefsTest --tests com.newtube.mobile.ui.common.MarsShortsSessionTest --stacktrace
 
       - name: Block risky permissions in packaged smartphone/TV APK
         shell: bash
