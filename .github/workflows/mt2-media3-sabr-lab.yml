@@ -90,13 +90,33 @@ jobs:
           grep -q "enable = false // single sideloadable universal APK" newtube-reference/smarttubetv/build.gradle
           grep -q 'mMarsTvShell.handle(event)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
 
-      - name: Verify SABR tests and compile MarsTube v0.0.5 Fire TV APK
+      - name: Verify SABR tests and compile MarsTube 0.0.6 multi-device APK
         shell: bash
         working-directory: newtube-reference
         run: |
           set -euo pipefail
           chmod +x gradlew
           ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m :sabr-media3:testDebugUnitTest :smarttubetv:assembleStmobileDebug --stacktrace
+
+      - name: Block risky permissions in packaged smartphone/TV APK
+        shell: bash
+        working-directory: newtube-reference
+        run: |
+          set -euo pipefail
+          aapt="$ANDROID_HOME/build-tools/37.0.0/aapt"
+          test -x "$aapt"
+          apk=$(find smarttubetv/build/outputs/apk -type f -name '*.apk' -path '*stmobile*' | head -n 1)
+          test -s "$apk"
+          "$aapt" dump permissions "$apk" > "$RUNNER_TEMP/mt2-permissions.txt"
+          cat "$RUNNER_TEMP/mt2-permissions.txt"
+          for forbidden in REQUEST_INSTALL_PACKAGES REQUEST_DELETE_PACKAGES SYSTEM_ALERT_WINDOW ACTION_MANAGE_OVERLAY_PERMISSION; do
+            if grep -q "android.permission.$forbidden" "$RUNNER_TEMP/mt2-permissions.txt"; then
+              echo "::error::Unexpected permission in APK: $forbidden"
+              exit 1
+            fi
+          done
+          "$aapt" dump badging "$apk" | grep -m 1 "^package:"
+          echo "Security permission gate passed."
 
       - name: Record source and APK checksums
         shell: bash
