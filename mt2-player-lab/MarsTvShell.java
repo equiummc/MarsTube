@@ -1,12 +1,11 @@
 package com.newtube.mobile.ui.playback;
 
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
@@ -22,6 +21,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.media3.common.C;
+import androidx.media3.common.Format;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,6 +31,7 @@ import com.bumptech.glide.load.DecodeFormat;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.newtube.mobile.player.MarsTvPlayerPrefs;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -39,42 +40,118 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * MT2-005: TV-first chrome over the existing, UNCHANGED Media3/TextureView playback surface.
- * No permanent background art, blur, animations, side scrims or extra video decoders.
- * Six real 16:9 thumbnails at a time; native D-pad state machine; one optional slim icon rail.
- * Only installed in the isolated MarsTube 2.0 TV UI lab package.
+ * MarsTube 0.0.10 TV player chrome.
+ *
+ * <p>Dark-blue translucent bar, white/cyan vector glyphs, rounded focus, no live blur and
+ * no permanent animation. The Media3 surface, the SABR adapter and the decoder stay
+ * untouched: this class only draws over them and translates remote keys.</p>
+ *
+ * <p>Remote contract:</p>
+ * <ul>
+ *   <li>OK short = play/pause; OK held = temporary 2x, restored on release.</li>
+ *   <li>BACK in the video opens the left rail while playback continues; BACK again
+ *       closes the rail; a later BACK lets the activity minimize.</li>
+ *   <li>BACK in a dialog is handled by the dialog before this shell sees it.</li>
+ *   <li>D-pad up/down switches Shorts when no control is focused; Media next/previous
+ *       always switches. Left/right keep seeking.</li>
+ * </ul>
  */
 public final class MarsTvShell {
-    public interface PlayerSource { ExoPlayer current(); }
-    public interface Actions {
-        void openVideo(Video video);
-        void navigate(int destination);
-        void previous();
-        void next();
-        void toggle();
-        void captions();
-        void fullscreen();
-        void like();
-        void dislike();
-        void quality();
+    public interface PlayerSource {
+        ExoPlayer current();
     }
 
-    private enum Focus { VIDEO, CARDS, CONTROLS, RAIL }
+    public interface Actions {
+        void openVideo(Video video);
 
-    private static final int BLUE = 0xFF0B9BFF;
+        void navigate(int destination);
+
+        void previous();
+
+        void next();
+
+        void toggle();
+
+        void captions();
+
+        void fullscreen();
+
+        void like();
+
+        void dislike();
+
+        void quality();
+
+        /** Temporary 2x while OK is held. */
+        default void beginHold() {
+        }
+
+        /** Restore the chosen speed; never leaves a pause loop. */
+        default void endHold() {
+        }
+
+        /** The protocol that is actually open, for the Info panel. */
+        default String sourceProtocol() {
+            return "";
+        }
+
+        /** Extra diagnostics (fallback, buffer, track) for the Info panel. */
+        default String sourceDiagnostics() {
+            return "";
+        }
+    }
+
+    private enum Focus {
+        VIDEO, CARDS, CONTROLS, RAIL
+    }
+
+    private static final int CYAN = 0xFF16B8FF;
     private static final int WHITE = 0xFFF1F7FF;
-    private static final int MUTED = 0xFFB5C7D8;
-    private static final int[] RAIL_GLYPHS = {0, 1, 2, 3, 4, 5, 16};
-    private static final String[] RAIL_LABELS = {
-            "Start", "Suche", "Abos", "Verlauf", "Bibliothek", "Einstellungen", "Shorts"
+    private static final int MUTED = 0xFF9FB6CC;
+    private static final int PANEL_TOP = 0xA6112E54;
+    private static final int PANEL_BOTTOM = 0xF0091B37;
+
+    private static final long HOLD_DELAY_MS = 420L;
+    private static final long AUTO_HIDE_MS = 10_000L;
+
+    private static final int CONTROL_LIKE = 0;
+    private static final int CONTROL_DISLIKE = 1;
+    private static final int CONTROL_PREVIOUS = 2;
+    private static final int CONTROL_REWIND = 3;
+    private static final int CONTROL_PLAY = 4;
+    private static final int CONTROL_FORWARD = 5;
+    private static final int CONTROL_NEXT = 6;
+    private static final int CONTROL_CC = 7;
+    private static final int CONTROL_INFO = 8;
+    private static final int CONTROL_HD = 9;
+    private static final int CONTROL_FULLSCREEN = 10;
+
+    private static final int[] CONTROL_ICONS = {
+            R.drawable.mars_tv_ic_like,
+            R.drawable.mars_tv_ic_dislike,
+            R.drawable.mars_tv_ic_previous,
+            R.drawable.mars_tv_ic_rewind10,
+            R.drawable.mars_tv_ic_play,
+            R.drawable.mars_tv_ic_forward10,
+            R.drawable.mars_tv_ic_next,
+            R.drawable.mars_tv_ic_cc,
+            R.drawable.mars_tv_ic_info,
+            R.drawable.mars_tv_ic_hd_settings,
+            R.drawable.mars_tv_ic_fullscreen
     };
-    private static final int[] CONTROL_GLYPHS = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+
+    private static final String[] CONTROL_LABELS = {
+            "Gefällt mir", "Gefällt mir nicht", "Vorheriges", "10 Sekunden zurück",
+            "Pause oder Wiedergabe", "10 Sekunden vor", "Nächstes", "Untertitel",
+            "Videoinfos", "Videoqualität", "Vollbild"
+    };
 
     private final Activity activity;
     private final PlayerSource player;
     private final Actions actions;
     private final FrameLayout root;
     private final LinearLayout rail;
+    private final LinearLayout railItems;
     private final LinearLayout controls;
     private final FrameLayout panel;
     private final RecyclerView cards;
@@ -83,187 +160,219 @@ public final class MarsTvShell {
     private final TextView elapsed;
     private final TextView remaining;
     private final TextView clock;
-    private final TextView qualityStatus;
-    private int lastHighlightedCard = -1;
     private final TextView railHint;
-    private final List<View> railButtons = new ArrayList<>();
-    private final List<View> controlButtons = new ArrayList<>();
+    private final FrameLayout infoPanel;
+    private final TextView infoText;
+    private final ImageView playPauseIcon;
+    private final List<ImageView> controlButtons = new ArrayList<>();
+    private final List<TextView> railButtons = new ArrayList<>();
+    private final List<RailItem> railDestinations = new ArrayList<>();
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private final Runnable ticker = this::tick;
     private Focus focus = Focus.VIDEO;
+    private int cardPosition;
+    private int controlPosition = CONTROL_PLAY;
+    private int railPosition;
+    private int lastHighlightedCard = -1;
+    private boolean pip;
+    private boolean released;
+    private boolean infoOpen;
+    private boolean railEverOpened;
+    private boolean okDown;
+    private boolean holdTriggered;
+    private final Runnable ticker = this::tick;
     private final Runnable autoHide = () -> {
-        if (focus == Focus.CARDS || focus == Focus.CONTROLS) {
+        if (!infoOpen && focus != Focus.RAIL && (focus == Focus.CARDS || focus == Focus.CONTROLS)) {
             focus = Focus.VIDEO;
             render();
         }
     };
-    private int cardPosition;
-    private int controlPosition = 2;
-    private int railPosition;
-    private boolean pip;
-    private boolean released;
+    private final Runnable holdRunnable;
     private final int cardWidthPx;
     private final int thumbnailHeightPx;
     private final int gapPx;
 
-    public MarsTvShell(Activity a, ViewGroup host, PlayerSource source, Actions callbacks) {
-        activity = a;
-        player = source;
-        actions = callbacks;
-        int width = a.getResources().getDisplayMetrics().widthPixels;
-        gapPx = dp(12);
-        cardWidthPx = Math.max(dp(106), (width - dp(92) - gapPx * 5) / 6);
+    private static final class RailItem {
+        final String label;
+        final int destination;
+
+        RailItem(String label, int destination) {
+            this.label = label;
+            this.destination = destination;
+        }
+    }
+
+    public MarsTvShell(Activity activity, ViewGroup host, PlayerSource source, Actions callbacks) {
+        this.activity = activity;
+        this.player = source;
+        this.actions = callbacks;
+        this.holdRunnable = () -> {
+            if (okDown && !holdTriggered && canHold()) {
+                holdTriggered = true;
+                actions.beginHold();
+            }
+        };
+
+        int width = activity.getResources().getDisplayMetrics().widthPixels;
+        gapPx = dp(10);
+        cardWidthPx = Math.max(dp(96), (width - dp(88) - gapPx * 5) / 6);
         thumbnailHeightPx = cardWidthPx * 9 / 16;
 
-        root = new FrameLayout(a);
+        root = new FrameLayout(activity);
         root.setClipChildren(false);
         root.setClipToPadding(false);
         root.setFocusable(false);
         host.addView(root, new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        // Simple clock, low cost. The video still fills the entire display behind the chrome.
-        clock = text(19, WHITE);
-        clock.setGravity(Gravity.RIGHT);
+        clock = text(18, WHITE);
+        clock.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         FrameLayout.LayoutParams clockLp = new FrameLayout.LayoutParams(
-                dp(120), dp(39), Gravity.TOP | Gravity.RIGHT);
-        clockLp.topMargin = dp(8);
-        clockLp.rightMargin = dp(22);
+                dp(120), dp(36), Gravity.TOP | Gravity.RIGHT);
+        clockLp.topMargin = dp(10);
+        clockLp.rightMargin = dp(24);
         root.addView(clock, clockLp);
-        qualityStatus = text(13, WHITE);
-        qualityStatus.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-        qualityStatus.setPadding(dp(8), 0, dp(8), 0);
-        qualityStatus.setBackground(shape(0xA5071521, 0, 0));
-        qualityStatus.setOnClickListener(v -> actions.quality());
-        FrameLayout.LayoutParams qualityLp = new FrameLayout.LayoutParams(
-                dp(390), dp(32), Gravity.RIGHT | Gravity.TOP);
-        qualityLp.rightMargin = dp(20);
-        qualityLp.topMargin = dp(47);
-        root.addView(qualityStatus, qualityLp);
 
-        // 66 dp rail, NOT the large left panel used by phone/navigation shells.
-        rail = new LinearLayout(a);
+        infoPanel = new FrameLayout(activity);
+        infoPanel.setBackground(shape(0xF00A1D33, CYAN, 1, 14));
+        infoPanel.setPadding(dp(18), dp(14), dp(18), dp(14));
+        FrameLayout.LayoutParams infoLp = new FrameLayout.LayoutParams(
+                dp(430), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.RIGHT);
+        infoLp.topMargin = dp(52);
+        infoLp.rightMargin = dp(22);
+        root.addView(infoPanel, infoLp);
+        infoText = text(13, WHITE);
+        infoText.setLineSpacing(dp(3), 1f);
+        infoText.setGravity(Gravity.START);
+        infoPanel.addView(infoText, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // Left rail. It is an overlay over the playing video, never a second player.
+        rail = new LinearLayout(activity);
         rail.setOrientation(LinearLayout.VERTICAL);
         rail.setGravity(Gravity.CENTER_HORIZONTAL);
-        rail.setBackgroundColor(0xEE071521);
-        rail.setPadding(dp(5), dp(8), dp(5), dp(10));
+        rail.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{0xFA112D52, 0xFA08182F}));
+        rail.setPadding(dp(12), dp(18), dp(12), dp(12));
         FrameLayout.LayoutParams railLp = new FrameLayout.LayoutParams(
-                dp(67), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT | Gravity.TOP);
+                dp(240), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT | Gravity.TOP);
         root.addView(rail, railLp);
 
-        ImageView logo = new ImageView(a);
+        ImageView logo = new ImageView(activity);
         logo.setImageResource(R.drawable.mars_m_logo);
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        LinearLayout.LayoutParams logoLp = new LinearLayout.LayoutParams(dp(48), dp(61));
-        logoLp.bottomMargin = dp(12);
-        rail.addView(logo, logoLp);
+        logo.setContentDescription("MarsTube");
+        rail.addView(logo, new LinearLayout.LayoutParams(dp(54), dp(58)));
+        TextView version = text(11, MUTED);
+        version.setText("0.0.10");
+        version.setGravity(Gravity.CENTER);
+        rail.addView(version, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(22)));
 
-        for (int i = 0; i < RAIL_GLYPHS.length; i++) {
-            final int index = i;
-            Glyph button = new Glyph(a, RAIL_GLYPHS[i], dp(24));
-            button.setFocusable(false);
-            button.setContentDescription(RAIL_LABELS[i]);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(51), dp(49));
-            lp.bottomMargin = dp(9);
-            rail.addView(button, lp);
-            button.setOnClickListener(v -> { railPosition = index; activateRail(); });
-            railButtons.add(button);
-        }
+        railItems = new LinearLayout(activity);
+        railItems.setOrientation(LinearLayout.VERTICAL);
+        railItems.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        rail.addView(railItems, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        railHint = text(16, WHITE);
+        addRailItem("Start", 0);
+        addRailItem("Shorts", 8);
+        addRailItem("Suche", 1);
+        addRailItem("Abos", 2);
+        addRailItem("Verlauf", 3);
+        addRailItem("Profil", 6);
+        addRailItem("Einstellungen", 5);
+
+        railHint = text(15, WHITE);
         railHint.setGravity(Gravity.CENTER_VERTICAL);
-        railHint.setPadding(dp(12), 0, dp(12), 0);
-        railHint.setBackground(shape(0xEE071521, BLUE, 1));
-        FrameLayout.LayoutParams hintLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(45), Gravity.LEFT | Gravity.TOP);
-        hintLp.leftMargin = dp(76);
-        hintLp.topMargin = dp(77);
-        root.addView(railHint, hintLp);
+        railHint.setPadding(dp(14), 0, dp(14), 0);
+        railHint.setBackground(shape(0xF00A1D33, CYAN, 1, 10));
+        rail.addView(railHint, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(38)));
 
-        // Bottom panel is translucent paint, not GPU-expensive blur/glow.
-        panel = new FrameLayout(a);
+        // Translucent paint, not a GPU blur. The video keeps rendering behind it.
+        panel = new FrameLayout(activity);
         panel.setBackground(new GradientDrawable(
-                GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{0x9C112E54, 0xEC091B37}));
-        // 0.0.5: strip stays close to the lower image edge, not halfway up the video.
-        FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(103) + thumbnailHeightPx,
-                Gravity.BOTTOM);
-        root.addView(panel, panelLp);
+                GradientDrawable.Orientation.TOP_BOTTOM, new int[]{PANEL_TOP, PANEL_BOTTOM}));
+        int panelHeight = dp(4) + dp(32) + dp(8) + dp(56) + dp(8)
+                + thumbnailHeightPx + dp(34) + dp(8);
+        root.addView(panel, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, panelHeight, Gravity.BOTTOM));
 
-        LinearLayout panelContent = new LinearLayout(a);
+        LinearLayout panelContent = new LinearLayout(activity);
         panelContent.setOrientation(LinearLayout.VERTICAL);
         panelContent.setPadding(dp(22), dp(4), dp(22), dp(4));
         panel.addView(panelContent, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        // One slim BLUE seek line, real progress and clock; seek driven by key events.
-        LinearLayout progressRow = new LinearLayout(a);
+        // Large progress bar above the icon row.
+        LinearLayout progressRow = new LinearLayout(activity);
         progressRow.setGravity(Gravity.CENTER_VERTICAL);
-        // The scrubber is deliberately attached AFTER the floating remote controls.
         elapsed = text(13, WHITE);
-        progressRow.addView(elapsed, new LinearLayout.LayoutParams(dp(65), dp(23)));
-        progress = new View(a) {
+        progressRow.addView(elapsed, new LinearLayout.LayoutParams(dp(72), dp(30)));
+        progress = new View(activity) {
             final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            @Override protected void onDraw(Canvas c) {
-                super.onDraw(c);
+
+            @Override
+            protected void onDraw(Canvas canvas) {
+                super.onDraw(canvas);
                 ExoPlayer exo = player.current();
                 long duration = exo == null ? 0 : exo.getDuration();
-                long pos = exo == null ? 0 : exo.getCurrentPosition();
-                float fraction = duration <= 0 || duration == C.TIME_UNSET ? 0 :
-                        Math.max(0, Math.min(1, (float) pos / duration));
+                long position = exo == null ? 0 : exo.getCurrentPosition();
+                float fraction = duration <= 0 || duration == C.TIME_UNSET ? 0f
+                        : Math.max(0f, Math.min(1f, (float) position / duration));
                 float y = getHeight() / 2f;
-                paint.setStrokeWidth(dp(3));
-                paint.setStrokeCap(Paint.Cap.ROUND);
-                paint.setColor(0xFF718AAA);
-                c.drawLine(0, y, getWidth(), y, paint);
-                // MarsTube blue-to-blue progress: true rendering gradient, no animation work.
-                paint.setShader(new android.graphics.LinearGradient(
-                        0f, y, Math.max(1f, getWidth()), y,
-                        0xFF16B8FF, 0xFF354FEA, android.graphics.Shader.TileMode.CLAMP));
-                paint.setStrokeWidth(dp(4));
-                c.drawLine(0, y, getWidth() * fraction, y, paint);
                 paint.setShader(null);
-                paint.setColor(0xFFF1F7FF);
-                c.drawCircle(getWidth() * fraction, y, dp(4), paint);
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setStrokeWidth(dp(4));
+                paint.setColor(0xFF5F7893);
+                canvas.drawLine(0, y, getWidth(), y, paint);
+                paint.setShader(new LinearGradient(0f, y, Math.max(1f, getWidth()), y,
+                        CYAN, 0xFF354FEA, Shader.TileMode.CLAMP));
+                paint.setStrokeWidth(dp(6));
+                canvas.drawLine(0, y, getWidth() * fraction, y, paint);
+                paint.setShader(null);
+                paint.setColor(WHITE);
+                canvas.drawCircle(getWidth() * fraction, y, dp(5), paint);
             }
         };
-        progressRow.addView(progress, new LinearLayout.LayoutParams(
-                0, dp(23), 1f));
+        progressRow.addView(progress, new LinearLayout.LayoutParams(0, dp(30), 1f));
         remaining = text(13, WHITE);
         remaining.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-        progressRow.addView(remaining, new LinearLayout.LayoutParams(dp(65), dp(23)));
+        progressRow.addView(remaining, new LinearLayout.LayoutParams(dp(72), dp(30)));
+        panelContent.addView(progressRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
 
-        controls = new LinearLayout(a);
-        controls.setGravity(Gravity.CENTER);
+        controls = new LinearLayout(activity);
+        controls.setGravity(Gravity.CENTER_VERTICAL);
         controls.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams controlsLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(34));
-        controlsLp.bottomMargin = dp(2);
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(56));
+        controlsLp.topMargin = dp(8);
         panelContent.addView(controls, controlsLp);
 
-        for (int i = 0; i < CONTROL_GLYPHS.length; i++) {
+        for (int i = 0; i < CONTROL_ICONS.length; i++) {
             final int index = i;
-            Glyph button = new Glyph(a, CONTROL_GLYPHS[i], dp(17));
-            button.setFocusable(false);
-            button.setContentDescription(new String[]{
-                    "Vorheriges", "10 Sekunden zurück", "Pause oder Wiedergabe",
-                    "10 Sekunden vor", "Nächstes", "Untertitel", "Vollbild",
-                    "Videoqualität", "Gefällt mir", "Gefällt mir nicht"
-            }[i]);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(43), dp(33));
-            lp.leftMargin = dp(5);
-            lp.rightMargin = dp(5);
+            ImageView button = new ImageView(activity);
+            button.setImageResource(CONTROL_ICONS[i]);
+            button.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            button.setContentDescription(CONTROL_LABELS[i]);
+            button.setColorFilter(WHITE);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    dp(index == CONTROL_PLAY ? 50 : 46),
+                    dp(index == CONTROL_PLAY ? 50 : 46));
+            lp.leftMargin = dp(4);
+            lp.rightMargin = dp(4);
             controls.addView(button, lp);
-            button.setOnClickListener(v -> { controlPosition = index; executeControl(); });
+            button.setOnClickListener(v -> {
+                controlPosition = index;
+                executeControl();
+            });
             controlButtons.add(button);
         }
+        playPauseIcon = controlButtons.get(CONTROL_PLAY);
 
-        // UI order: floating playback buttons, blue progress line, then six recommendations.
-        panelContent.addView(progressRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(25)));
-        cards = new RecyclerView(a);
-        cards.setLayoutManager(new LinearLayoutManager(a, RecyclerView.HORIZONTAL, false));
+        cards = new RecyclerView(activity);
+        cards.setLayoutManager(new LinearLayoutManager(activity, RecyclerView.HORIZONTAL, false));
         cards.setHasFixedSize(true);
         cards.setItemAnimator(null);
         cards.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -271,45 +380,76 @@ public final class MarsTvShell {
         cards.setFocusable(false);
         adapter = new Carousel();
         cards.setAdapter(adapter);
-        panelContent.addView(cards, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(35)));
+        LinearLayout.LayoutParams cardsLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(34));
+        cardsLp.topMargin = dp(8);
+        panelContent.addView(cards, cardsLp);
 
         root.bringChildToFront(rail);
-        root.bringChildToFront(railHint);
+        root.bringChildToFront(infoPanel);
         root.bringChildToFront(clock);
-        root.bringChildToFront(qualityStatus);
         render();
         tick();
     }
 
-    private int dp(float n) {
-        return (int) (n * activity.getResources().getDisplayMetrics().density + 0.5f);
+    private int dp(float value) {
+        return (int) (value * activity.getResources().getDisplayMetrics().density + 0.5f);
     }
 
     private TextView text(int sp, int color) {
-        TextView v = new TextView(activity);
-        v.setTextColor(color);
-        v.setTextSize(sp);
-        v.setFontFeatureSettings("kern");
-        v.setIncludeFontPadding(false);
-        v.setGravity(Gravity.CENTER_VERTICAL);
-        return v;
+        TextView view = new TextView(activity);
+        view.setTextColor(color);
+        view.setTextSize(sp);
+        view.setIncludeFontPadding(false);
+        view.setGravity(Gravity.CENTER_VERTICAL);
+        return view;
     }
 
-    private GradientDrawable shape(int background, int outline, int outlineDp) {
-        GradientDrawable d = new GradientDrawable();
-        d.setColor(background);
-        d.setCornerRadius(dp(10));
-        if (outlineDp > 0) d.setStroke(dp(outlineDp), outline);
-        return d;
+    private GradientDrawable shape(int background, int outline, int outlineDp, int radiusDp) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(background);
+        drawable.setCornerRadius(dp(radiusDp));
+        if (outlineDp > 0) {
+            drawable.setStroke(dp(outlineDp), outline);
+        }
+        return drawable;
+    }
+
+    private void addRailItem(String label, int destination) {
+        final int index = railButtons.size();
+        TextView button = text(15, WHITE);
+        button.setText(label);
+        button.setGravity(Gravity.CENTER_VERTICAL);
+        button.setPadding(dp(18), 0, dp(12), 0);
+        button.setContentDescription(label);
+        button.setBackground(shape(0x00000000, 0, 0, 10));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(46));
+        lp.topMargin = dp(4);
+        railItems.addView(button, lp);
+        button.setOnClickListener(v -> {
+            railPosition = index;
+            activateRail();
+        });
+        railButtons.add(button);
+        railDestinations.add(new RailItem(label, destination));
     }
 
     public void setRecommendations(List<Video> videos) {
-        if (released) return;
+        if (released) {
+            return;
+        }
+        int limit = MarsTvPlayerPrefs.getCarouselPreviewCount(activity);
         List<Video> clean = new ArrayList<>();
-        if (videos != null) for (Video video : videos) {
-            if (video != null && video.videoId != null) clean.add(video);
-            if (clean.size() >= 80) break; // RecyclerView binds only visible thumbnails
+        if (videos != null) {
+            for (Video video : videos) {
+                if (video != null && video.videoId != null) {
+                    clean.add(video);
+                }
+                if (clean.size() >= limit) {
+                    break;
+                }
+            }
         }
         cardPosition = 0;
         adapter.items = clean;
@@ -319,378 +459,578 @@ public final class MarsTvShell {
     }
 
     public void hideUi() {
+        cancelHold();
+        infoOpen = false;
         focus = Focus.VIDEO;
         render();
     }
 
     public void setPictureInPicture(boolean value) {
         pip = value;
-        if (pip) focus = Focus.VIDEO;
+        if (pip) {
+            focus = Focus.VIDEO;
+        }
         render();
     }
 
-    public boolean handle(KeyEvent e) {
-        if (released || pip) return false;
-        int key = e.getKeyCode();
-        boolean mapped = key == KeyEvent.KEYCODE_DPAD_LEFT
+    /**
+     * Predictive-back entry point. Mirrors {@link #handleDown(int)} for BACK so a gesture
+     * that never produces a key event still closes the Info panel, then the rail, then
+     * opens the rail once, and only then lets the activity minimize.
+     *
+     * @return true when the shell consumed the gesture
+     */
+    public boolean handleBack() {
+        if (released || pip) {
+            return false;
+        }
+        cancelHold();
+        if (infoOpen) {
+            infoOpen = false;
+            render();
+            return true;
+        }
+        if (focus != Focus.VIDEO) {
+            focus = Focus.VIDEO;
+            render();
+            return true;
+        }
+        if (railEverOpened) {
+            return false;
+        }
+        openRail();
+        render();
+        return true;
+    }
+
+    public boolean handle(KeyEvent event) {
+        if (released || pip) {
+            return false;
+        }
+        int key = event.getKeyCode();
+        int action = event.getAction();
+        boolean okKey = key == KeyEvent.KEYCODE_DPAD_CENTER
+                || key == KeyEvent.KEYCODE_ENTER
+                || key == KeyEvent.KEYCODE_NUMPAD_ENTER;
+        boolean mapped = okKey
+                || key == KeyEvent.KEYCODE_DPAD_LEFT
                 || key == KeyEvent.KEYCODE_DPAD_RIGHT
                 || key == KeyEvent.KEYCODE_DPAD_UP
                 || key == KeyEvent.KEYCODE_DPAD_DOWN
-                || key == KeyEvent.KEYCODE_DPAD_CENTER
-                || key == KeyEvent.KEYCODE_ENTER
-                || key == KeyEvent.KEYCODE_NUMPAD_ENTER
                 || key == KeyEvent.KEYCODE_BACK
                 || key == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
                 || key == KeyEvent.KEYCODE_MEDIA_REWIND
                 || key == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
+                || key == KeyEvent.KEYCODE_MEDIA_NEXT
+                || key == KeyEvent.KEYCODE_MEDIA_PREVIOUS
                 || key == KeyEvent.KEYCODE_MENU;
-        if (!mapped) return false;
-        if (e.getAction() != KeyEvent.ACTION_DOWN) return true;
+        if (!mapped) {
+            return false;
+        }
+
+        if (action == KeyEvent.ACTION_DOWN) {
+            if (event.getRepeatCount() > 0) {
+                return true;
+            }
+            if (okKey) {
+                okDown = true;
+                holdTriggered = false;
+                if (canHold()) {
+                    handler.postDelayed(holdRunnable, HOLD_DELAY_MS);
+                }
+                return true;
+            }
+            cancelHold();
+            return handleDown(key);
+        }
+        if (action == KeyEvent.ACTION_UP) {
+            if (okKey && okDown) {
+                handler.removeCallbacks(holdRunnable);
+                if (holdTriggered) {
+                    holdTriggered = false;
+                    actions.endHold();
+                } else {
+                    executeOkShort();
+                }
+                okDown = false;
+                render();
+                return true;
+            }
+            return true;
+        }
+        return true;
+    }
+
+    private boolean handleDown(int key) {
         switch (key) {
+            case KeyEvent.KEYCODE_BACK:
+                if (infoOpen) {
+                    infoOpen = false;
+                } else if (focus == Focus.RAIL) {
+                    focus = Focus.VIDEO;
+                } else if (focus == Focus.VIDEO) {
+                    if (railEverOpened) {
+                        // First BACK already opened the rail once: let the activity minimize.
+                        return false;
+                    }
+                    openRail();
+                } else {
+                    focus = Focus.VIDEO;
+                }
+                render();
+                return true;
+            case KeyEvent.KEYCODE_MENU:
+                openRail();
+                render();
+                return true;
             case KeyEvent.KEYCODE_DPAD_LEFT:
-                if (focus == Focus.CARDS && cardPosition > 0) {
-                    cardPosition--; cards.scrollToPosition(cardPosition);
+                if (focus == Focus.RAIL) {
+                    focus = Focus.VIDEO;
+                } else if (focus == Focus.CARDS && cardPosition > 0) {
+                    cardPosition--;
+                    cards.scrollToPosition(cardPosition);
                 } else if (focus == Focus.CONTROLS && controlPosition > 0) {
                     controlPosition--;
                 } else {
-                    focus = Focus.RAIL;
+                    seek(-10_000L);
                 }
                 break;
             case KeyEvent.KEYCODE_DPAD_RIGHT:
                 if (focus == Focus.RAIL) {
                     focus = adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;
-                } else if (focus == Focus.CARDS && cardPosition < adapter.getItemCount() - 1) {
-                    cardPosition++; cards.scrollToPosition(cardPosition);
+                } else if (focus == Focus.CARDS
+                        && cardPosition < adapter.getItemCount() - 1) {
+                    cardPosition++;
+                    cards.scrollToPosition(cardPosition);
                 } else if (focus == Focus.CONTROLS) {
-                    controlPosition = Math.min(CONTROL_GLYPHS.length - 1, controlPosition + 1);
+                    controlPosition = Math.min(CONTROL_ICONS.length - 1, controlPosition + 1);
                 } else {
-                    focus = adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;
+                    seek(10_000L);
                 }
                 break;
             case KeyEvent.KEYCODE_DPAD_UP:
                 if (focus == Focus.RAIL) {
-                    railPosition = (railPosition + RAIL_GLYPHS.length - 1) % RAIL_GLYPHS.length;
+                    railPosition = (railPosition + railButtons.size() - 1) % railButtons.size();
+                } else if (focus == Focus.VIDEO) {
+                    if (isVerticalVideo()) {
+                        actions.previous();
+                    } else {
+                        focus = Focus.CONTROLS;
+                    }
                 } else if (focus == Focus.CARDS) {
                     focus = Focus.CONTROLS;
-                } else if (focus == Focus.CONTROLS) {
-                    focus = Focus.VIDEO;
                 } else {
-                    focus = Focus.CONTROLS;
+                    focus = Focus.VIDEO;
                 }
                 break;
             case KeyEvent.KEYCODE_DPAD_DOWN:
                 if (focus == Focus.RAIL) {
-                    railPosition = (railPosition + 1) % RAIL_GLYPHS.length;
+                    railPosition = (railPosition + 1) % railButtons.size();
+                } else if (focus == Focus.VIDEO) {
+                    if (isVerticalVideo()) {
+                        actions.next();
+                    } else {
+                        focus = adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;
+                    }
                 } else if (focus == Focus.CONTROLS && adapter.getItemCount() > 0) {
                     focus = Focus.CARDS;
                 } else {
-                    focus = adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;
+                    focus = Focus.VIDEO;
                 }
                 break;
-            case KeyEvent.KEYCODE_ENTER:
-            case KeyEvent.KEYCODE_NUMPAD_ENTER:
-            case KeyEvent.KEYCODE_DPAD_CENTER:
-                if (focus == Focus.RAIL) activateRail();
-                else if (focus == Focus.CARDS && adapter.getItemCount() > cardPosition) {
-                    actions.openVideo(adapter.items.get(cardPosition));
-                } else if (focus == Focus.CONTROLS) executeControl();
-                else focus = Focus.CONTROLS;
-                break;
-            case KeyEvent.KEYCODE_BACK:
-                if (focus == Focus.VIDEO) return false; // preserve app's video -> mini-player Back
-                if (focus == Focus.RAIL) focus = adapter.getItemCount() > 0
-                        ? Focus.CARDS : Focus.CONTROLS;
-                else focus = Focus.VIDEO;
-                break;
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                actions.toggle(); break;
+                actions.toggle();
+                break;
             case KeyEvent.KEYCODE_MEDIA_REWIND:
-                seek(-10000); break;
+                seek(-10_000L);
+                break;
             case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
-                seek(10000); break;
-            case KeyEvent.KEYCODE_MENU:
-                focus = Focus.RAIL; break;
-            default: return false;
+                seek(10_000L);
+                break;
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+                actions.previous();
+                break;
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+                actions.next();
+                break;
+            default:
+                return false;
         }
         render();
         return true;
     }
 
+    private void executeOkShort() {
+        if (focus == Focus.RAIL) {
+            activateRail();
+        } else if (focus == Focus.CARDS && adapter.getItemCount() > cardPosition) {
+            actions.openVideo(adapter.items.get(cardPosition));
+        } else if (focus == Focus.CONTROLS) {
+            executeControl();
+        } else {
+            actions.toggle();
+            // OK is also the natural way to reveal the controls; the next OK still
+            // lands on play/pause, so "short OK = play/pause" stays true.
+            focus = Focus.CONTROLS;
+            controlPosition = CONTROL_PLAY;
+        }
+    }
+
+    private boolean canHold() {
+        return focus == Focus.VIDEO
+                || (focus == Focus.CONTROLS && controlPosition == CONTROL_PLAY);
+    }
+
+    private void cancelHold() {
+        handler.removeCallbacks(holdRunnable);
+        if (holdTriggered) {
+            holdTriggered = false;
+            actions.endHold();
+        }
+        okDown = false;
+    }
+
+    private void openRail() {
+        cancelHold();
+        infoOpen = false;
+        focus = Focus.RAIL;
+        railEverOpened = true;
+        railPosition = Math.max(0, Math.min(railPosition, railButtons.size() - 1));
+    }
+
     private void seek(long delta) {
         ExoPlayer exo = player.current();
-        if (exo == null || !exo.isCurrentMediaItemSeekable()) return;
+        if (exo == null || !exo.isCurrentMediaItemSeekable()) {
+            return;
+        }
         long duration = exo.getDuration();
         long target = Math.max(0L, exo.getCurrentPosition() + delta);
-        if (duration > 0 && duration != C.TIME_UNSET) target = Math.min(duration, target);
+        if (duration > 0 && duration != C.TIME_UNSET) {
+            target = Math.min(duration, target);
+        }
         exo.seekTo(target);
     }
 
     private void executeControl() {
         switch (controlPosition) {
-            case 0: actions.previous(); break;
-            case 1: seek(-10000); break;
-            case 2: actions.toggle(); break;
-            case 3: seek(10000); break;
-            case 4: actions.next(); break;
-            case 5: actions.captions(); break;
-            case 6: actions.fullscreen(); break;
-            case 7: actions.quality(); break;
-            case 8: actions.like(); break;
-            case 9: actions.dislike(); break;
+            case CONTROL_LIKE:
+                actions.like();
+                break;
+            case CONTROL_DISLIKE:
+                actions.dislike();
+                break;
+            case CONTROL_PREVIOUS:
+                actions.previous();
+                break;
+            case CONTROL_REWIND:
+                seek(-10_000L);
+                break;
+            case CONTROL_PLAY:
+                actions.toggle();
+                break;
+            case CONTROL_FORWARD:
+                seek(10_000L);
+                break;
+            case CONTROL_NEXT:
+                actions.next();
+                break;
+            case CONTROL_CC:
+                actions.captions();
+                break;
+            case CONTROL_INFO:
+                infoOpen = !infoOpen;
+                if (infoOpen) {
+                    updateInfo();
+                }
+                break;
+            case CONTROL_HD:
+                actions.quality();
+                break;
+            case CONTROL_FULLSCREEN:
+                actions.fullscreen();
+                break;
+            default:
+                break;
         }
     }
 
     private void activateRail() {
-        actions.navigate(railPosition == 6 ? 8 : railPosition);
+        if (railPosition < 0 || railPosition >= railDestinations.size()) {
+            return;
+        }
+        actions.navigate(railDestinations.get(railPosition).destination);
+    }
+
+    private boolean isVerticalVideo() {
+        ExoPlayer exo = player.current();
+        Format format = exo != null ? exo.getVideoFormat() : null;
+        return format != null && format.width > 0 && format.height > format.width;
     }
 
     private void render() {
-        if (released) return;
+        if (released) {
+            return;
+        }
         root.setVisibility(pip ? View.GONE : View.VISIBLE);
-        panel.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
-        // No station watermark in video-only mode. Clock appears only with menu.
-        clock.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
-        qualityStatus.setVisibility(pip ? View.GONE : View.VISIBLE);
+        boolean panelVisible = !pip && focus != Focus.VIDEO && focus != Focus.RAIL;
+        panel.setVisibility(panelVisible ? View.VISIBLE : View.GONE);
+        clock.setVisibility(!pip && (panelVisible || focus == Focus.RAIL || infoOpen)
+                ? View.VISIBLE : View.GONE);
         rail.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
-        railHint.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
+        infoPanel.setVisibility(!pip && infoOpen ? View.VISIBLE : View.GONE);
+
         if (focus == Focus.RAIL) {
-            railHint.setText(RAIL_LABELS[railPosition]);
-            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) railHint.getLayoutParams();
-            lp.topMargin = dp(81 + railPosition * 58);
-            railHint.setLayoutParams(lp);
+            railHint.setText(railDestinations.get(railPosition).label);
         }
-        for (int i = 0; i < railButtons.size(); i++)
-            railButtons.get(i).setBackground(focus == Focus.RAIL && railPosition == i
-                    ? shape(0x99225072, BLUE, 2) : null);
-        for (int i = 0; i < controlButtons.size(); i++)
-            controlButtons.get(i).setBackground(focus == Focus.CONTROLS && controlPosition == i
-                    ? shape(0x99225072, BLUE, 2) : null);
-        int newHighlight = focus == Focus.CARDS ? cardPosition : -1;
-        if (lastHighlightedCard != newHighlight) {
-            if (lastHighlightedCard >= 0 && lastHighlightedCard < adapter.getItemCount())
+        for (int i = 0; i < railButtons.size(); i++) {
+            boolean selected = focus == Focus.RAIL && railPosition == i;
+            railButtons.get(i).setTextColor(selected ? CYAN : WHITE);
+            railButtons.get(i).setBackground(selected
+                    ? shape(0xCC1B4770, CYAN, 1, 10)
+                    : shape(0x00000000, 0, 0, 10));
+        }
+        for (int i = 0; i < controlButtons.size(); i++) {
+            boolean selected = focus == Focus.CONTROLS && controlPosition == i;
+            controlButtons.get(i).setColorFilter(selected ? CYAN : WHITE);
+            controlButtons.get(i).setBackground(selected
+                    ? shape(0xCC1B4770, CYAN, 2, 14)
+                    : shape(0x00000000, 0, 0, 14));
+            controlButtons.get(i).setPadding(dp(8), dp(8), dp(8), dp(8));
+        }
+
+        int highlight = focus == Focus.CARDS ? cardPosition : -1;
+        if (lastHighlightedCard != highlight) {
+            if (lastHighlightedCard >= 0 && lastHighlightedCard < adapter.getItemCount()) {
                 adapter.notifyItemChanged(lastHighlightedCard);
-            if (newHighlight >= 0 && newHighlight < adapter.getItemCount())
-                adapter.notifyItemChanged(newHighlight);
-            lastHighlightedCard = newHighlight;
+            }
+            if (highlight >= 0 && highlight < adapter.getItemCount()) {
+                adapter.notifyItemChanged(highlight);
+            }
+            lastHighlightedCard = highlight;
         }
+
         handler.removeCallbacks(autoHide);
-        if (focus == Focus.CARDS || focus == Focus.CONTROLS) handler.postDelayed(autoHide, 12000);
+        if (!infoOpen && (focus == Focus.CARDS || focus == Focus.CONTROLS)) {
+            handler.postDelayed(autoHide, AUTO_HIDE_MS);
+        }
     }
 
-    private static String format(long ms) {
-        long secs = Math.max(0L, ms) / 1000;
-        long minutes = secs / 60;
-        if (minutes >= 60) return String.format(Locale.ROOT, "%d:%02d:%02d",
-                minutes / 60, minutes % 60, secs % 60);
-        return String.format(Locale.ROOT, "%02d:%02d", minutes, secs % 60);
+    private static String formatTime(long ms) {
+        long seconds = Math.max(0L, ms) / 1000;
+        long minutes = seconds / 60;
+        if (minutes >= 60) {
+            return String.format(Locale.ROOT, "%d:%02d:%02d",
+                    minutes / 60, minutes % 60, seconds % 60);
+        }
+        return String.format(Locale.ROOT, "%02d:%02d", minutes, seconds % 60);
     }
 
     private void tick() {
-        if (released) return;
+        if (released) {
+            return;
+        }
         ExoPlayer exo = player.current();
         long duration = exo == null ? 0 : exo.getDuration();
         long position = exo == null ? 0 : exo.getCurrentPosition();
-        elapsed.setText(format(position));
+        elapsed.setText(formatTime(position));
         remaining.setText(duration <= 0 || duration == C.TIME_UNSET
-                ? "--:--" : format(Math.max(0L, duration - position)));
+                ? "--:--" : formatTime(Math.max(0L, duration - position)));
         clock.setText(new SimpleDateFormat("HH:mm", Locale.GERMANY).format(new Date()));
-        androidx.media3.common.Format video = exo != null ? exo.getVideoFormat() : null;
-        if (video != null && video.height > 0) {
-            String codec = video.codecs != null ? video.codecs :
-                    (video.sampleMimeType == null ? "" : video.sampleMimeType);
-            String lower = codec.toLowerCase(Locale.ROOT);
-            String codecLabel = lower.contains("vp09") || lower.contains("vp9") ? "VP9" :
-                    lower.contains("av01") ? "AV1" : lower.contains("avc") ? "H.264" : codec;
-            String hdr = video.colorInfo != null
-                    && video.colorInfo.colorTransfer != C.COLOR_TRANSFER_SDR
-                    && video.colorInfo.colorTransfer != androidx.media3.common.Format.NO_VALUE ? " · HDR" : "";
-            qualityStatus.setText(video.height + "p" + (video.frameRate > 40 ? "60" : "")
-                    + " · " + codecLabel + hdr
-                    + (video.bitrate > 0 ? String.format(Locale.GERMANY,
-                    " · %.1f Mbit/s Video", video.bitrate / 1000000f) : ""));
-        } else {
-            qualityStatus.setText("Videoqualität wird ermittelt");
+        boolean playing = exo != null && exo.getPlayWhenReady();
+        playPauseIcon.setImageResource(playing
+                ? R.drawable.mars_tv_ic_pause : R.drawable.mars_tv_ic_play);
+        if (infoOpen) {
+            updateInfo();
         }
-        if (focus != Focus.VIDEO) progress.invalidate();
-        handler.postDelayed(ticker, 1000);
+        if (panel.getVisibility() == View.VISIBLE) {
+            progress.invalidate();
+        }
+        handler.postDelayed(ticker, 1000L);
+    }
+
+    private void updateInfo() {
+        ExoPlayer exo = player.current();
+        Format video = exo != null ? exo.getVideoFormat() : null;
+        StringBuilder text = new StringBuilder();
+        if (video != null && video.height > 0) {
+            text.append(video.width).append('x').append(video.height)
+                    .append(" · ").append(Math.round(video.frameRate)).append(" fps")
+                    .append(" · ").append(codecLabel(video.codecs, video.sampleMimeType))
+                    .append(isHdr(video) ? " · HDR" : " · SDR");
+            if (video.bitrate > 0) {
+                text.append('\n').append("Bitrate: ")
+                        .append(String.format(Locale.GERMANY, "%.1f Mbit/s",
+                                video.bitrate / 1_000_000f));
+            }
+        } else {
+            text.append("Videoformat wird ermittelt");
+        }
+        String protocol = actions.sourceProtocol();
+        if (!TextUtils.isEmpty(protocol)) {
+            text.append('\n').append("Protokoll: ").append(protocol);
+        }
+        String diagnostics = actions.sourceDiagnostics();
+        if (!TextUtils.isEmpty(diagnostics)) {
+            text.append('\n').append(diagnostics);
+        }
+        text.append('\n').append("Puffer: ").append(bufferLabel(
+                MarsTvPlayerPrefs.getBufferPreset(activity)));
+        infoText.setText(text.toString());
+    }
+
+    private static String bufferLabel(int value) {
+        switch (value) {
+            case MarsTvPlayerPrefs.BUFFER_LOW:
+                return "Klein";
+            case MarsTvPlayerPrefs.BUFFER_HIGH:
+                return "Groß";
+            case MarsTvPlayerPrefs.BUFFER_NORMAL:
+            default:
+                return "Normal";
+        }
+    }
+
+    private static String codecLabel(String codecs, String mime) {
+        String value = codecs != null ? codecs : (mime != null ? mime : "");
+        String lower = value.toLowerCase(Locale.ROOT);
+        if (lower.contains("vp09") || lower.contains("vp9")) {
+            return "VP9";
+        }
+        if (lower.contains("av01")) {
+            return "AV1";
+        }
+        if (lower.contains("avc") || lower.contains("h264")) {
+            return "H.264";
+        }
+        return value;
+    }
+
+    private static boolean isHdr(Format format) {
+        return format.colorInfo != null
+                && format.colorInfo.colorTransfer != C.COLOR_TRANSFER_SDR
+                && format.colorInfo.colorTransfer != Format.NO_VALUE;
     }
 
     public void release() {
         released = true;
         handler.removeCallbacks(ticker);
         handler.removeCallbacks(autoHide);
+        handler.removeCallbacks(holdRunnable);
+        if (holdTriggered) {
+            holdTriggered = false;
+            actions.endHold();
+        }
         adapter.items.clear();
         root.removeAllViews();
         ViewGroup parent = (ViewGroup) root.getParent();
-        if (parent != null) parent.removeView(root);
+        if (parent != null) {
+            parent.removeView(root);
+        }
     }
 
     private final class Carousel extends RecyclerView.Adapter<Carousel.Holder> {
         private List<Video> items = new ArrayList<>();
-        @NonNull @Override public Holder onCreateViewHolder(@NonNull ViewGroup parent, int type) {
+
+        @NonNull
+        @Override
+        public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             LinearLayout card = new LinearLayout(activity);
             card.setOrientation(LinearLayout.VERTICAL);
             card.setFocusable(false);
             RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
-                    cardWidthPx, thumbnailHeightPx + dp(35));
+                    cardWidthPx, thumbnailHeightPx + dp(34));
             lp.rightMargin = gapPx;
             card.setLayoutParams(lp);
 
-            // Real rounded corners, not a square preview under a floating selection border.
             FrameLayout imageFrame = new FrameLayout(activity);
-            imageFrame.setBackground(shape(0xFF0A1B2B, 0, 0));
+            imageFrame.setBackground(shape(0xFF0A1B2B, 0, 0, 12));
             imageFrame.setClipToOutline(true);
             ImageView image = new ImageView(activity);
             image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            image.setBackground(shape(0xFF1C3447, 0, 0));
+            image.setBackground(shape(0xFF1C3447, 0, 0, 12));
             image.setClipToOutline(true);
             imageFrame.addView(image, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             TextView badge = text(11, WHITE);
             badge.setGravity(Gravity.CENTER);
             badge.setPadding(dp(5), dp(2), dp(5), dp(2));
-            badge.setBackground(shape(0xDB071521, 0, 0));
+            badge.setBackground(shape(0xDB071521, 0, 0, 6));
             FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, dp(23), Gravity.RIGHT | Gravity.BOTTOM);
-            badgeLp.rightMargin = dp(6); badgeLp.bottomMargin = dp(5);
+                    ViewGroup.LayoutParams.WRAP_CONTENT, dp(22), Gravity.RIGHT | Gravity.BOTTOM);
+            badgeLp.rightMargin = dp(6);
+            badgeLp.bottomMargin = dp(5);
             imageFrame.addView(badge, badgeLp);
             card.addView(imageFrame, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx));
-            TextView title = text(13, WHITE);
+            TextView title = text(12, WHITE);
             title.setGravity(Gravity.TOP);
             title.setMaxLines(1);
-            title.setMinLines(1);
             title.setEllipsize(TextUtils.TruncateAt.END);
-            title.setLineSpacing(dp(2), 1f);
             LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(28));
-            titleLp.topMargin = dp(3);
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(26));
+            titleLp.topMargin = dp(4);
             card.addView(title, titleLp);
-            Holder h = new Holder(card, imageFrame, image, badge, title);
+            Holder holder = new Holder(card, imageFrame, image, badge, title);
             card.setOnClickListener(v -> {
-                int position = h.getBindingAdapterPosition();
-                if (position == RecyclerView.NO_POSITION || position >= items.size()) return;
+                int position = holder.getBindingAdapterPosition();
+                if (position == RecyclerView.NO_POSITION || position >= items.size()) {
+                    return;
+                }
                 cardPosition = position;
                 focus = Focus.CARDS;
                 render();
                 actions.openVideo(items.get(position));
             });
-            return h;
+            return holder;
         }
 
-        @Override public void onBindViewHolder(@NonNull Holder h, int position) {
-            Video v = items.get(position);
-            h.title.setText(v.getTitle());
-            String badgeText = v.isLive ? "LIVE" : v.badge;
-            h.badge.setText(badgeText);
-            h.badge.setVisibility(badgeText == null || badgeText.isEmpty()
+        @Override
+        public void onBindViewHolder(@NonNull Holder holder, int position) {
+            Video video = items.get(position);
+            holder.title.setText(video.getTitle());
+            String badgeText = video.isLive ? "LIVE" : video.badge;
+            holder.badge.setText(badgeText);
+            holder.badge.setVisibility(badgeText == null || badgeText.isEmpty()
                     ? View.GONE : View.VISIBLE);
             boolean selected = focus == Focus.CARDS && position == cardPosition;
-            h.imageFrame.setBackground(selected
-                    ? shape(0xFF153653, BLUE, 2) : shape(0xFF0A1B2B, 0, 0));
-            h.imageFrame.setPadding(dp(3), dp(3), dp(3), dp(3));
-            h.image.setClipToOutline(true);
-            Glide.with(activity).load(v.getCardImageUrl())
+            holder.imageFrame.setBackground(selected
+                    ? shape(0xFF153653, CYAN, 2, 12)
+                    : shape(0xFF0A1B2B, 0, 0, 12));
+            holder.imageFrame.setPadding(dp(3), dp(3), dp(3), dp(3));
+            Glide.with(activity).load(video.getCardImageUrl())
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .format(DecodeFormat.PREFER_RGB_565)
-                    .centerCrop().into(h.image);
+                    .override(cardWidthPx, thumbnailHeightPx)
+                    .centerCrop()
+                    .dontAnimate()
+                    .into(holder.image);
         }
-        @Override public void onViewRecycled(@NonNull Holder h) {
-            Glide.with(activity).clear(h.image);
-            super.onViewRecycled(h);
+
+        @Override
+        public void onViewRecycled(@NonNull Holder holder) {
+            Glide.with(activity).clear(holder.image);
+            super.onViewRecycled(holder);
         }
-        @Override public int getItemCount() { return items.size(); }
+
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
+
         final class Holder extends RecyclerView.ViewHolder {
             final FrameLayout imageFrame;
             final ImageView image;
-            final TextView badge, title;
-            Holder(View view, FrameLayout f, ImageView i, TextView b, TextView t) {
-                super(view); imageFrame=f; image=i; badge=b; title=t;
-            }
-        }
-    }
+            final TextView badge;
+            final TextView title;
 
-    /** Tiny vector strokes: zero custom fonts, raster highlights or complex shaders. */
-    private final class Glyph extends View {
-        final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        final int id;
-        final int size;
-        Glyph(Context c, int iconId, int sizePx) {
-            super(c); id=iconId; size=sizePx;
-            setClickable(true);
-        }
-        @Override protected void onDraw(Canvas c) {
-            super.onDraw(c);
-            c.save();
-            float scale = size / 24f;
-            c.translate((getWidth()-size)/2f, (getHeight()-size)/2f);
-            c.scale(scale, scale);
-            p.setColor(WHITE); p.setStrokeWidth(1.9f); p.setStrokeCap(Paint.Cap.ROUND);
-            p.setStrokeJoin(Paint.Join.ROUND); p.setStyle(Paint.Style.STROKE);
-            Path path = new Path();
-            switch (id) {
-                case 0: // home
-                    path.moveTo(2,11);path.lineTo(12,3);path.lineTo(22,11);
-                    path.moveTo(5,10);path.lineTo(5,21);path.lineTo(19,21);
-                    path.lineTo(19,10);path.moveTo(10,21);path.lineTo(10,15);
-                    path.lineTo(14,15);path.lineTo(14,21);break;
-                case 1: c.drawCircle(10.2f,10.2f,6.2f,p);
-                    c.drawLine(15,15,21.5f,21.5f,p);break;
-                case 2: c.drawRoundRect(4,6,22,20,2,2,p);
-                    c.drawLine(2,3,18,3,p); path.moveTo(11,9);path.lineTo(16,13);
-                    path.lineTo(11,17);path.close();break;
-                case 3: c.drawArc(2,3,22,22,-75,300,false,p);
-                    path.moveTo(2,4);path.lineTo(2,10);path.lineTo(8,10);
-                    path.moveTo(12,6);path.lineTo(12,12);path.lineTo(16,14);break;
-                case 4: c.drawRoundRect(3,8,21,21,2,2,p);
-                    c.drawLine(5,4,19,4,p);path.moveTo(10,11);path.lineTo(16,14);
-                    path.lineTo(10,18);path.close();break;
-                case 5: c.drawCircle(12,12,4,p);
-                    for (int i=0;i<8;i++){ double a=Math.PI*i/4;
-                        c.drawLine((float)(12+7*Math.cos(a)),(float)(12+7*Math.sin(a)),
-                            (float)(12+10*Math.cos(a)),(float)(12+10*Math.sin(a)),p);}
-                    break;
-                case 6: path.moveTo(8,6);path.lineTo(8,18);path.moveTo(18,6);
-                    path.lineTo(9,12);path.lineTo(18,18);path.close();break;
-                case 7: case 9:
-                    c.drawArc(4,4,21,21,id==7?175:5,300,false,p);
-                    path.moveTo(id==7?4:20,6);
-                    path.lineTo(id==7?4:20,12);
-                    c.drawText("10",7,15,p);
-                    break;
-                case 8: c.drawRoundRect(7,5,10,19,1,1,p);
-                    c.drawRoundRect(14,5,17,19,1,1,p); break;
-                case 10: path.moveTo(16,6);path.lineTo(16,18);
-                    path.moveTo(6,6);path.lineTo(15,12);path.lineTo(6,18);path.close();break;
-                case 11: c.drawRoundRect(2,6,22,18,2,2,p);
-                    p.setStyle(Paint.Style.FILL);p.setTextSize(9);
-                    c.drawText("CC",5,15,p);break;
-                case 16: // Shorts: vertical video with play triangle
-                    c.drawRoundRect(7,2,17,22,2,2,p);
-                    path.moveTo(10,8);path.lineTo(15,12);
-                    path.lineTo(10,16);path.close();break;
-                case 13:
-                    p.setStyle(Paint.Style.FILL); p.setTextSize(9);
-                    c.drawText("HD", 4, 16, p); break;
-                case 14: case 15:
-                    if (id==15) { c.save(); c.rotate(180,12,12); }
-                    path.moveTo(9,21);path.lineTo(9,9);path.lineTo(14,3);
-                    path.lineTo(16,3);path.lineTo(16,9);path.lineTo(21,9);
-                    path.lineTo(21,13);path.lineTo(19,21);path.close();
-                    path.moveTo(3,10);path.lineTo(7,10);path.lineTo(7,21);
-                    path.lineTo(3,21);path.close();
-                    c.drawPath(path,p);path.reset();
-                    if (id==15) c.restore();
-                    break;
-                case 12:
-                    path.moveTo(3,9);path.lineTo(3,3);path.lineTo(9,3);
-                    path.moveTo(15,3);path.lineTo(21,3);path.lineTo(21,9);
-                    path.moveTo(21,15);path.lineTo(21,21);path.lineTo(15,21);
-                    path.moveTo(9,21);path.lineTo(3,21);path.lineTo(3,15);break;
+            Holder(View view, FrameLayout frame, ImageView imageView, TextView badgeView,
+                    TextView titleView) {
+                super(view);
+                imageFrame = frame;
+                image = imageView;
+                badge = badgeView;
+                title = titleView;
             }
-            p.setStyle(Paint.Style.STROKE);
-            c.drawPath(path,p);
-            c.restore();
         }
     }
 }

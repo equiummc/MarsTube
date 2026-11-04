@@ -21,7 +21,7 @@ import java.util.List;
  * data/section controller; a single vertical rail is the TV control surface.
  */
 public final class MarsTvRail extends LinearLayout {
-    private static final String TAG = "mars.tv.rail.v009";
+    private static final String TAG = "mars.tv.rail.v010";
     private static final int BLUE = Color.rgb(48, 157, 250);
     private static final int BG = Color.rgb(13, 21, 37);
     private static final int SELECTED = Color.rgb(24, 55, 93);
@@ -47,7 +47,7 @@ public final class MarsTvRail extends LinearLayout {
         branding.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
         addView(branding, new LinearLayout.LayoutParams(-1, dp(46)));
         TextView version = new TextView(activity);
-        version.setText("0.0.9");
+        version.setText("0.0.10");
         version.setTextSize(11);
         version.setTextColor(Color.LTGRAY);
         version.setGravity(Gravity.CENTER);
@@ -58,10 +58,11 @@ public final class MarsTvRail extends LinearLayout {
         addAction("Suche", 1);
         addAction("Abos", 2);
         addAction("Verlauf", 3);
-        addAction("Downloads", 4);
+        // Downloads and Miniplayer are deliberately absent on TV. Downloads are a
+        // phone-only feature, and a permanent "Miniplayer" row would be a selectable
+        // empty function whenever no player is active.
         addAction("Profil", 6);
         addAction("Einst.", 5);
-        addAction("Miniplayer", 7);
     }
 
     private int dp(float d) {

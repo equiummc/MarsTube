@@ -74,3 +74,8 @@ hs_err_pid*.log
 keystore.properties
 *.jks
 *.keystore
+
+# local MT2 reference checkout, editor state and build logs
+.mt2-build/
+.vscode/
+mt2-player-lab/build-*.log

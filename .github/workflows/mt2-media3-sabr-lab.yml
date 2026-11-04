@@ -1,4 +1,4 @@
-name: MarsTube 0.0.9 Shorts and blue TV UI
+name: MarsTube 0.0.10 TV player and settings UI
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
       - feature/mt2-007-tv-ui-quality-20261104
       - feature/mt2-008-player-tv-controls-20261104
       - feature/mt2-009-shorts-blue-ui-20261104
+      - feature/mt2-010-player-settings-ui-20261104
     paths:
       - "mt2-player-lab/**"
       - ".github/workflows/mt2-media3-sabr-lab.yml"
@@ -20,7 +21,7 @@ permissions:
 
 jobs:
   newtube-media3-sabr-reference:
-    name: Build MarsTube v0.0.9 Shorts TV APK and test Media3
+    name: Build MarsTube v0.0.10 TV player/settings APK and test Media3
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
@@ -83,50 +84,80 @@ jobs:
           python3 mt2-player-lab/patch_007_translate_common.py newtube-reference
           python3 mt2-player-lab/patch_008_tv_player.py newtube-reference
           python3 mt2-player-lab/patch_009_tv_shorts_ui.py newtube-reference
+          python3 mt2-player-lab/patch_010_player_settings_ui.py newtube-reference
           grep -q 'mt2-003 sabr-error -> dash-once' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
           grep -q 'marsTvPlaybackKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q 'marsTvBrowseKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
-          grep -q 'android:label="MarsTube 0.0.9"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
-          grep -q 'applicationId "de.equiummc.marstube2.firetest009"' newtube-reference/smarttubetv/build.gradle
-          grep -q 'versionName "0.0.9"' newtube-reference/smarttubetv/build.gradle
+          grep -q 'android:label="MarsTube 0.0.10"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
+          grep -q 'applicationId "de.equiummc.marstube2.firetest010"' newtube-reference/smarttubetv/build.gradle
+          grep -q 'versionCode 12010' newtube-reference/smarttubetv/build.gradle
+          grep -q 'versionName "0.0.10"' newtube-reference/smarttubetv/build.gradle
           test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_settings.xml) -eq 251
           test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_settings_search.xml) -eq 35
           test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_mobile.xml) -eq 370
           test -s newtube-reference/smarttubetv/src/stmobile/res/drawable-nodpi/mars_m_logo.png
           grep -q "MarsDeviceMode.isTelevision(this)" newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q "getPreferredLanguage().isEmpty()" newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/MobileMainApplication.java
-          grep -q "github.com/equiummc/mars-smarttube" newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/SettingsPages.java
+          grep -q "github.com/equiummc/MarsTube" newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/SettingsPages.java
           grep -q "enable = false // single sideloadable universal APK" newtube-reference/smarttubetv/build.gradle
           grep -q 'mMarsTvShell.handle(event)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
+          grep -q 'mMarsTvShell.handleBack()' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
+          grep -q 'beginHoldSpeed(2f)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
+          grep -q 'sourceProtocol()' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           test -s newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
+          grep -q 'mars.tv.rail.v010' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
+          grep -q 'version.setText("0.0.10")' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
           grep -q 'MarsTvRail.install(this)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MobileActivity.java
           grep -q 'MAX_RECENT_SEED_BPS = 10_000_000' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/StartupBandwidthMeter.java
-          grep -q 'int autoHeight = com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerInitializer.java
+          test -s newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/MarsTvPlayerPrefs.java
+          grep -q 'startBufferMs' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/MarsTvPlayerPrefs.java
+          grep -q 'MarsTvPlayerPrefs.getResolutionCeiling' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerInitializer.java
+          grep -q 'MarsTvPlayerPrefs.startBufferMs' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerInitializer.java
+          grep -q 'applyTvSubtitlePolicyIfNeeded' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3TrackAdapter.java
+          grep -q 'MarsTvPlayerPrefs.getResolutionCeiling' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3TrackAdapter.java
+          grep -q 'setContext(mContext)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
+          grep -q 'getSourceProtocol' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
+          test -s newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MarsTvSettingsPages.java
+          grep -q 'TV_VIDEO' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MarsTvSettingsPages.java
+          grep -q 'TV_STREAMING' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MarsTvSettingsPages.java
+          grep -q 'TV_SUBTITLES' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MarsTvSettingsPages.java
+          grep -q 'MarsTvSettingsPages.build' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/SettingsPages.java
           grep -q 'Detaillierte TV-Bildqualität' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/PlayerPages.java
           test $(grep -c '<string name=' newtube-reference/common/src/main/res/values-de/mars_strings_extra.xml) -eq 45
           grep -q 'void like()' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
           grep -q 'void dislike()' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
+          grep -q 'void beginHold()' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
+          grep -q 'public boolean handleBack()' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
           grep -q 'minimizeByDrag();' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q 'marsTvMiniPlayerKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
-          grep -q 'version.setText("0.0.9")' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
           grep -q 'addAction("Shorts", 8)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
           grep -q 'destination == 8 ? MediaGroup.TYPE_SHORTS' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
           grep -q 'mCurrentSectionId == MediaGroup.TYPE_SHORTS' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
+          grep -q 'MarsTvPlayerPrefs.shortsSpanCount' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
+          grep -q 'VideoDownloads.SECTION_ID' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
+          grep -q 'mYouGridRow' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
+          grep -q 'isMiniPlayerEnabled' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
           grep -q 'mars_tv_shorts_009' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/MobileMainApplication.java
           grep -q 'ThemeOverlay_MarsTube_Tv009' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MobileActivity.java
           test -s newtube-reference/smarttubetv/src/stmobile/res/values/mars_tv_theme_009.xml
-          grep -q 'floating playback buttons, blue progress line' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
           grep -q 'new android.graphics.LinearGradient' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
           grep -q 'marsTvBindShortsAspect(video)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
           grep -q 'lp.dimensionRatio = desired' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
+          grep -q 'shortsHighResUrl' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
+          grep -q 'thumbnailSize' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/VideoCardAdapter.java
+          grep -q 'MarsTvPlayerPrefs.isProfileGrid' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
+          grep -q 'setVisibility(!subScreen' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/BrowseTopBar.java
+          test -s newtube-reference/smarttubetv/src/test/java/com/newtube/mobile/player/MarsTvPlayerPrefsTest.java
+          test $(find newtube-reference/smarttubetv/src/stmobile/res/drawable -name 'mars_tv_ic_*.xml' | wc -l) -eq 12
 
-      - name: Verify SABR tests and compile MarsTube 0.0.9 multi-device APK
+      - name: Verify SABR and TV preference tests, compile MarsTube 0.0.10 APK
         shell: bash
         working-directory: newtube-reference
         run: |
           set -euo pipefail
           chmod +x gradlew
           ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m :sabr-media3:testDebugUnitTest :smarttubetv:assembleStmobileDebug --stacktrace
+          ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m :smarttubetv:testStmobileDebugUnitTest --tests com.newtube.mobile.player.MarsTvPlayerPrefsTest --stacktrace
 
       - name: Block risky permissions in packaged smartphone/TV APK
         shell: bash
@@ -146,7 +177,8 @@ jobs:
             fi
           done
           "$aapt" dump badging "$apk" | grep -m 1 "^package:"
-          "$aapt" dump badging "$apk" | grep -Fq "package: name='de.equiummc.marstube2.firetest009.debug'"
+          "$aapt" dump badging "$apk" | grep -Fq "package: name='de.equiummc.marstube2.firetest010.debug'"
+          "$aapt" dump badging "$apk" | grep -Fq "versionName='0.0.10'"
           echo "Security and isolated package gate passed."
 
       - name: Record source and APK checksums
@@ -156,12 +188,13 @@ jobs:
           set -euo pipefail
           mkdir -p mt2-proof
           {
-            echo "MarsTube 0.0.9 / de.equiummc.marstube2.firetest009.debug / Shorts TV tab and blue gradient player/menus APK"
+            echo "MarsTube 0.0.10 / de.equiummc.marstube2.firetest010.debug / TV player controls, settings pages and Shorts layout APK"
             echo "NewTube: $(git -C newtube-reference rev-parse HEAD)"
             echo "Build: $GITHUB_RUN_ID"
             echo "MT2 TV Input patch: $(sha256sum mt2-player-lab/patch_tv_input.py)"
             echo "MT2 SABR rescue patch: $(sha256sum mt2-player-lab/patch_sabr_recovery.py)"
             echo "MT2 parallel package patch: $(sha256sum mt2-player-lab/patch_lab_identity.py)"
+            echo "MT2 player/settings patch: $(sha256sum mt2-player-lab/patch_010_player_settings_ui.py)"
             find newtube-reference/smarttubetv/build/outputs/apk -name '*.apk' -path '*stmobile*' -print -exec sha256sum {} \;
           } > mt2-proof/build-manifest.txt
 
@@ -169,7 +202,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: marstube-v0.0.9-firetv-shorts-blue-ui-debug
+          name: marstube-v0.0.10-firetv-player-settings-ui-debug
           path: |
             newtube-reference/smarttubetv/build/outputs/apk/**/debug/*.apk
             mt2-proof/build-manifest.txt
@@ -180,7 +213,9 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: marstube-v0.0.9-firetv-sabr-unit-test-reports
-          path: newtube-reference/sabr-media3/build/reports/tests/**
+          name: marstube-v0.0.10-player-settings-unit-test-reports
+          path: |
+            newtube-reference/sabr-media3/build/reports/tests/**
+            newtube-reference/smarttubetv/build/reports/tests/**
           if-no-files-found: ignore
           retention-days: 7
