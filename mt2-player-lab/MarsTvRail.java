@@ -9,6 +9,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.lang.ref.WeakReference;
@@ -21,9 +22,9 @@ import java.util.List;
  * data/section controller; a single vertical rail is the TV control surface.
  */
 public final class MarsTvRail extends LinearLayout {
-    private static final String TAG = "mars.tv.rail.v007";
-    private static final int BLUE = Color.rgb(48, 157, 250);
-    private static final int BG = Color.rgb(13, 21, 37);
+    private static final String TAG = "mars.tv.rail.v008";
+    private static final int BLUE = 0xFF0B9BFF;
+    private static final int BG = 0xFF071521;
     private static final int SELECTED = Color.rgb(24, 55, 93);
     private final Activity activity;
     private final List<TextView> actions = new ArrayList<>();
@@ -40,13 +41,17 @@ public final class MarsTvRail extends LinearLayout {
         setClipToPadding(false);
         setPadding(dp(6), dp(16), dp(6), dp(8));
 
-        TextView branding = new TextView(activity);
-        branding.setText("M");
-        branding.setTextSize(27);
-        branding.setTypeface(null, android.graphics.Typeface.BOLD);
-        branding.setTextColor(BLUE);
-        branding.setGravity(Gravity.CENTER);
-        addView(branding, new LinearLayout.LayoutParams(-1, dp(54)));
+        // Identical Mars "M" image to the playback rail, never a plain letter.
+        ImageView branding = new ImageView(activity);
+        branding.setImageResource(com.liskovsoft.smartyoutubetv2.tv.R.drawable.mars_m_logo);
+        branding.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        addView(branding, new LinearLayout.LayoutParams(-1, dp(52)));
+        TextView version = new TextView(activity);
+        version.setText("0.0.8");
+        version.setTextSize(12);
+        version.setTextColor(BLUE);
+        version.setGravity(Gravity.CENTER);
+        addView(version, new LinearLayout.LayoutParams(-1, dp(23)));
 
         addAction("Start", 0);
         addAction("Suche", 1);
@@ -130,6 +135,7 @@ public final class MarsTvRail extends LinearLayout {
         FrameLayout.LayoutParams layout = new FrameLayout.LayoutParams(railWidth,
                 ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START);
         content.addView(rail, layout);
+        bindMiniPlayer(activity);
         android.util.Log.i("MarsTubeTV", "rail installed activity=" + name);
     }
 
@@ -142,6 +148,50 @@ public final class MarsTvRail extends LinearLayout {
 
     public static boolean isInstalled(Activity activity) {
         return get(activity) != null;
+    }
+
+    /** The shared in-app mini card is a real D-pad target on television. */
+    public static void bindMiniPlayer(Activity activity) {
+        if (!MarsDeviceMode.isTelevision(activity)) return;
+        View mini = activity.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.mobile_mini_player);
+        if (mini == null) return;
+        mini.setFocusable(true);
+        mini.setFocusableInTouchMode(false);
+        mini.setContentDescription("Kleines Video – OK zum Vergrößern");
+        mini.setOnFocusChangeListener((v, hasFocus) -> {
+            GradientDrawable border = new GradientDrawable();
+            border.setColor(Color.TRANSPARENT);
+            border.setCornerRadius(12);
+            if (hasFocus) border.setStroke(3, BLUE);
+            v.setForeground(hasFocus ? border : null);
+        });
+    }
+
+    public static boolean focusMiniPlayer(Activity activity) {
+        if (!MarsDeviceMode.isTelevision(activity) ||
+                !com.newtube.mobile.ui.playback.MiniPlayerBridge.isActive()) return false;
+        View mini = activity.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.mobile_mini_player);
+        return mini != null && mini.getVisibility() == View.VISIBLE && mini.requestFocus();
+    }
+
+    public static boolean handleMiniKey(Activity activity, KeyEvent event) {
+        if (!MarsDeviceMode.isTelevision(activity)) return false;
+        View mini = activity.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.mobile_mini_player);
+        if (mini == null || mini.getVisibility() != View.VISIBLE) return false;
+        View focus = activity.getCurrentFocus();
+        if (focus != mini) return false;
+        int code = event.getKeyCode();
+        if (code == KeyEvent.KEYCODE_DPAD_CENTER ||
+                code == KeyEvent.KEYCODE_ENTER ||
+                code == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) mini.performClick();
+            return true;
+        }
+        if (code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_BACK) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) focus(activity);
+            return true;
+        }
+        return false;
     }
 
     public static boolean focus(Activity activity) {
@@ -196,6 +246,7 @@ public final class MarsTvRail extends LinearLayout {
         } else if (code == KeyEvent.KEYCODE_DPAD_DOWN) {
             rail.actions.get(Math.min(rail.actions.size() - 1, index + 1)).requestFocus();
         } else if (code == KeyEvent.KEYCODE_DPAD_RIGHT || code == KeyEvent.KEYCODE_BACK) {
+            if (code == KeyEvent.KEYCODE_DPAD_RIGHT && focusMiniPlayer(activity)) return true;
             rail.returnToContent();
         } else if (code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER
                 || code == KeyEvent.KEYCODE_DPAD_CENTER) {
