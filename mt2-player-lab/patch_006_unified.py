@@ -161,6 +161,9 @@ security_unused = (
     "android.permission.REQUEST_DELETE_PACKAGES",
     "android.permission.SYSTEM_ALERT_WINDOW",
     "android.permission.ACTION_MANAGE_OVERLAY_PERMISSION",
+    # Optional voice search is disabled for the diagnostic package. Normal
+    # video playback, search by keyboard and media background service remain.
+    "android.permission.RECORD_AUDIO",
 )
 m = manifest.read_text(encoding="utf-8")
 if m.count("    <application") != 1:
