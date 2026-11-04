@@ -33,11 +33,23 @@ public class MarsShortsSessionTest {
     }
 
     @Test
-    public void portraitRegularVideosCannotCreateShortsSession() {
-        Video regular = video("ddddddddddd", false);
-        MarsShortsSession.begin(Collections.singletonList(regular), regular);
+    public void unrelatedRegularVideosCannotHijackAnExistingShortsFeed() {
+        Video first = video("ddddddddddd", true);
+        Video regular = video("hhhhhhhhhhh", false);
+        MarsShortsSession.begin(Collections.singletonList(first), first);
+        assertFalse(MarsShortsSession.contains(regular));
         assertFalse(MarsShortsSession.isActiveFor(regular));
         assertNull(MarsShortsSession.step(regular, 1));
+    }
+
+    @Test
+    public void unflaggedItemsInAnActualShortsSectionStillWork() {
+        // The source section is TYPE_SHORTS, even when individual API flags are inconsistent.
+        Video first = video("iiiiiiiiiii", false);
+        Video second = video("jjjjjjjjjjj", false);
+        MarsShortsSession.begin(Arrays.asList(first, second), first);
+        assertTrue(MarsShortsSession.isActiveFor(first));
+        assertEquals(second.videoId, MarsShortsSession.step(first, 1).videoId);
     }
 
     @Test
