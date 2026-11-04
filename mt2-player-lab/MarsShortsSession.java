@@ -27,7 +27,7 @@ public final class MarsShortsSession {
         if (selected == null || selected.videoId == null || feed == null) return;
         Set<String> seen = new HashSet<>();
         for (Video video : feed) {
-            if (video != null && video.isShorts && video.videoId != null
+            if (video != null && video.videoId != null && video.hasVideo()
                     && seen.add(video.videoId)) {
                 ITEMS.add(video);
                 if (ITEMS.size() >= MAX_SHORTS) break;
