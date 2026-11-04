@@ -150,6 +150,27 @@ once(gradle,'// ABI selection exclusively via splits: armeabi-v7a',
              "abiFilters 'armeabi-v7a', 'arm64-v8a' // single universal APK: Fire TV + arm64 phones")
 once(gradle,'            enable = true\n            reset()',
              '            enable = false // single sideloadable universal APK, no ABI splits\n            reset()')
+# Security review: a user-installed video app must not inherit updater or
+# system overlay rights just because they existed in the pinned reference.
+# The upstream in-app updater has already been disabled. Android PiP uses its
+# own framework API and does NOT need SYSTEM_ALERT_WINDOW.
+# Keep optional microphone permission for deliberate voice-search requests;
+# diagnose any remaining Play Protect warning using its EXACT classification.
+security_unused = (
+    "android.permission.REQUEST_INSTALL_PACKAGES",
+    "android.permission.REQUEST_DELETE_PACKAGES",
+    "android.permission.SYSTEM_ALERT_WINDOW",
+    "android.permission.ACTION_MANAGE_OVERLAY_PERMISSION",
+)
+m = manifest.read_text(encoding="utf-8")
+if m.count("    <application") != 1:
+    raise SystemExit("Unsafe security overlay anchor: missing application")
+for permission in security_unused:
+    m = m.replace("    <application",
+                  f'    <uses-permission android:name="{permission}" tools:node="remove" />\n'
+                  + "    <application", 1)
+manifest.write_text(m, encoding="utf-8")
+
 # The existing "include" is intentionally ignored when the split is disabled.
 # A permanent beta package id is fixed, BUT DEBUG GitHub signatures need not
 # match across runs. Release upgrade requires a controlled signing key first.
