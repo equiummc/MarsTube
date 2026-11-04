@@ -73,7 +73,7 @@ before = names(source)
 already = names(translated)
 unknown = set(translations) - before
 conflicts = set(translations) & already
-if unknown or conflicts or len(translations) != 44:
+if unknown or conflicts or len(translations) != 45:
     raise SystemExit(f"Unexpected shared strings: unknown={unknown}, conflicts={conflicts}, count={len(translations)}")
 missing = before - already
 untouched = {"about_source_code_url","about_license_name","about_license_url"}
