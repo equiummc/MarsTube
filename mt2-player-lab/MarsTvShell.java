@@ -54,6 +54,9 @@ public final class MarsTvShell {
         void toggle();
         void captions();
         void fullscreen();
+        void like();
+        void dislike();
+        void quality();
     }
 
     private enum Focus { VIDEO, CARDS, CONTROLS, RAIL }
@@ -65,7 +68,7 @@ public final class MarsTvShell {
     private static final String[] RAIL_LABELS = {
             "Start", "Suche", "Abos", "Verlauf", "Bibliothek", "Einstellungen"
     };
-    private static final int[] CONTROL_GLYPHS = {6, 7, 8, 9, 10, 11, 12};
+    private static final int[] CONTROL_GLYPHS = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
     private final Activity activity;
     private final PlayerSource player;
@@ -80,6 +83,7 @@ public final class MarsTvShell {
     private final TextView elapsed;
     private final TextView remaining;
     private final TextView clock;
+    private final TextView qualityStatus;
     private int lastHighlightedCard = -1;
     private final TextView railHint;
     private final List<View> railButtons = new ArrayList<>();
@@ -126,6 +130,16 @@ public final class MarsTvShell {
         clockLp.topMargin = dp(8);
         clockLp.rightMargin = dp(22);
         root.addView(clock, clockLp);
+        qualityStatus = text(13, WHITE);
+        qualityStatus.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        qualityStatus.setPadding(dp(8), 0, dp(8), 0);
+        qualityStatus.setBackground(shape(0xA5071521, 0, 0));
+        qualityStatus.setOnClickListener(v -> actions.quality());
+        FrameLayout.LayoutParams qualityLp = new FrameLayout.LayoutParams(
+                dp(390), dp(32), Gravity.RIGHT | Gravity.TOP);
+        qualityLp.rightMargin = dp(20);
+        qualityLp.topMargin = dp(10);
+        root.addView(qualityStatus, qualityLp);
 
         // 66 dp rail, NOT the large left panel used by phone/navigation shells.
         rail = new LinearLayout(a);
@@ -173,13 +187,13 @@ public final class MarsTvShell {
                 new int[]{0x96051322, 0xF207121E}));
         // 0.0.5: strip stays close to the lower image edge, not halfway up the video.
         FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(151) + thumbnailHeightPx,
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(103) + thumbnailHeightPx,
                 Gravity.BOTTOM);
         root.addView(panel, panelLp);
 
         LinearLayout panelContent = new LinearLayout(a);
         panelContent.setOrientation(LinearLayout.VERTICAL);
-        panelContent.setPadding(dp(30), dp(7), dp(30), dp(9));
+        panelContent.setPadding(dp(22), dp(4), dp(22), dp(4));
         panel.addView(panelContent, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -187,9 +201,9 @@ public final class MarsTvShell {
         LinearLayout progressRow = new LinearLayout(a);
         progressRow.setGravity(Gravity.CENTER_VERTICAL);
         panelContent.addView(progressRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(28)));
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(23)));
         elapsed = text(13, WHITE);
-        progressRow.addView(elapsed, new LinearLayout.LayoutParams(dp(65), dp(29)));
+        progressRow.addView(elapsed, new LinearLayout.LayoutParams(dp(65), dp(23)));
         progress = new View(a) {
             final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
             @Override protected void onDraw(Canvas c) {
@@ -211,17 +225,17 @@ public final class MarsTvShell {
             }
         };
         progressRow.addView(progress, new LinearLayout.LayoutParams(
-                0, dp(30), 1f));
+                0, dp(23), 1f));
         remaining = text(13, WHITE);
         remaining.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-        progressRow.addView(remaining, new LinearLayout.LayoutParams(dp(65), dp(29)));
+        progressRow.addView(remaining, new LinearLayout.LayoutParams(dp(65), dp(23)));
 
         controls = new LinearLayout(a);
         controls.setGravity(Gravity.CENTER);
         controls.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams controlsLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(40));
-        controlsLp.bottomMargin = dp(7);
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(34));
+        controlsLp.bottomMargin = dp(2);
         panelContent.addView(controls, controlsLp);
 
         for (int i = 0; i < CONTROL_GLYPHS.length; i++) {
@@ -230,11 +244,12 @@ public final class MarsTvShell {
             button.setFocusable(false);
             button.setContentDescription(new String[]{
                     "Vorheriges", "10 Sekunden zurück", "Pause oder Wiedergabe",
-                    "10 Sekunden vor", "Nächstes", "Untertitel", "Vollbild"
+                    "10 Sekunden vor", "Nächstes", "Untertitel", "Vollbild",
+                    "Videoqualität", "Gefällt mir", "Gefällt mir nicht"
             }[i]);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(44), dp(36));
-            lp.leftMargin = dp(8);
-            lp.rightMargin = dp(8);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(43), dp(33));
+            lp.leftMargin = dp(5);
+            lp.rightMargin = dp(5);
             controls.addView(button, lp);
             button.setOnClickListener(v -> { controlPosition = index; executeControl(); });
             controlButtons.add(button);
@@ -250,11 +265,12 @@ public final class MarsTvShell {
         adapter = new Carousel();
         cards.setAdapter(adapter);
         panelContent.addView(cards, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(63)));
+                ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx + dp(35)));
 
         root.bringChildToFront(rail);
         root.bringChildToFront(railHint);
         root.bringChildToFront(clock);
+        root.bringChildToFront(qualityStatus);
         render();
         tick();
     }
@@ -411,6 +427,9 @@ public final class MarsTvShell {
             case 4: actions.next(); break;
             case 5: actions.captions(); break;
             case 6: actions.fullscreen(); break;
+            case 7: actions.quality(); break;
+            case 8: actions.like(); break;
+            case 9: actions.dislike(); break;
         }
     }
 
@@ -424,6 +443,7 @@ public final class MarsTvShell {
         panel.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
         // No station watermark in video-only mode. Clock appears only with menu.
         clock.setVisibility(!pip && focus != Focus.VIDEO ? View.VISIBLE : View.GONE);
+        qualityStatus.setVisibility(pip ? View.GONE : View.VISIBLE);
         rail.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
         railHint.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
         if (focus == Focus.RAIL) {
@@ -467,6 +487,23 @@ public final class MarsTvShell {
         remaining.setText(duration <= 0 || duration == C.TIME_UNSET
                 ? "--:--" : format(Math.max(0L, duration - position)));
         clock.setText(new SimpleDateFormat("HH:mm", Locale.GERMANY).format(new Date()));
+        androidx.media3.common.Format video = exo != null ? exo.getVideoFormat() : null;
+        if (video != null && video.height > 0) {
+            String codec = video.codecs != null ? video.codecs :
+                    (video.sampleMimeType == null ? "" : video.sampleMimeType);
+            String lower = codec.toLowerCase(Locale.ROOT);
+            String codecLabel = lower.contains("vp09") || lower.contains("vp9") ? "VP9" :
+                    lower.contains("av01") ? "AV1" : lower.contains("avc") ? "H.264" : codec;
+            String hdr = video.colorInfo != null
+                    && video.colorInfo.colorTransfer != C.COLOR_TRANSFER_SDR
+                    && video.colorInfo.colorTransfer != C.NO_VALUE ? " · HDR" : "";
+            qualityStatus.setText(video.height + "p" + (video.frameRate > 40 ? "60" : "")
+                    + " · " + codecLabel + hdr
+                    + (video.bitrate > 0 ? String.format(Locale.GERMANY,
+                    " · %.1f Mbit/s Video", video.bitrate / 1000000f) : ""));
+        } else {
+            qualityStatus.setText("Videoqualität wird ermittelt");
+        }
         if (focus != Focus.VIDEO) progress.invalidate();
         handler.postDelayed(ticker, 1000);
     }
@@ -488,7 +525,7 @@ public final class MarsTvShell {
             card.setOrientation(LinearLayout.VERTICAL);
             card.setFocusable(false);
             RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(
-                    cardWidthPx, thumbnailHeightPx + dp(65));
+                    cardWidthPx, thumbnailHeightPx + dp(35));
             lp.rightMargin = gapPx;
             card.setLayoutParams(lp);
 
@@ -514,13 +551,13 @@ public final class MarsTvShell {
                     ViewGroup.LayoutParams.MATCH_PARENT, thumbnailHeightPx));
             TextView title = text(13, WHITE);
             title.setGravity(Gravity.TOP);
-            title.setMaxLines(2);
-            title.setMinLines(2);
+            title.setMaxLines(1);
+            title.setMinLines(1);
             title.setEllipsize(TextUtils.TruncateAt.END);
             title.setLineSpacing(dp(2), 1f);
             LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, dp(56));
-            titleLp.topMargin = dp(6);
+                    ViewGroup.LayoutParams.MATCH_PARENT, dp(28));
+            titleLp.topMargin = dp(3);
             card.addView(title, titleLp);
             Holder h = new Holder(card, imageFrame, image, badge, title);
             card.setOnClickListener(v -> {
@@ -621,6 +658,19 @@ public final class MarsTvShell {
                 case 11: c.drawRoundRect(2,6,22,18,2,2,p);
                     p.setStyle(Paint.Style.FILL);p.setTextSize(9);
                     c.drawText("CC",5,15,p);break;
+                case 13:
+                    p.setStyle(Paint.Style.FILL); p.setTextSize(9);
+                    c.drawText("HD", 4, 16, p); break;
+                case 14: case 15:
+                    if (id==15) { c.save(); c.rotate(180,12,12); }
+                    path.moveTo(9,21);path.lineTo(9,9);path.lineTo(14,3);
+                    path.lineTo(16,3);path.lineTo(16,9);path.lineTo(21,9);
+                    path.lineTo(21,13);path.lineTo(19,21);path.close();
+                    path.moveTo(3,10);path.lineTo(7,10);path.lineTo(7,21);
+                    path.lineTo(3,21);path.close();
+                    c.drawPath(path,p);path.reset();
+                    if (id==15) c.restore();
+                    break;
                 case 12:
                     path.moveTo(3,9);path.lineTo(3,3);path.lineTo(9,3);
                     path.moveTo(15,3);path.lineTo(21,3);path.lineTo(21,9);
