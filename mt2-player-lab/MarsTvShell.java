@@ -64,9 +64,9 @@ public final class MarsTvShell {
     private static final int BLUE = 0xFF0B9BFF;
     private static final int WHITE = 0xFFF1F7FF;
     private static final int MUTED = 0xFFB5C7D8;
-    private static final int[] RAIL_GLYPHS = {0, 1, 2, 3, 4, 5};
+    private static final int[] RAIL_GLYPHS = {0, 1, 2, 3, 4, 5, 16};
     private static final String[] RAIL_LABELS = {
-            "Start", "Suche", "Abos", "Verlauf", "Bibliothek", "Einstellungen"
+            "Start", "Suche", "Abos", "Verlauf", "Bibliothek", "Einstellungen", "Shorts"
     };
     private static final int[] CONTROL_GLYPHS = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
@@ -184,7 +184,7 @@ public final class MarsTvShell {
         panel = new FrameLayout(a);
         panel.setBackground(new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{0x96051322, 0xF207121E}));
+                new int[]{0x9C112E54, 0xEC091B37}));
         // 0.0.5: strip stays close to the lower image edge, not halfway up the video.
         FrameLayout.LayoutParams panelLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(103) + thumbnailHeightPx,
@@ -200,8 +200,7 @@ public final class MarsTvShell {
         // One slim BLUE seek line, real progress and clock; seek driven by key events.
         LinearLayout progressRow = new LinearLayout(a);
         progressRow.setGravity(Gravity.CENTER_VERTICAL);
-        panelContent.addView(progressRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(23)));
+        // The scrubber is deliberately attached AFTER the floating remote controls.
         elapsed = text(13, WHITE);
         progressRow.addView(elapsed, new LinearLayout.LayoutParams(dp(65), dp(23)));
         progress = new View(a) {
@@ -216,12 +215,17 @@ public final class MarsTvShell {
                 float y = getHeight() / 2f;
                 paint.setStrokeWidth(dp(3));
                 paint.setStrokeCap(Paint.Cap.ROUND);
-                paint.setColor(0xFF7A8796);
+                paint.setColor(0xFF718AAA);
                 c.drawLine(0, y, getWidth(), y, paint);
-                paint.setColor(BLUE);
+                // MarsTube blue-to-blue progress: true rendering gradient, no animation work.
+                paint.setShader(new android.graphics.LinearGradient(
+                        0f, y, Math.max(1f, getWidth()), y,
+                        0xFF16B8FF, 0xFF354FEA, android.graphics.Shader.TileMode.CLAMP));
+                paint.setStrokeWidth(dp(4));
                 c.drawLine(0, y, getWidth() * fraction, y, paint);
-                paint.setColor(WHITE);
-                c.drawCircle(getWidth() * fraction, y, dp(5), paint);
+                paint.setShader(null);
+                paint.setColor(0xFFF1F7FF);
+                c.drawCircle(getWidth() * fraction, y, dp(4), paint);
             }
         };
         progressRow.addView(progress, new LinearLayout.LayoutParams(
@@ -255,6 +259,9 @@ public final class MarsTvShell {
             controlButtons.add(button);
         }
 
+        // UI order: floating playback buttons, blue progress line, then six recommendations.
+        panelContent.addView(progressRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(25)));
         cards = new RecyclerView(a);
         cards.setLayoutManager(new LinearLayoutManager(a, RecyclerView.HORIZONTAL, false));
         cards.setHasFixedSize(true);
@@ -434,7 +441,7 @@ public final class MarsTvShell {
     }
 
     private void activateRail() {
-        actions.navigate(railPosition);
+        actions.navigate(railPosition == 6 ? 8 : railPosition);
     }
 
     private void render() {
@@ -658,6 +665,10 @@ public final class MarsTvShell {
                 case 11: c.drawRoundRect(2,6,22,18,2,2,p);
                     p.setStyle(Paint.Style.FILL);p.setTextSize(9);
                     c.drawText("CC",5,15,p);break;
+                case 16: // Shorts: vertical video with play triangle
+                    c.drawRoundRect(7,2,17,22,2,2,p);
+                    path.moveTo(10,8);path.lineTo(15,12);
+                    path.lineTo(10,16);path.close();break;
                 case 13:
                     p.setStyle(Paint.Style.FILL); p.setTextSize(9);
                     c.drawText("HD", 4, 16, p); break;
