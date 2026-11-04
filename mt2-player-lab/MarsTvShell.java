@@ -138,7 +138,7 @@ public final class MarsTvShell {
         FrameLayout.LayoutParams qualityLp = new FrameLayout.LayoutParams(
                 dp(390), dp(32), Gravity.RIGHT | Gravity.TOP);
         qualityLp.rightMargin = dp(20);
-        qualityLp.topMargin = dp(10);
+        qualityLp.topMargin = dp(47);
         root.addView(qualityStatus, qualityLp);
 
         // 66 dp rail, NOT the large left panel used by phone/navigation shells.
