@@ -53,3 +53,14 @@ Jeder Agent **ergänzt** hier:
 - **Nächster Schritt:** gezielte konkrete Aufgabe, keine pauschale neue Gesamtanalyse
 
 **Wichtig:** Eine aktualisierte Datei auf GitHub wird nicht automatisch in eine bereits laufende lokale OpenCode-Sitzung übertragen. Änderungen nach Arbeitsabschluss kontrolliert mit dem lokalen Git-Zustand abgleichen.
+
+### Fire-TV-Gerätetest 0.0.10 – neue offene P0-Fehler
+
+**05.11.2026, tatsächlicher Nutzerbefund auf Amazon Fire TV Cube (AFTR):**
+
+- [ ] BACK aus Player/Navigation verhält sich nicht zuverlässig.
+- [ ] Shorts D-Pad nach unten wechselt in ein normales Video statt zum nächsten Short im selben Feed.
+- [ ] Player-Seitenmenü ist gegenüber der schmalen Hauptnavigation zu breit.
+- [ ] **Miniplayer P0:** Läuft nach Verkleinern rechts als überlagerndes Fenster weiter, lässt sich mit der TV-Fernbedienung nicht zuverlässig anwählen/vergrößern und verdeckt Bedienbereiche. Optionaler Miniplayer bleibt Produktziel, muss bei aktivem Video eindeutig fokussierbar sein; OK zurück zu Vollbild, auf allen Browse-/Suchseiten erreichbar, deaktivierbar. Keine zweite Playerinstanz.
+
+**Fachlicher Fixauftrag:** [MT2-010R-FIRETV-ABNAHME.md](../mt2-player-lab/MT2-010R-FIRETV-ABNAHME.md). Fehler sind auf Geräten beobachtet und analysiert, **noch nicht behoben oder auf Fire TV/Thomson nachgetestet**. Keine allgemeine 0.0.10-Freigabe.
