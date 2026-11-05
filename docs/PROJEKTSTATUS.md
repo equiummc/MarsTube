@@ -81,3 +81,19 @@ Jeder Agent **ergänzt** hier:
 - [ ] **Visuelle Abnahme:** Vergleich der echten Fire-TV-Oberfläche mit dem vom Nutzer freigegebenen neonblauen Zielbild. Das Originalbild muss noch als versionierte Referenzdatei aufgenommen werden.
 
 **Installationshelfer:** `tools/Install-MarsTube-011-FireTV.ps1` (im PowerShell-7-Terminal mit explizitem APK-Pfad). Bestehende Testpakete 0.0.9 und 0.0.10 nicht entfernen.
+
+### MT2-012 – Updatefunktion direkt auf Android TV
+
+**05.11.2026 – in der Entwicklung, noch keine freigegebene TV-APK.** Branch `feature/mt2-012-inapp-updates-20261105` auf Basis 0.0.11.
+
+- [x] Neuer isolierter Build vorbereitet: Version `0.0.12`, Code `12012`, Paket `de.equiummc.marstube2.firetest012.debug`.
+- [x] Echter TV-Info-Menüpunkt „Auf Updates prüfen“ startet vorhandene Updateoberfläche mit D-Pad-Fokus und Bestätigungsdialog; alte Dummy-Aktion entfernt.
+- [x] **Fremde Updatequelle entfernt:** Ausschließlich `https://github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json`, Debug-Systemproperty als Umleitungsweg gesperrt.
+- [x] `MarsUpdateApkGuard` prüft APK-Datei, unveränderte Paket-ID, steigenden Versionscode und identische Signatur vor Android-Installationsdialog. `REQUEST_INSTALL_PACKAGES` mit CI-Sicherheitsausnahme für explizites Update.
+- [ ] CI-Build **[41941226412](https://github.com/equiummc/MarsTube/actions/runs/41941226412)**: Ergebnis beim Eintrag noch offen; keine Behauptung über fertige APK.
+- [ ] **Dauerhafte Signatur** einrichten, bevor 0.0.12 als echte Updatebasis installiert wird. Die normalen CI-Debug-Schlüssel wechseln zwischen Läufen; diese APKs sind keine zuverlässige Updatekette.
+- [ ] Eigenes GitHub Release mit signierter höherer Version und validem Update-Manifest veröffentlichen. Bis dahin zeigt Updateprüfung ggf. einen Fehler (kein Feed verfügbar).
+- [ ] Reale Geräteabnahme der Updateoberfläche/Installer-Berechtigungen auf Fire TV Cube und Thomson; 0.0.12 → 0.0.13 tatsächlich testen, ohne Einstellungen zu verlieren.
+- [ ] Sicherheitsprüfung um SHA-256-Abgleich mit vertrauenswürdigem Release-Manifest ergänzen, bevor öffentlich ausgerollt wird.
+
+Details: [MT2-012-UPDATE-FUNKTION.md](MT2-012-UPDATE-FUNKTION.md), GitHub [Issue #38](https://github.com/equiummc/MarsTube/issues/38).
