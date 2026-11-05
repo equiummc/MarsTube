@@ -15,6 +15,14 @@
 - Reproduzierbarer `patch_014_tv_shorts_mode.py` nach 013 im bestehenden Build; **eigene** Testkennung `de.equiummc.marstube2.firetest014.debug`, `versionCode 12014`, `versionName 0.0.14`. Die installierten 0.0.12/0.0.13 bleiben unangetastet.
 - Erweiterte Shorts-Session-Regression: schnelle Umschaltung während `prepare` bleibt im Shorts-Modus.
 
+## Reale Fire-TV-Abnahme (Nutzerrückmeldung 05.11.2026)
+
+- [x] Shorts-Seite öffnen und eine Videokachel per Fernbedienung auswählen
+- [x] Während Shorts: Hoch/Runter wechseln; Links/Rechts spulen; OK kurz pausiert; OK gehalten schaltet vorübergehend 2×
+- [x] Startseite, Einstellungen und Player mit derselben schmalen linken Navigation
+- [x] „Auf Updates prüfen“ direkt auf der ersten Einstellungsseite sichtbar
+- [ ] **BACK im Video:** Rückkehr zur vorherigen Übersicht mit einem Druck ist nicht als erfolgreich bestätigt. Diagnoseschritt: echte Fernbedienung und gezielt `adb shell input keyevent 4` vergleichen, Vordergrund-Activity vor/nach protokollieren. Nur den BACK-/Miniplayer-Handoff ändern, nicht die vier bestätigten Bereiche.
+
 ## Noch offen
 - [ ] CI Android-Komplettbuild / Units von 0.0.14 erfolgreich.
 - [ ] Reales Fire-TV-Gerät: Kurz/Long-OK, Seek, Shortswechsel, MENU, BACK, Home/Settings-Fokus, Designvergleich.
