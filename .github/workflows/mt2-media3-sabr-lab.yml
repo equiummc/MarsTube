@@ -1,4 +1,4 @@
-name: MarsTube 0.0.13 Fire TV focus and compact UI
+name: MarsTube 0.0.14 dedicated Shorts remote and unified rail
 
 on:
   push:
@@ -14,6 +14,7 @@ on:
       - feature/mt2-011-firetv-controls-navigation-20261105
       - feature/mt2-012-inapp-updates-20261105
       - feature/mt2-013-tv-navigation-updatelab-20261105
+      - feature/mt2-014-shorts-remote-rail-updates-20261105
     paths:
       - "mt2-player-lab/**"
       - ".github/workflows/mt2-media3-sabr-lab.yml"
@@ -28,7 +29,7 @@ permissions:
 
 jobs:
   newtube-media3-sabr-reference:
-    name: Build MarsTube v0.0.13 TV fixes and test Media3
+    name: Build MarsTube v0.0.14 Shorts TV remote & test Media3
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
@@ -95,13 +96,14 @@ jobs:
           python3 mt2-player-lab/patch_011_firetv_navigation.py newtube-reference
           python3 mt2-player-lab/patch_012_tv_updates.py newtube-reference
           python3 mt2-player-lab/patch_013_tv_focus_ui.py newtube-reference
+          python3 mt2-player-lab/patch_014_tv_shorts_mode.py newtube-reference
           grep -q 'mt2-003 sabr-error -> dash-once' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/Media3PlayerController.java
           grep -q 'marsTvPlaybackKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -q 'marsTvBrowseKey' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/browse/MobileBrowseActivity.java
-          grep -q 'android:label="MarsTube 0.0.13"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
-          grep -q 'applicationId "de.equiummc.marstube2.firetest013"' newtube-reference/smarttubetv/build.gradle
-          grep -q 'versionCode 12013' newtube-reference/smarttubetv/build.gradle
-          grep -q 'versionName "0.0.13"' newtube-reference/smarttubetv/build.gradle
+          grep -q 'android:label="MarsTube 0.0.14"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
+          grep -q 'applicationId "de.equiummc.marstube2.firetest014"' newtube-reference/smarttubetv/build.gradle
+          grep -q 'versionCode 12014' newtube-reference/smarttubetv/build.gradle
+          grep -q 'versionName "0.0.14"' newtube-reference/smarttubetv/build.gradle
           test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_settings.xml) -eq 251
           test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_settings_search.xml) -eq 35
           test $(grep -c '<string name=' newtube-reference/smarttubetv/src/stmobile/res/values-de/strings_mobile.xml) -eq 370
@@ -126,8 +128,8 @@ jobs:
             echo "::error::NewTube update source survived MarsTube patch"
             exit 1
           fi
-          grep -q 'mars.tv.rail.v013' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
-          grep -q 'version.setText("0.0.13")' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
+          grep -q 'mars.tv.rail.v014' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
+          grep -q 'version.setText("0.0.14")' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java
           grep -q 'MarsTvRail.install(this)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MobileActivity.java
           grep -q 'MAX_RECENT_SEED_BPS = 10_000_000' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/StartupBandwidthMeter.java
           test -s newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/player/MarsTvPlayerPrefs.java
@@ -171,7 +173,7 @@ jobs:
           test -s newtube-reference/smarttubetv/src/test/java/com/newtube/mobile/player/MarsTvPlayerPrefsTest.java
           test $(find newtube-reference/smarttubetv/src/stmobile/res/drawable -name 'mars_tv_ic_*.xml' | wc -l) -eq 12
 
-      - name: Verify SABR and TV preference tests, compile MarsTube 0.0.13 APK
+      - name: Verify SABR and TV preference tests, compile MarsTube 0.0.14 APK
         shell: bash
         working-directory: newtube-reference
         run: |
@@ -203,8 +205,8 @@ jobs:
             fi
           done
           "$aapt" dump badging "$apk" | grep -m 1 "^package:"
-          "$aapt" dump badging "$apk" | grep -Fq "package: name='de.equiummc.marstube2.firetest013.debug'"
-          "$aapt" dump badging "$apk" | grep -Fq "versionName='0.0.13'"
+          "$aapt" dump badging "$apk" | grep -Fq "package: name='de.equiummc.marstube2.firetest014.debug'"
+          "$aapt" dump badging "$apk" | grep -Fq "versionName='0.0.14'"
           echo "Security and isolated package gate passed."
 
       - name: Record source and APK checksums
@@ -214,7 +216,7 @@ jobs:
           set -euo pipefail
           mkdir -p mt2-proof
           {
-            echo "MarsTube 0.0.13 / de.equiummc.marstube2.firetest013.debug / TV player controls, settings pages and Shorts layout APK"
+            echo "MarsTube 0.0.14 / de.equiummc.marstube2.firetest014.debug / TV player controls, settings pages and Shorts layout APK"
             echo "NewTube: $(git -C newtube-reference rev-parse HEAD)"
             echo "Build: $GITHUB_RUN_ID"
             echo "MT2 TV Input patch: $(sha256sum mt2-player-lab/patch_tv_input.py)"
@@ -224,6 +226,7 @@ jobs:
             echo "MT2 Fire TV controls patch: $(sha256sum mt2-player-lab/patch_011_firetv_navigation.py)"
             echo "MT2 TV update patch: $(sha256sum mt2-player-lab/patch_012_tv_updates.py)"
             echo "MT2 TV focus patch: $(sha256sum mt2-player-lab/patch_013_tv_focus_ui.py)"
+            echo "MT2 dedicated Shorts patch: $(sha256sum mt2-player-lab/patch_014_tv_shorts_mode.py)"
             find newtube-reference/smarttubetv/build/outputs/apk -name '*.apk' -path '*stmobile*' -print -exec sha256sum {} \;
           } > mt2-proof/build-manifest.txt
 
@@ -231,7 +234,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: marstube-v0.0.13-firetv-compact-back-shorts-debug
+          name: marstube-v0.0.14-shorts-remote-unified-rail-debug
           path: |
             newtube-reference/smarttubetv/build/outputs/apk/**/debug/*.apk
             mt2-proof/build-manifest.txt
@@ -242,7 +245,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: marstube-v0.0.13-player-settings-unit-test-reports
+          name: marstube-v0.0.14-player-settings-unit-test-reports
           path: |
             newtube-reference/sabr-media3/build/reports/tests/**
             newtube-reference/smarttubetv/build/reports/tests/**
