@@ -6,6 +6,7 @@ import com.liskovsoft.smartyoutubetv2.tv.R;
 /** One common visual contract across player overlay, Home, Shorts and Settings. */
 public final class MarsTvNavigationTheme {
     public static final int WIDTH_DP = 64;
+    public static final int SETTINGS_WIDTH_DP = 132;
     public static final int ITEM_HEIGHT_DP = 38;
     private static final int BACKGROUND_TOP = 0xFF112D52;
     private static final int BACKGROUND_BOTTOM = 0xFF08182F;
