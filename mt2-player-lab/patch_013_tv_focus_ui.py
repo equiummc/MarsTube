@@ -7,6 +7,7 @@ debug key as though it were compatible with an earlier CI installation.
 """
 from pathlib import Path
 import sys
+import os
 
 if len(sys.argv) != 2:
     raise SystemExit("Usage: patch_013_tv_focus_ui.py <pinned-checkout>")
@@ -22,10 +23,14 @@ def once(path, before, after):
         raise SystemExit(f"MT2-013 fail closed {path}: anchor count {text.count(before)}: {before[:100]!r}")
     path.write_text(text.replace(before, after, 1), encoding="utf-8")
 
-# Same Android package as v0.0.12 -- the only correct way to produce a real
-# in-place update. A compatible SIGNING KEY is also mandatory.
+# Standalone 0.0.13 has an isolated package; the paired UPDATE LAB
+# intentionally retains a single package for both 0.0.12 and 0.0.13.
+# Both modes still require identical signing certificates for upgrades.
 gradle = root / "smarttubetv/build.gradle"
 manifest = mobile / "AndroidManifest.xml"
+if os.environ.get("MT2_UPDATE_LAB", "") != "1":
+    once(gradle, 'applicationId "de.equiummc.marstube2.firetest012"',
+         'applicationId "de.equiummc.marstube2.firetest013"')
 once(gradle, 'versionCode 12012', 'versionCode 12013')
 once(gradle, 'versionName "0.0.12"', 'versionName "0.0.13"')
 once(manifest, 'android:label="MarsTube 0.0.12"',
@@ -120,4 +125,4 @@ once(browse,
                 }
                 break;''')
 
-print("MT2-013: TV focus/back fixes and compact overlay applied; package remains 012 for upgrades.")
+print("MT2-013: TV focus/back fixes and compact overlay applied; isolated 013 build or same-package signed update pair.")
