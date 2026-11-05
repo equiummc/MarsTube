@@ -79,6 +79,9 @@ jobs:
           python3 mt2-player-lab/patch_014_tv_shorts_mode.py newtube-reference
           test -s mt2-player-lab/legacy/MarsTvRail_014.txt
           test -s mt2-player-lab/legacy/MarsTvShell_014.txt
+          # Never publish the upstream NewTube icon as a MarsTube test APK.
+          test -s newtube-reference/smarttubetv/src/stmobile/res/drawable-nodpi/mars_m_logo.png
+          grep -Fq 'android:icon="@drawable/mars_m_logo"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
       - name: Build and verify exact same-signature update pair
         shell: bash
         run: bash mt2-player-lab/build_015_update_pair.sh
