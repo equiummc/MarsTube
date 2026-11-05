@@ -41,6 +41,14 @@ once(gradle, 'versionCode 12015', f'versionCode {version_code}')
 once(gradle, 'versionName "0.0.15"', f'versionName "{version_name}"')
 once(manifest, 'android:label="MarsTube 0.0.15"', 'android:label="MarsTube"')
 
+# Set the app-level icon only after older migration patches have completed.
+# Earlier MT2-006 matches the original manifest header exactly.
+once(manifest, '        android:label="MarsTube"\n',
+     '        android:label="MarsTube"\n'
+     '        android:icon="@drawable/mars_m_logo"\n')
+once(manifest, 'tools:replace="android:name,android:theme,android:label"',
+     'tools:replace="android:name,android:theme,android:label,android:icon"')
+
 # Do not display a stale literal version on the left rail or player overlay.
 for target in (tv / "common/MarsTvRail.java",
                tv / "playback/MarsTvShell.java"):
