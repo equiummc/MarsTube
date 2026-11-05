@@ -1,1 +1,1 @@
-MarsTube production signing bootstrap. This file is updated by the owner's local setup script after GitHub secrets are configured.
+MarsTube release 0.0.16 (permanente Signatur) - a8e61808-5bc5-4d92-a533-221afcb3fe09
