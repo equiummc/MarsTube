@@ -1,0 +1,140 @@
+name: MarsTube 0.0.12 to 0.0.13 on-device update lab
+
+on:
+  push:
+    branches:
+      - feature/mt2-013-tv-navigation-updatelab-20261105
+    paths:
+      - "mt2-player-lab/**"
+      - ".github/workflows/mt2-013-updatelab.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: mt2-013-update-pair-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pair-build:
+    name: Build matched-signature 12 and 13 update-test APKs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Pin NewTube reference
+        run: |
+          set -euo pipefail
+          mkdir newtube-reference
+          git -C newtube-reference init
+          git -C newtube-reference remote add origin https://github.com/aleixrodriala/newtube.git
+          git -C newtube-reference fetch --depth 1 origin 6f96a1b42bb9272935360d7e5aec34d35f2753f0
+          git -C newtube-reference checkout --detach FETCH_HEAD
+          git -C newtube-reference submodule update --init --recursive --depth 1
+          test "$(git -C newtube-reference rev-parse HEAD)" = "6f96a1b42bb9272935360d7e5aec34d35f2753f0"
+      - name: Android compile API and build tools
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --channel=3 "platforms;android-37.0" "build-tools;37.0.0" "ndk;21.0.6113669"
+          test -f "$ANDROID_HOME/platforms/android-37.0/android.jar"
+          if [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s "$ANDROID_HOME/platforms/android-37.0" "$ANDROID_HOME/platforms/android-37"
+          fi
+          sed -i "s@'../SharedModules'@'./SharedModules'@g;s@'../MediaServiceCore'@'./MediaServiceCore'@g" newtube-reference/settings.gradle
+      - name: Apply pinned MarsTube 0.0.12 baseline
+        run: |
+          set -euo pipefail
+          python3 mt2-player-lab/patch_tv_input.py newtube-reference
+          python3 mt2-player-lab/patch_sabr_recovery.py newtube-reference
+          python3 mt2-player-lab/patch_lab_identity.py newtube-reference
+          python3 mt2-player-lab/patch_tv_shell.py newtube-reference
+          python3 mt2-player-lab/patch_005_navigation.py newtube-reference
+          python3 mt2-player-lab/patch_005_localize.py newtube-reference
+          python3 mt2-player-lab/patch_005_mobile_de.py newtube-reference
+          python3 mt2-player-lab/patch_006_unified.py newtube-reference
+          python3 mt2-player-lab/patch_006_isolated_firetv.py newtube-reference
+          python3 mt2-player-lab/patch_007_tv_quality.py newtube-reference
+          python3 mt2-player-lab/patch_007_translate_common.py newtube-reference
+          python3 mt2-player-lab/patch_008_tv_player.py newtube-reference
+          python3 mt2-player-lab/patch_009_tv_shorts_ui.py newtube-reference
+          python3 mt2-player-lab/patch_010_player_settings_ui.py newtube-reference
+          python3 mt2-player-lab/patch_011_firetv_navigation.py newtube-reference
+          python3 mt2-player-lab/patch_012_tv_updates.py newtube-reference
+      - name: Build signed pair and run regression tests
+        run: bash mt2-player-lab/build_013_update_pair.sh
+      - name: Verify manifest and block unapproved permissions
+        run: |
+          set -euo pipefail
+          grep -q 'de.equiummc.marstube2.updatelab.debug' dist/badging-12.txt
+          grep -q 'de.equiummc.marstube2.updatelab.debug' dist/badging-13.txt
+          grep -q 'MarsTube-0.0.13-updatelab.apk' dist/marstube-tv.json
+          for apk in dist/MarsTube*.apk; do
+            "$ANDROID_HOME/build-tools/37.0.0/aapt" dump permissions "$apk" > "$apk.permissions"
+            grep -q 'android.permission.REQUEST_INSTALL_PACKAGES' "$apk.permissions"
+            for denied in REQUEST_DELETE_PACKAGES SYSTEM_ALERT_WINDOW RECORD_AUDIO; do
+              if grep -q "android.permission.$denied" "$apk.permissions"; then
+                echo "::error::Forbidden permission $denied"
+                exit 1
+              fi
+            done
+          done
+      - name: Upload standalone test pair
+        uses: actions/upload-artifact@v4
+        with:
+          name: marstube-v013-update-lab-pair
+          path: dist/**
+          if-no-files-found: error
+          retention-days: 14
+      - name: Preserve test reports on failure
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: marstube-v013-update-lab-test-reports
+          path: |
+            newtube-reference/sabr-media3/build/reports/tests/**
+            newtube-reference/smarttubetv/build/reports/tests/**
+          if-no-files-found: ignore
+          retention-days: 14
+
+  publish-test-release:
+    name: Publish immutable prerelease only after paired tests pass
+    needs: pair-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: marstube-v013-update-lab-pair
+          path: dist
+      - name: Release paired update test (never stable or latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag=$(cat dist/release-tag.txt)
+          test "$tag" = "mt2-updatelab-${GITHUB_SHA:0:12}"
+          test -s dist/MarsTube-0.0.12-updatelab.apk
+          test -s dist/MarsTube-0.0.13-updatelab.apk
+          test -s dist/marstube-tv.json
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Immutable paired release $tag already exists; refusing to overwrite."
+            exit 1
+          fi
+          gh release create "$tag" \
+            dist/MarsTube-0.0.13-updatelab.apk dist/marstube-tv.json dist/SHA256SUMS \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "MarsTube 0.0.13 – isolierter Fire-TV-Updatetest" \
+            --notes "Nur TEST. Installiere zuerst die 0.0.12-updatelab.apk aus dem zugehörigen CI-Artefakt. Beide APKs wurden im selben Workflow mit identischem temporären Zertifikat gebaut. Keine stabile MarsTube-Release. Keine Garantie für spätere Updates mit einem anderen Schlüssel."

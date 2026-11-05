@@ -21,7 +21,7 @@ import java.util.List;
  * data/section controller; a single vertical rail is the TV control surface.
  */
 public final class MarsTvRail extends LinearLayout {
-    private static final String TAG = "mars.tv.rail.v011";
+    private static final String TAG = "mars.tv.rail.v013";
     private static final int BLUE = Color.rgb(48, 157, 250);
     private static final int BG = Color.rgb(13, 21, 37);
     private static final int SELECTED = Color.rgb(24, 55, 93);
@@ -40,19 +40,19 @@ public final class MarsTvRail extends LinearLayout {
                 new int[] {0xFF112D52, 0xFF08182F}));
         setFocusable(false);
         setClipToPadding(false);
-        setPadding(dp(6), dp(16), dp(6), dp(8));
+        setPadding(dp(4), dp(10), dp(4), dp(6));
 
         android.widget.ImageView branding = new android.widget.ImageView(activity);
         branding.setImageResource(com.liskovsoft.smartyoutubetv2.tv.R.drawable.mars_m_logo);
         branding.setContentDescription("MarsTube");
         branding.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-        addView(branding, new LinearLayout.LayoutParams(-1, dp(46)));
+        addView(branding, new LinearLayout.LayoutParams(-1, dp(38)));
         TextView version = new TextView(activity);
-        version.setText("0.0.12");
+        version.setText("0.0.13");
         version.setTextSize(11);
         version.setTextColor(Color.LTGRAY);
         version.setGravity(Gravity.CENTER);
-        addView(version, new LinearLayout.LayoutParams(-1, dp(22)));
+        addView(version, new LinearLayout.LayoutParams(-1, dp(16)));
 
         addAction("Start", 0);
         addAction("Shorts", 8);
@@ -110,8 +110,8 @@ public final class MarsTvRail extends LinearLayout {
 
     private void addAction(String label, int destination) {
         TextView button = new TextView(activity);
-        button.setText(label);
-        button.setTextSize(11);
+        button.setText(""); // Voice/accessibility label stays on contentDescription
+        button.setTextSize(9);
         int iconRes;
         switch (destination) {
             case 0: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_home; break;
@@ -126,15 +126,15 @@ public final class MarsTvRail extends LinearLayout {
         }
         button.setCompoundDrawablesWithIntrinsicBounds(0, iconRes, 0, 0);
         button.setCompoundDrawableTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
-        button.setCompoundDrawablePadding(dp(2));
+        button.setCompoundDrawablePadding(0);
         button.setTextColor(Color.WHITE);
         button.setGravity(Gravity.CENTER);
         button.setContentDescription(label.equals("Einst.") ? "Einstellungen" : label);
         button.setFocusable(true);
         button.setFocusableInTouchMode(false);
         button.setBackground(focusBackground(false));
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, dp(46));
-        params.bottomMargin = dp(4);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, dp(38));
+        params.bottomMargin = dp(3);
         addView(button, params);
         actions.add(button);
         button.setOnFocusChangeListener((v, focused) ->
@@ -182,7 +182,7 @@ public final class MarsTvRail extends LinearLayout {
         FrameLayout content = (FrameLayout) contentView;
         if (content.findViewWithTag(TAG) != null || content.getChildCount() == 0) return;
         View page = content.getChildAt(0);
-        final int railWidth = (int) (100 * activity.getResources().getDisplayMetrics().density + 0.5f);
+        final int railWidth = (int) (64 * activity.getResources().getDisplayMetrics().density + 0.5f);
         page.setPadding(page.getPaddingLeft() + railWidth, page.getPaddingTop(),
                 page.getPaddingRight(), page.getPaddingBottom());
         // Keep the original bottom nav's menu and presenter alive, but never show
@@ -213,7 +213,8 @@ public final class MarsTvRail extends LinearLayout {
         rail.syncMiniAction();
         View old = activity.getCurrentFocus();
         if (old != null && !rail.containsFocus(old)) rail.previousFocus = new WeakReference<>(old);
-        rail.actions.get(0).requestFocus();
+        View selected = rail.actions.get(0);
+        selected.requestFocus();
         return true;
     }
 
@@ -223,6 +224,11 @@ public final class MarsTvRail extends LinearLayout {
     }
 
     private void returnToContent() {
+        if (activity instanceof com.newtube.mobile.ui.browse.MobileBrowseActivity) {
+            ((com.newtube.mobile.ui.browse.MobileBrowseActivity) activity)
+                    .marsTvRestoreContentFocus();
+            return;
+        }
         View old = previousFocus.get();
         if (old != null && old.isAttachedToWindow() && old.isFocusable()) {
             old.requestFocus();
