@@ -118,6 +118,14 @@ if not guard.is_file():
     raise SystemExit("MT2-012 missing MarsUpdateApkGuard.java")
 dst.write_text(guard.read_text(encoding="utf-8"), encoding="utf-8")
 
+# Exercise fail-closed behavior in the existing Robolectric TV unit-test task.
+guard_test = Path(__file__).resolve().parent / "MarsUpdateApkGuardTest.java"
+if not guard_test.is_file():
+    raise SystemExit("MT2-012 missing MarsUpdateApkGuardTest.java")
+test_dst = root / "smarttubetv/src/test/java/com/newtube/mobile/update/MarsUpdateApkGuardTest.java"
+test_dst.parent.mkdir(parents=True, exist_ok=True)
+test_dst.write_text(guard_test.read_text(encoding="utf-8"), encoding="utf-8")
+
 sheet = tv / "update/MobileUpdateActivity.java"
 once(sheet,
 '''        render();
