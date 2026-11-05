@@ -6,6 +6,7 @@ The permanent installed versions are never overwritten (isolated APK identity).
 """
 from pathlib import Path
 import sys
+import os
 
 if len(sys.argv) != 2:
     raise SystemExit("Usage: patch_015_universal_back.py <pinned-checkout>")
@@ -26,8 +27,12 @@ def once(path, before, after):
 
 gradle = root / "smarttubetv/build.gradle"
 manifest = mobile / "AndroidManifest.xml"
-once(gradle, 'applicationId "de.equiummc.marstube2.firetest014"',
-             'applicationId "de.equiummc.marstube2.firetest015"')
+if os.environ.get("MT2_UPDATE_LAB", "") != "1":
+    once(gradle, 'applicationId "de.equiummc.marstube2.firetest014"',
+                 'applicationId "de.equiummc.marstube2.firetest015"')
+else:
+    if 'applicationId "de.equiummc.marstube2.updatelab"' not in gradle.read_text(encoding="utf-8"):
+        raise SystemExit("MT2-015: update lab requires unchanged package ID")
 once(gradle, 'versionCode 12014', 'versionCode 12015')
 once(gradle, 'versionName "0.0.14"', 'versionName "0.0.15"')
 once(manifest, 'android:label="MarsTube 0.0.14"',
