@@ -64,3 +64,20 @@ Jeder Agent **ergänzt** hier:
 - [ ] **Miniplayer P0:** Läuft nach Verkleinern rechts als überlagerndes Fenster weiter, lässt sich mit der TV-Fernbedienung nicht zuverlässig anwählen/vergrößern und verdeckt Bedienbereiche. Optionaler Miniplayer bleibt Produktziel, muss bei aktivem Video eindeutig fokussierbar sein; OK zurück zu Vollbild, auf allen Browse-/Suchseiten erreichbar, deaktivierbar. Keine zweite Playerinstanz.
 
 **Fachlicher Fixauftrag:** [MT2-010R-FIRETV-ABNAHME.md](../mt2-player-lab/MT2-010R-FIRETV-ABNAHME.md). Fehler sind auf Geräten beobachtet und analysiert, **noch nicht behoben oder auf Fire TV/Thomson nachgetestet**. Keine allgemeine 0.0.10-Freigabe.
+
+### MT2-011 – integrierter Korrekturzweig
+
+**05.11.2026 – implementiert, realer Gerätetest weiterhin offen.** GitHub-Branch: `feature/mt2-011-firetv-controls-navigation-20261105`; Basis `feature/mt2-010-player-settings-ui-20261104` (0.0.10 bleibt erhalten).
+
+- [x] **Neuer isolierter Android-Paketstand vorbereitet:** `de.equiummc.marstube2.firetest011.debug`, `versionCode 12011`, `versionName 0.0.11`; reproduzierbarer neuer Patch `mt2-player-lab/patch_011_firetv_navigation.py` nach dem 0.0.10-Overlay in CI.
+- [x] **Playerleiste im Quellcode** umgebaut: zentrierte weiße Vektorsymbole, cyanblaue leichte Verlaufsflächen, abgerundete Schaltflächen/Fokus, schmale dauerhafte TV-Rail mit Icons statt 240-dp-Textleiste. Stil orientiert sich am freigegebenen Zielbild; **visuelle Identität noch nicht durch Geräte-Screenshot bestätigt**.
+- [x] **BACK-Logik im Code** über dieselbe Shell-State-Machine für Back-Event und Android-Callback; BACK bei Rail dockt laufenden Player in den Mini-Host, ohne Neu-Player.
+- [x] **Shorts-Queue** `MarsShortsSession.java` als abgegrenzte Sammlung aus dem echten `TYPE_SHORTS`-Feed statt generischer Empfehlung oder bloßer Hochformatprüfung. Hoch/Runter + Media Next/Previous bleiben im Feed; am Ende kein automatischer Sprung zum normalen Video. Test `MarsShortsSessionTest.java` hinzugefügt.
+- [x] **Mini-Zugriff im Code**: dynamischer Eintrag `Laufendes Video` nur bei aktiver Mini-Wiedergabe; mit OK wieder vergrößern, Fokusrahmen; rechter Bereich des Browse-Rasters bei aktivem Mini freigehalten. Vollständige Funktion auf Suche und anderen TV-Seiten sowie echtes Gerätesichtbild **noch offen**.
+- [x] **Erster GitHub-CI-Build** ohne nachträglich ergänzte Shorts-Tests erfolgreich: Run [41937350004](https://github.com/equiummc/MarsTube/actions/runs/41937350004). Der neueste Build nach dem Test-/Shorts-Feed-Fix ist separat nachzuweisen.
+- [x] **Erster erweiterter Shorts-Testlauf:** [41937721476](https://github.com/equiummc/MarsTube/actions/runs/41937721476) ergab 13 Tests, davon 1 fehlerhafte Erwartung in `nextAndPreviousStayWithinActualShortsFeed`; Testdaten am 05.11.2026 korrigiert, nicht als bestandener Lauf behaupten.
+- [ ] **Aktueller CI-Build einschließlich korrigierter Shorts-Tests und dynamischer Versionsanzeige:** [41938747357](https://github.com/equiummc/MarsTube/actions/runs/41938747357) – Ergebnis bei Eintrag noch offen.
+- [ ] **Fire TV Cube / Thomson:** vollständiger sichtbarer Funktionstest für BACK, Shorts, Miniplayer, Bedienknöpfe, Vorspulen/2×, Menü/Focus, Speicher und Stabilität.
+- [ ] **Visuelle Abnahme:** Vergleich der echten Fire-TV-Oberfläche mit dem vom Nutzer freigegebenen neonblauen Zielbild. Das Originalbild muss noch als versionierte Referenzdatei aufgenommen werden.
+
+**Installationshelfer:** `tools/Install-MarsTube-011-FireTV.ps1` (im PowerShell-7-Terminal mit explizitem APK-Pfad). Bestehende Testpakete 0.0.9 und 0.0.10 nicht entfernen.

@@ -316,9 +316,10 @@ public final class MarsTvSettingsPages {
                 context.getString(R.string.about_license_name),
                 page -> Utils.openLinkExt(page.requireContext(),
                         context.getString(R.string.about_license_url))));
-        rows.add(SettingsRow.note("MarsTube 0.0.10 ist eine separate Test-App "
-                + "(de.equiummc.marstube2.firetest010.debug). "
-                + "Bestehende 0.0.9-Installationen bleiben unberührt."));
+        rows.add(SettingsRow.note("MarsTube "
+                + com.liskovsoft.smartyoutubetv2.tv.BuildConfig.VERSION_NAME
+                + " ist eine separate Test-App (" + context.getPackageName() + "). "
+                + "Andere MarsTube-Testinstallationen bleiben unberührt."));
         return new SettingsPages.Page("Info", rows);
     }
 
