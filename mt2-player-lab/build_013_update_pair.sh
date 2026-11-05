@@ -28,8 +28,14 @@ official = 'releases/latest/download/marstube-tv.json'
 test = f'releases/download/{tag}/marstube-tv.json'
 edit(feed, official, test)
 edit(updater, official, test)
-edit(rail, 'version.setText("0.0.13");', 'version.setText("0.0.12");')
-edit(shell, 'version.setText("0.0.13");', 'version.setText("0.0.12");')
+# Exact pre-v13 layouts belong to the baseline. The new rail calls a
+# Browse focus API added only by patch_013, so using it in v12 would not compile.
+legacy = Path("mt2-player-lab/legacy")
+for source, destination in ((legacy / "MarsTvRail_012.txt", rail),
+                            (legacy / "MarsTvShell_012.txt", shell)):
+    if not source.is_file():
+        raise SystemExit(f"Missing tested baseline overlay: {source}")
+    destination.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
 edit(updater,
      'return "https://github.com/equiummc/MarsTube/releases/tag/v" + versionName;',
      f'return "https://github.com/equiummc/MarsTube/releases/tag/{tag}";')
