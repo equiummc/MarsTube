@@ -48,7 +48,7 @@ public final class MarsTvRail extends LinearLayout {
         branding.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
         addView(branding, new LinearLayout.LayoutParams(-1, dp(46)));
         TextView version = new TextView(activity);
-        version.setText("0.0.11");
+        version.setText("0.0.12");
         version.setTextSize(11);
         version.setTextColor(Color.LTGRAY);
         version.setGravity(Gravity.CENTER);
