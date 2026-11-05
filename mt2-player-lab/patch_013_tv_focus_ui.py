@@ -90,9 +90,8 @@ once(browse,
         }
         android.content.Intent intent = new android.content.Intent();''')
 
-# In the Home grid BACK goes to navigation; outside Home it returns to Home
-# instead of leaving an inaccessible screen. Android takes over BACK on other
-# activities (Settings, Search etc). The rail itself keeps its own BACK path.
+# BACK must also work on an empty or still-loading Shorts section.
+# It is handled BEFORE the old "no cards -> consume key" fast path.
 once(browse,
 '''        boolean mapped = key == KeyEvent.KEYCODE_DPAD_LEFT
                 || key == KeyEvent.KEYCODE_DPAD_RIGHT''',
@@ -100,17 +99,15 @@ once(browse,
                 || key == KeyEvent.KEYCODE_DPAD_LEFT
                 || key == KeyEvent.KEYCODE_DPAD_RIGHT''')
 once(browse,
-'''        switch (key) {
-            case KeyEvent.KEYCODE_DPAD_LEFT:''',
-'''        switch (key) {
-            case KeyEvent.KEYCODE_BACK:
-                if (mCurrentSectionId != MediaGroup.TYPE_HOME) {
-                    marsTvRoute(0);
-                } else {
-                    com.newtube.mobile.ui.common.MarsTvRail.focus(this);
-                }
-                return true;
-            case KeyEvent.KEYCODE_DPAD_LEFT:''')
+'''        if (mContentGrid == null || mAdapter == null || mAdapter.getItemCount() == 0) return true;
+        int stride = mLayoutManager != null ? Math.max(1, mLayoutManager.getSpanCount()) : 1;''',
+'''        if (key == KeyEvent.KEYCODE_BACK) {
+            if (mCurrentSectionId != MediaGroup.TYPE_HOME) marsTvRoute(0);
+            else com.newtube.mobile.ui.common.MarsTvRail.focus(this);
+            return true;
+        }
+        if (mContentGrid == null || mAdapter == null || mAdapter.getItemCount() == 0) return true;
+        int stride = mLayoutManager != null ? Math.max(1, mLayoutManager.getSpanCount()) : 1;''')
 
 # Shorts tiles must have a deterministic transition from rail to grid.
 # The old source updater can reload section asynchronously; don't consume
