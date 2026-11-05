@@ -59,7 +59,10 @@ public final class MarsShortsSession {
     public static synchronized boolean isActiveFor(@Nullable Video video) {
         if (currentId == null || ITEMS.isEmpty()) return false;
         // During prepare, the playback presenter may not yet have bound the Video.
-        return video == null || currentId.equals(video.videoId);
+        // During a fast D-Pad switch, the player may still expose the previous
+        // Short while the next media item is preparing. Both belong to this
+        // scoped feed; normal recommendations are cleared before playback.
+        return video == null || contains(video);
     }
 
     @Nullable

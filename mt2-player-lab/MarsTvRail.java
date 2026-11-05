@@ -21,7 +21,7 @@ import java.util.List;
  * data/section controller; a single vertical rail is the TV control surface.
  */
 public final class MarsTvRail extends LinearLayout {
-    private static final String TAG = "mars.tv.rail.v013";
+    private static final String TAG = "mars.tv.rail.v014";
     private static final int BLUE = Color.rgb(48, 157, 250);
     private static final int BG = Color.rgb(13, 21, 37);
     private static final int SELECTED = Color.rgb(24, 55, 93);
@@ -36,8 +36,7 @@ public final class MarsTvRail extends LinearLayout {
         setTag(TAG);
         setOrientation(VERTICAL);
         setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[] {0xFF112D52, 0xFF08182F}));
+        setBackground(MarsTvNavigationTheme.railBackground());
         setFocusable(false);
         setClipToPadding(false);
         setPadding(dp(4), dp(10), dp(4), dp(6));
@@ -48,7 +47,7 @@ public final class MarsTvRail extends LinearLayout {
         branding.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
         addView(branding, new LinearLayout.LayoutParams(-1, dp(38)));
         TextView version = new TextView(activity);
-        version.setText("0.0.13");
+        version.setText("0.0.14");
         version.setTextSize(11);
         version.setTextColor(Color.LTGRAY);
         version.setGravity(Gravity.CENTER);
@@ -100,30 +99,16 @@ public final class MarsTvRail extends LinearLayout {
         return (int) (d * getResources().getDisplayMetrics().density + 0.5f);
     }
 
-    private static GradientDrawable focusBackground(boolean focus) {
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(focus ? SELECTED : BG);
-        background.setCornerRadius(12);
-        if (focus) background.setStroke(2, BLUE);
-        return background;
+    private GradientDrawable focusBackground(boolean focus) {
+        return MarsTvNavigationTheme.itemBackground(focus,
+                getResources().getDisplayMetrics().density);
     }
 
     private void addAction(String label, int destination) {
         TextView button = new TextView(activity);
         button.setText(""); // Voice/accessibility label stays on contentDescription
         button.setTextSize(9);
-        int iconRes;
-        switch (destination) {
-            case 0: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_home; break;
-            case 1: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_mobile_search; break;
-            case 2: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_subscriptions; break;
-            case 3: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_history; break;
-            case 4: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_downloads; break;
-            case 5: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_mobile_settings; break;
-            case 6: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_nav_you; break;
-            case 8: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.icon_shorts; break;
-            default: iconRes = com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_player_fullscreen; break;
-        }
+        int iconRes = MarsTvNavigationTheme.iconFor(destination);
         button.setCompoundDrawablesWithIntrinsicBounds(0, iconRes, 0, 0);
         button.setCompoundDrawableTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
         button.setCompoundDrawablePadding(0);
@@ -133,7 +118,7 @@ public final class MarsTvRail extends LinearLayout {
         button.setFocusable(true);
         button.setFocusableInTouchMode(false);
         button.setBackground(focusBackground(false));
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, dp(38));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, dp(MarsTvNavigationTheme.ITEM_HEIGHT_DP));
         params.bottomMargin = dp(3);
         addView(button, params);
         actions.add(button);
@@ -182,7 +167,7 @@ public final class MarsTvRail extends LinearLayout {
         FrameLayout content = (FrameLayout) contentView;
         if (content.findViewWithTag(TAG) != null || content.getChildCount() == 0) return;
         View page = content.getChildAt(0);
-        final int railWidth = (int) (64 * activity.getResources().getDisplayMetrics().density + 0.5f);
+        final int railWidth = (int) (MarsTvNavigationTheme.WIDTH_DP * activity.getResources().getDisplayMetrics().density + 0.5f);
         page.setPadding(page.getPaddingLeft() + railWidth, page.getPaddingTop(),
                 page.getPaddingRight(), page.getPaddingBottom());
         // Keep the original bottom nav's menu and presenter alive, but never show

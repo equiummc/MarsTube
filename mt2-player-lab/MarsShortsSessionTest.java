@@ -61,6 +61,19 @@ public class MarsShortsSessionTest {
     }
 
     @Test
+    public void rapidNextDoesNotFallBackToRegularPlayerWhilePreparing() {
+        Video first = video("mmmmmmmmmmm", true);
+        Video second = video("nnnnnnnnnnn", true);
+        Video third = video("ooooooooooo", true);
+        MarsShortsSession.begin(Arrays.asList(first, second, third), first);
+        assertEquals(second.videoId, MarsShortsSession.step(first, 1).videoId);
+        // The player can still report first during the next prepare.
+        assertTrue(MarsShortsSession.isActiveFor(first));
+        assertEquals(third.videoId, MarsShortsSession.step(first, 1).videoId);
+        assertNull(MarsShortsSession.step(second, 1));
+    }
+
+    @Test
     public void explicitClearReleasesPreviousQueue() {
         Video first = video("ggggggggggg", true);
         MarsShortsSession.begin(Collections.singletonList(first), first);

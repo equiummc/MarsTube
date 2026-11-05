@@ -112,7 +112,11 @@ public final class MarsTvSettingsPages {
                 context.getString(R.string.mobile_settings_advanced),
                 context.getString(R.string.mobile_settings_advanced_summary), SettingsPages.ADVANCED));
 
-        rows.add(SettingsRow.header("Info"));
+        rows.add(SettingsRow.header("Updates & Info"));
+        rows.add(SettingsRow.action("Auf Updates prüfen",
+                "MarsTube-Versionen prüfen und auf dem Fernseher installieren.",
+                page -> com.newtube.mobile.ui.update.MobileUpdateActivity
+                        .startCheck(page.requireContext())));
         rows.add(SettingsRow.page(R.drawable.ic_settings_about, "Info",
                 versionLine(context), TV_INFO));
 
@@ -215,14 +219,15 @@ public final class MarsTvSettingsPages {
     private static SettingsPages.Page remote(Context context) {
         List<SettingsRow> rows = new ArrayList<>();
         rows.add(SettingsRow.header("Fernbedienung"));
-        rows.add(SettingsRow.note("BACK im Player öffnet die linke Leiste; Video und Ton laufen weiter. "
-                + "BACK in einem Dialog schließt zuerst den Dialog. "
-                + "Ein weiteres BACK schließt die Leiste, danach verkleinert BACK den Player."));
+        rows.add(SettingsRow.note("BACK im Player: zurück zur Übersicht; bei aktivem "
+                + "Miniplayer darf das Video weiterlaufen. MENU öffnet die einheitliche "
+                + "schmale TV-Navigation. BACK im Infodialog schließt zuerst den Dialog."));
         rows.add(SettingsRow.note("OK kurz: Wiedergabe/Pause. OK gehalten: vorübergehend 2×, "
                 + "beim Loslassen sicher zurück auf 1×. Kein Pause-Loop."));
-        rows.add(SettingsRow.note("Shorts: D-Pad hoch/runter wechselt den Short, solange kein "
-                + "Steuerelement fokussiert ist. Media Next/Previous tun dasselbe. "
-                + "Die Seek-Tasten spulen weiterhin."));
+        rows.add(SettingsRow.note("Shorts haben eine eigene Fernbedienungsmaske: "
+                + "Hoch/Runter = vorheriger/nächster Short, Links/Rechts = 10 Sekunden spulen, "
+                + "OK kurz = Pause/Weiter, OK gehalten = vorübergehend 2×. MENU öffnet "
+                + "die Navigation; die normalen Videokarten werden ausgeblendet."));
         rows.add(SettingsRow.toggle("Miniplayer",
                 "Nur anzeigen, wenn eine Wiedergabe aktiv ist; bei ausgeschaltetem Player "
                         + "gibt es keinen leeren Menüpunkt.",
@@ -302,8 +307,10 @@ public final class MarsTvSettingsPages {
         List<SettingsRow> rows = new ArrayList<>();
         rows.add(SettingsRow.action(context.getString(R.string.mobile_settings_version),
                 versionLine(context), page -> { }));
-        rows.add(SettingsRow.action("MarsTube-Updates",
-                "Diese Testversion wird als APK lokal installiert.", page -> { }));
+        rows.add(SettingsRow.action("Auf Updates prüfen",
+                "MarsTube-Versionen vom eigenen GitHub-Release; Installation nach Bestätigung.",
+                page -> com.newtube.mobile.ui.update.MobileUpdateActivity
+                        .startCheck(page.requireContext())));
         rows.add(SettingsRow.divider());
         rows.add(SettingsRow.action(context.getString(R.string.diagnostic_log_send),
                 context.getString(R.string.diagnostic_log_send_desc),
