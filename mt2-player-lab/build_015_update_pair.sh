@@ -90,7 +90,7 @@ check_apk() {
         exit 1
     fi
     cat "dist/signing-$name.txt"
-    if ! grep -q 'Signer #1 certificate SHA-256 digest:' "dist/signing-$name.txt"; then
+    if ! grep -Eq 'certificate SHA-256 digest: [[:xdigit:]]{64}' "dist/signing-$name.txt"; then
         echo "::error::No SHA-256 signing certificate reported by apksigner for $file" >&2
         exit 1
     fi
@@ -134,8 +134,8 @@ check_apk dist/MarsTube-0.0.15-update.apk 0.0.15 12015
 
 # This is an actual same-package Android update, not merely similarly named
 # APKs. Android's package manager verifies the certificate again at install.
-cert14=$(grep -m1 'Signer #1 certificate SHA-256 digest:' dist/signing-0.0.14.txt)
-cert15=$(grep -m1 'Signer #1 certificate SHA-256 digest:' dist/signing-0.0.15.txt)
+cert14=$(grep -om1 -E 'certificate SHA-256 digest: [[:xdigit:]]{64}' dist/signing-0.0.14.txt | awk '{print $4}')
+cert15=$(grep -om1 -E 'certificate SHA-256 digest: [[:xdigit:]]{64}' dist/signing-0.0.15.txt | awk '{print $4}')
 if [[ -z "$cert14" || "$cert14" != "$cert15" ]]; then
     echo "::error::Different signing certificates. Do not release." >&2
     exit 1
