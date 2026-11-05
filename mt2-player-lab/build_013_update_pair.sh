@@ -35,7 +35,6 @@ edit(updater,
      f'return "https://github.com/equiummc/MarsTube/releases/tag/{tag}";')
 PY
 
-./gradle --version >/dev/null 2>&1 || true
 (cd "$root" && ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m \
   :smarttubetv:assembleStmobileDebug --stacktrace)
 mkdir -p dist
@@ -47,7 +46,8 @@ cp "$apk" dist/MarsTube-0.0.12-updatelab.apk
 # focus fixes and versionCode increment. Do not clear ~/.android/debug.keystore.
 MT2_UPDATE_LAB=1 python3 mt2-player-lab/patch_013_tv_focus_ui.py "$root"
 (cd "$root" && ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m \
-  :sabr-media3:testDebugUnitTest :smarttubetv:assembleStmobileDebug \
+  :sabr-media3:testDebugUnitTest :smarttubetv:assembleStmobileDebug --stacktrace)
+(cd "$root" && ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m \
   :smarttubetv:testStmobileDebugUnitTest \
   --tests com.newtube.mobile.player.MarsTvPlayerPrefsTest \
   --tests com.newtube.mobile.ui.common.MarsShortsSessionTest \
