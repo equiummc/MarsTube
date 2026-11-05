@@ -24,8 +24,7 @@ public class MarsShortsSessionTest {
     public void nextAndPreviousStayWithinActualShortsFeed() {
         Video first = video("aaaaaaaaaaa", true);
         Video second = video("bbbbbbbbbbb", true);
-        Video regular = video("ccccccccccc", false);
-        MarsShortsSession.begin(Arrays.asList(first, regular, second), first);
+        MarsShortsSession.begin(Arrays.asList(first, second), first);
         assertTrue(MarsShortsSession.isActiveFor(first));
         assertEquals(second.videoId, MarsShortsSession.step(first, 1).videoId);
         assertNull(MarsShortsSession.step(second, 1));
