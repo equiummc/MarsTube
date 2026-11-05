@@ -97,3 +97,19 @@ Jeder Agent **ergänzt** hier:
 - [ ] Sicherheitsprüfung um SHA-256-Abgleich mit vertrauenswürdigem Release-Manifest ergänzen, bevor öffentlich ausgerollt wird.
 
 Details: [MT2-012-UPDATE-FUNKTION.md](MT2-012-UPDATE-FUNKTION.md), GitHub [Issue #38](https://github.com/equiummc/MarsTube/issues/38).
+
+### MT2-013 – TV-Fokus, schlanke Leiste und Update-Lab
+
+**05.11.2026, Nutzerabnahme v0.0.12: fehlgeschlagen.** Tatsächlich beobachtet: Rail und Einstellungsnavigation zu breit, Player-Rail dauerhaft eingeblendet, Buttons deutlich zu groß, Shorts-Kachel nicht mit Fernbedienung erreichbar, BACK ohne erwartete Wirkung.
+
+**Implementiert in Code (Gerätetest offen):** Rail auf 64dp, Beschriftungen gegen Icons ohne breite Textkacheln; Player-Rail nur bei Fokus sichtbar; Buttons von 48/58dp auf 32/38dp; ein BACK aus dem Player zurück zu Browse (Info zuerst schließen); Shorts-Fokus ab Rail rechts auf erstes Video, inkl. begrenztem Nachladen; BACK bei leerem Shorts-Feed ebenfalls möglich. Änderungen: `MarsTvShell.java`, `MarsTvRail.java`, `patch_013_tv_focus_ui.py`.
+
+**Separate Prüfpfade:** Eigenständige `0.0.13`-APK mit `de.equiummc.marstube2.firetest013.debug`; plus echtes 0.0.12→0.0.13-Testpaar mit festem Lab-Paket `de.equiummc.marstube2.updatelab.debug` und identischer temporärer Signatur **innerhalb eines CI-Runs**. Bisherige 0.0.12 mit anderer Signatur nicht direkt updatefähig. Alte Installation niemals ungefragt löschen.
+
+- [ ] Normaler 0.0.13-CI-Lauf: [41944918270](https://github.com/equiummc/MarsTube/actions/runs/41944918270), Ergebnis noch offen.
+- [ ] Paar-Build/Prerelease: [41944917528](https://github.com/equiummc/MarsTube/actions/runs/41944917528), Ergebnis noch offen. Publikation ausschließlich als isoliertes GitHub-Prerelease, **nicht** als Stable/latest.
+- [ ] Bedienung, Shorts, BACK, Miniplayer und UI **real am Fire TV Cube**, danach Thomson testen; weder CI-Erfolg noch Quellcodeänderung sind bereits ein Gerätetest.
+- [ ] Einmalig gepaarte v0.0.12-Lab-Basis per ADB installieren → v0.0.13 **über TV-Updatefunktion** abrufen; Zustimmung im Android-Installer, Versionswechsel und Datenbestand prüfen.
+- [ ] Dauerhafter Signaturschlüssel für spätere echte Updates; Testschlüssel pro Lab-CI nicht über mehrere Builds stabil.
+
+Details: [MT2-013-ABNAHME.md](MT2-013-ABNAHME.md).
