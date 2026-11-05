@@ -83,8 +83,17 @@ check_apk() {
     [[ "$label" == *"name='de.equiummc.marstube2.updatelab.debug'"* ]]
     [[ "$label" == *"versionCode='$code'"* ]]
     [[ "$label" == *"versionName='$name'"* ]]
-    "$apksigner" verify --print-certs "$file" > "dist/signing-$name.txt"
-    grep -q 'Signer #1 certificate SHA-256 digest:' "dist/signing-$name.txt"
+    echo "Verifying APK signature with $apksigner ..."
+    if ! "$apksigner" verify --print-certs "$file" > "dist/signing-$name.txt" 2>&1; then
+        cat "dist/signing-$name.txt" >&2
+        echo "::error::apksigner could not verify $file" >&2
+        exit 1
+    fi
+    cat "dist/signing-$name.txt"
+    if ! grep -q 'Signer #1 certificate SHA-256 digest:' "dist/signing-$name.txt"; then
+        echo "::error::No SHA-256 signing certificate reported by apksigner for $file" >&2
+        exit 1
+    fi
 }
 
 (cd "$root" && ./gradlew --no-daemon --max-workers=1 \
