@@ -60,4 +60,46 @@ for item, condition in checks.items():
     if not condition:
         raise SystemExit(f"MT2-014 failed invariant: {item}")
 
+# An asynchronous section swap must never focus a stale Home card as Shorts.
+# Version 013's bounded retry only checked adapter item count, which could
+# temporarily still refer to the previous section while the new feed loads.
+browse = tv / "browse/MobileBrowseActivity.java"
+once(browse,
+'''    private int mMarsTvSelection = 0;
+
+    // Focus transfer cannot work against an empty RecyclerView''',
+'''    private int mMarsTvSelection = 0;
+    private int mMarsTvExpectedFocusSection = -1;
+
+    // Focus transfer cannot work against an empty RecyclerView''')
+once(browse,
+'''                if (mAdapter != null && mAdapter.getItemCount() > 0
+                        && mContentGrid.getVisibility() == View.VISIBLE) {
+                    marsTvFocusCard(0);
+                } else if (++attempts < 25) {''',
+'''                // Only focus real cards from the newly selected section.
+                // An old RecyclerView list may remain momentarily while diffing.
+                boolean correctSection = mMarsTvExpectedFocusSection == -1
+                        || mCurrentSectionId == mMarsTvExpectedFocusSection;
+                boolean freshCards = mAdapter != null
+                        && mAdapter.getItemCount() > 0 && !mCurrentVideos.isEmpty()
+                        && !mAdapter.getCurrentList().isEmpty()
+                        && java.util.Objects.equals(
+                                mAdapter.getCurrentList().get(0).videoId,
+                                mCurrentVideos.get(0).videoId);
+                if (correctSection && freshCards
+                        && mContentGrid.getVisibility() == View.VISIBLE) {
+                    marsTvFocusCard(0);
+                    mMarsTvExpectedFocusSection = -1;
+                } else if (++attempts < 40) {''')
+once(browse,
+'''            // Previous sections may have had a completely different grid.
+            mMarsTvSelection = 0;''',
+'''            // Wait until the new feed has replaced the previous card list.
+            mMarsTvExpectedFocusSection = destination == 8 ? MediaGroup.TYPE_SHORTS
+                    : destination == 2 ? MediaGroup.TYPE_SUBSCRIPTIONS
+                    : destination == 3 ? MediaGroup.TYPE_HISTORY
+                    : MediaGroup.TYPE_HOME;
+            mMarsTvSelection = 0;''')
+
 print("MT2-014 applied: dedicated Short D-Pad actions, common 64dp UI, discoverable updates.")
