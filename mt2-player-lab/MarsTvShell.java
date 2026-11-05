@@ -254,11 +254,10 @@ public final class MarsTvShell {
         rail = new LinearLayout(activity);
         rail.setOrientation(LinearLayout.VERTICAL);
         rail.setGravity(Gravity.CENTER_HORIZONTAL);
-        rail.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{0xFA112D52, 0xFA08182F}));
+        rail.setBackground(com.newtube.mobile.ui.common.MarsTvNavigationTheme.railBackground());
         rail.setPadding(dp(4), dp(9), dp(4), dp(6));
         FrameLayout.LayoutParams railLp = new FrameLayout.LayoutParams(
-                dp(64), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT | Gravity.TOP);
+                dp(com.newtube.mobile.ui.common.MarsTvNavigationTheme.WIDTH_DP), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT | Gravity.TOP);
         root.addView(rail, railLp);
 
         ImageView logo = new ImageView(activity);
@@ -267,7 +266,7 @@ public final class MarsTvShell {
         logo.setContentDescription("MarsTube");
         rail.addView(logo, new LinearLayout.LayoutParams(dp(38), dp(40)));
         TextView version = text(11, MUTED);
-        version.setText("0.0.13");
+        version.setText("0.0.14");
         version.setGravity(Gravity.CENTER);
         rail.addView(version, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(16)));
@@ -447,24 +446,16 @@ public final class MarsTvShell {
         button.setText("");
         button.setGravity(Gravity.CENTER);
         button.setPadding(dp(3), dp(3), dp(3), dp(3));
-        int railIcon;
-        switch (destination) {
-            case 0: railIcon = R.drawable.ic_nav_home; break;
-            case 8: railIcon = R.drawable.icon_shorts; break;
-            case 1: railIcon = R.drawable.ic_mobile_search; break;
-            case 2: railIcon = R.drawable.ic_nav_subscriptions; break;
-            case 3: railIcon = R.drawable.ic_nav_history; break;
-            case 6: railIcon = R.drawable.ic_nav_you; break;
-            case 5: railIcon = R.drawable.ic_mobile_settings; break;
-            default: railIcon = R.drawable.ic_nav_home; break;
-        }
+        int railIcon = com.newtube.mobile.ui.common.MarsTvNavigationTheme.iconFor(destination);
         button.setCompoundDrawablesWithIntrinsicBounds(0, railIcon, 0, 0);
         button.setCompoundDrawableTintList(
                 android.content.res.ColorStateList.valueOf(WHITE));
         button.setContentDescription(label);
-        button.setBackground(shape(0x00000000, 0, 0, 10));
+        button.setBackground(com.newtube.mobile.ui.common.MarsTvNavigationTheme.itemBackground(false,
+                activity.getResources().getDisplayMetrics().density));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(38));
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(com.newtube.mobile.ui.common.MarsTvNavigationTheme.ITEM_HEIGHT_DP));
         lp.topMargin = dp(3);
         railItems.addView(button, lp);
         button.setOnClickListener(v -> {
@@ -595,6 +586,31 @@ public final class MarsTvShell {
     }
 
     private boolean handleDown(int key) {
+        // Shorts is its own remote-control mode, never the generic video rail.
+        // Commands are stable even when recommendations have focus or no track
+        // metadata has arrived yet. Only MENU explicitly opens the TV rail.
+        if (actions.isShortsPlayback() && focus != Focus.RAIL && !infoOpen) {
+            switch (key) {
+                case KeyEvent.KEYCODE_DPAD_UP:
+                case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+                    actions.previous();
+                    render();
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                case KeyEvent.KEYCODE_MEDIA_NEXT:
+                    actions.next();
+                    render();
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    seek(-10_000L);
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    seek(10_000L);
+                    return true;
+                default:
+                    break; // BACK, MENU and media play/pause keep normal handling.
+            }
+        }
         switch (key) {
             case KeyEvent.KEYCODE_BACK:
                 return handleBack();
@@ -680,6 +696,12 @@ public final class MarsTvShell {
     }
 
     private void executeOkShort() {
+        // Short tap = toggle, long press = 2x while held; never open controls.
+        if (actions.isShortsPlayback() && focus != Focus.RAIL) {
+            actions.toggle();
+            focus = Focus.VIDEO;
+            return;
+        }
         if (focus == Focus.RAIL) {
             activateRail();
         } else if (focus == Focus.CARDS && adapter.getItemCount() > cardPosition) {
@@ -696,6 +718,7 @@ public final class MarsTvShell {
     }
 
     private boolean canHold() {
+        if (actions.isShortsPlayback() && focus != Focus.RAIL) return true;
         return focus == Focus.VIDEO
                 || (focus == Focus.CONTROLS && controlPosition == CONTROL_PLAY);
     }
@@ -785,7 +808,10 @@ public final class MarsTvShell {
             return;
         }
         root.setVisibility(pip ? View.GONE : View.VISIBLE);
-        boolean panelVisible = !pip && focus != Focus.VIDEO && focus != Focus.RAIL;
+        boolean shortsMode = actions.isShortsPlayback();
+        // Dedicated Shorts canvas has no regular-video carousel/control overlay.
+        boolean panelVisible = !pip && !shortsMode
+                && focus != Focus.VIDEO && focus != Focus.RAIL;
         panel.setVisibility(panelVisible ? View.VISIBLE : View.GONE);
         clock.setVisibility(!pip && (panelVisible || focus == Focus.RAIL || infoOpen)
                 ? View.VISIBLE : View.GONE);
@@ -799,8 +825,9 @@ public final class MarsTvShell {
         for (int i = 0; i < railButtons.size(); i++) {
             boolean selected = focus == Focus.RAIL && railPosition == i;
             railButtons.get(i).setTextColor(selected ? CYAN : WHITE);
-            railButtons.get(i).setBackground(selected
-                    ? buttonChrome(true, false) : buttonChrome(false, false));
+            railButtons.get(i).setBackground(
+                    com.newtube.mobile.ui.common.MarsTvNavigationTheme.itemBackground(
+                            selected, activity.getResources().getDisplayMetrics().density));
         }
         for (int i = 0; i < controlButtons.size(); i++) {
             boolean selected = focus == Focus.CONTROLS && controlPosition == i;
