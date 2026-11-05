@@ -38,10 +38,10 @@ replace_once(manifest, 'android:label="MarsTube 2.0 Recovery Lab"',
 # not our in-app rail image. Override upstream NewTube's @mipmap/app_icon
 # exclusively in the stmobile flavor. The original TV fork is unchanged.
 replace_once(manifest,
-    '        android:theme="@style/Theme.NewTube"\\n'
+    '        android:theme="@style/Theme.NewTube"\n'
     '        tools:replace="android:name,android:theme">',
-    '        android:theme="@style/Theme.NewTube"\\n'
-    '        android:icon="@drawable/mars_m_logo"\\n'
+    '        android:theme="@style/Theme.NewTube"\n'
+    '        android:icon="@drawable/mars_m_logo"\n'
     '        tools:replace="android:name,android:theme,android:icon">')
 
 
