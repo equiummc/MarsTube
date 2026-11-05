@@ -43,9 +43,6 @@ once(manifest, 'android:label="MarsTube 0.0.15"', 'android:label="MarsTube"')
 
 # Set the app-level icon only after older migration patches have completed.
 # Earlier MT2-006 matches the original manifest header exactly.
-once(manifest, '        android:label="MarsTube"\n',
-     '        android:label="MarsTube"\n'
-     '        android:icon="@drawable/mars_m_logo"\n')
 # Legacy migration may append other manifest tools:replace fields. Update only
 # the <application> header so earlier steps are free to keep their own values.
 import re
@@ -55,6 +52,14 @@ app_end = xml.find(">", app_start)
 if app_start < 0 or app_end < 0:
     raise SystemExit("Missing application manifest header")
 header = xml[app_start:app_end]
+# Other patches can already set an application icon. Replace it, do not duplicate it.
+icons = re.findall(r'android:icon="[^"]+"', header)
+if len(icons) > 1:
+    raise SystemExit("Duplicate application icons before production patch")
+if icons:
+    header = header.replace(icons[0], 'android:icon="@drawable/mars_m_logo"', 1)
+else:
+    header += '\n        android:icon="@drawable/mars_m_logo"'
 match = re.search(r'tools:replace="([^"]+)"', header)
 if match:
     attributes = match.group(1).split(",")
