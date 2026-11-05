@@ -21,11 +21,12 @@ import java.util.List;
  * data/section controller; a single vertical rail is the TV control surface.
  */
 public final class MarsTvRail extends LinearLayout {
-    private static final String TAG = "mars.tv.rail.v014";
+    private static final String TAG = "mars.tv.rail.v015";
     private static final int BLUE = Color.rgb(48, 157, 250);
     private static final int BG = Color.rgb(13, 21, 37);
     private static final int SELECTED = Color.rgb(24, 55, 93);
     private final Activity activity;
+    private final boolean expandedSettings;
     private final List<TextView> actions = new ArrayList<>();
     private WeakReference<View> previousFocus = new WeakReference<>(null);
     private TextView miniAction;
@@ -33,6 +34,7 @@ public final class MarsTvRail extends LinearLayout {
     private MarsTvRail(Activity activity) {
         super(activity);
         this.activity = activity;
+        expandedSettings = "MobileSettingsActivity".equals(activity.getClass().getSimpleName());
         setTag(TAG);
         setOrientation(VERTICAL);
         setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
@@ -47,7 +49,7 @@ public final class MarsTvRail extends LinearLayout {
         branding.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
         addView(branding, new LinearLayout.LayoutParams(-1, dp(38)));
         TextView version = new TextView(activity);
-        version.setText("0.0.14");
+        version.setText("0.0.15");
         version.setTextSize(11);
         version.setTextColor(Color.LTGRAY);
         version.setGravity(Gravity.CENTER);
@@ -106,19 +108,29 @@ public final class MarsTvRail extends LinearLayout {
 
     private void addAction(String label, int destination) {
         TextView button = new TextView(activity);
-        button.setText(""); // Voice/accessibility label stays on contentDescription
-        button.setTextSize(9);
+        button.setText(expandedSettings ? (label.equals("Einst.") ? "Einstellungen" : label) : "");
+        button.setTextSize(expandedSettings ? 10 : 9);
+        button.setMaxLines(1);
+        button.setEllipsize(android.text.TextUtils.TruncateAt.END);
         int iconRes = MarsTvNavigationTheme.iconFor(destination);
-        button.setCompoundDrawablesWithIntrinsicBounds(0, iconRes, 0, 0);
+        // Never trust icon intrinsic sizes (search icon used to overlap the rail).
+        android.graphics.drawable.Drawable glyph =
+                androidx.core.content.ContextCompat.getDrawable(activity, iconRes);
+        if (glyph != null) {
+            glyph = glyph.mutate();
+            glyph.setBounds(0, 0, dp(20), dp(20));
+            button.setCompoundDrawables(null, glyph, null, null);
+        }
         button.setCompoundDrawableTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
-        button.setCompoundDrawablePadding(0);
+        button.setCompoundDrawablePadding(expandedSettings ? dp(4) : 0);
         button.setTextColor(Color.WHITE);
         button.setGravity(Gravity.CENTER);
         button.setContentDescription(label.equals("Einst.") ? "Einstellungen" : label);
         button.setFocusable(true);
         button.setFocusableInTouchMode(false);
         button.setBackground(focusBackground(false));
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, dp(MarsTvNavigationTheme.ITEM_HEIGHT_DP));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1,
+                dp(expandedSettings ? 58 : MarsTvNavigationTheme.ITEM_HEIGHT_DP));
         params.bottomMargin = dp(3);
         addView(button, params);
         actions.add(button);
@@ -167,7 +179,9 @@ public final class MarsTvRail extends LinearLayout {
         FrameLayout content = (FrameLayout) contentView;
         if (content.findViewWithTag(TAG) != null || content.getChildCount() == 0) return;
         View page = content.getChildAt(0);
-        final int railWidth = (int) (MarsTvNavigationTheme.WIDTH_DP * activity.getResources().getDisplayMetrics().density + 0.5f);
+        final int railWidth = (int) ((("MobileSettingsActivity".equals(name)
+                ? MarsTvNavigationTheme.SETTINGS_WIDTH_DP : MarsTvNavigationTheme.WIDTH_DP)
+                * activity.getResources().getDisplayMetrics().density) + 0.5f);
         page.setPadding(page.getPaddingLeft() + railWidth, page.getPaddingTop(),
                 page.getPaddingRight(), page.getPaddingBottom());
         // Keep the original bottom nav's menu and presenter alive, but never show
@@ -198,7 +212,7 @@ public final class MarsTvRail extends LinearLayout {
         rail.syncMiniAction();
         View old = activity.getCurrentFocus();
         if (old != null && !rail.containsFocus(old)) rail.previousFocus = new WeakReference<>(old);
-        View selected = rail.actions.get(0);
+        View selected = rail.actions.get(rail.expandedSettings ? 6 : 0);
         selected.requestFocus();
         return true;
     }
@@ -208,7 +222,31 @@ public final class MarsTvRail extends LinearLayout {
         return false;
     }
 
+    private void focusSettingsContent() {
+        View root = activity.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.settings_list);
+        if (!(root instanceof androidx.recyclerview.widget.RecyclerView)) return;
+        androidx.recyclerview.widget.RecyclerView list = (androidx.recyclerview.widget.RecyclerView) root;
+        list.post(new Runnable() {
+            int retries;
+            @Override public void run() {
+                if (activity.isFinishing() || activity.isDestroyed()) return;
+                for (int i = 0; i < list.getChildCount(); i++) {
+                    View row = list.getChildAt(i);
+                    if (row != null && row.isEnabled() && row.isFocusable()
+                            && row.getVisibility() == View.VISIBLE && row.requestFocus()) {
+                        return;
+                    }
+                }
+                if (++retries < 12) list.postDelayed(this, 75L);
+            }
+        });
+    }
+
     private void returnToContent() {
+        if (expandedSettings) {
+            focusSettingsContent();
+            return;
+        }
         if (activity instanceof com.newtube.mobile.ui.browse.MobileBrowseActivity) {
             ((com.newtube.mobile.ui.browse.MobileBrowseActivity) activity)
                     .marsTvRestoreContentFocus();
@@ -230,7 +268,9 @@ public final class MarsTvRail extends LinearLayout {
         if (rail == null) return false;
         rail.syncMiniAction();
         int code = event.getKeyCode();
-        if (code == KeyEvent.KEYCODE_MENU) {
+        // BACK and MENU always target the rail, even after scrolling 20+ tiles.
+        // This must run before testing whether the current focus is a rail item.
+        if (code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU) {
             if (event.getAction() == KeyEvent.ACTION_DOWN) focus(activity);
             return true;
         }
@@ -241,7 +281,6 @@ public final class MarsTvRail extends LinearLayout {
                 || code == KeyEvent.KEYCODE_DPAD_DOWN
                 || code == KeyEvent.KEYCODE_DPAD_LEFT
                 || code == KeyEvent.KEYCODE_DPAD_RIGHT
-                || code == KeyEvent.KEYCODE_BACK
                 || code == KeyEvent.KEYCODE_ENTER
                 || code == KeyEvent.KEYCODE_NUMPAD_ENTER
                 || code == KeyEvent.KEYCODE_DPAD_CENTER;
@@ -251,7 +290,7 @@ public final class MarsTvRail extends LinearLayout {
             rail.actions.get(Math.max(0, index - 1)).requestFocus();
         } else if (code == KeyEvent.KEYCODE_DPAD_DOWN) {
             rail.actions.get(Math.min(rail.actions.size() - 1, index + 1)).requestFocus();
-        } else if (code == KeyEvent.KEYCODE_DPAD_RIGHT || code == KeyEvent.KEYCODE_BACK) {
+        } else if (code == KeyEvent.KEYCODE_DPAD_RIGHT) {
             rail.returnToContent();
         } else if (code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER
                 || code == KeyEvent.KEYCODE_DPAD_CENTER) {

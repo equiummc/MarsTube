@@ -49,8 +49,8 @@ import java.util.Locale;
  * <p>Remote contract:</p>
  * <ul>
  *   <li>OK short = play/pause; OK held = temporary 2x, restored on release.</li>
- *   <li>BACK in the video opens the left rail while playback continues; BACK again
- *       closes the rail; a later BACK lets the activity minimize.</li>
+ *   <li>BACK always opens the left rail while playback continues; it never
+ *       minimizes the player or sends a user back through every video tile.</li>
  *   <li>BACK in a dialog is handled by the dialog before this shell sees it.</li>
  *   <li>D-pad up/down switches Shorts when no control is focused; Media next/previous
  *       always switches. Left/right keep seeking.</li>
@@ -266,7 +266,7 @@ public final class MarsTvShell {
         logo.setContentDescription("MarsTube");
         rail.addView(logo, new LinearLayout.LayoutParams(dp(38), dp(40)));
         TextView version = text(11, MUTED);
-        version.setText("0.0.14");
+        version.setText("0.0.15");
         version.setGravity(Gravity.CENTER);
         rail.addView(version, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(16)));
@@ -304,7 +304,7 @@ public final class MarsTvShell {
                 + thumbnailHeightPx + dp(34) + dp(8);
         FrameLayout.LayoutParams playerPanelLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, panelHeight, Gravity.BOTTOM);
-        playerPanelLp.leftMargin = dp(72);
+        playerPanelLp.leftMargin = dp(12);
         playerPanelLp.rightMargin = dp(12);
         playerPanelLp.bottomMargin = dp(12);
         root.addView(panel, playerPanelLp);
@@ -447,7 +447,13 @@ public final class MarsTvShell {
         button.setGravity(Gravity.CENTER);
         button.setPadding(dp(3), dp(3), dp(3), dp(3));
         int railIcon = com.newtube.mobile.ui.common.MarsTvNavigationTheme.iconFor(destination);
-        button.setCompoundDrawablesWithIntrinsicBounds(0, railIcon, 0, 0);
+        android.graphics.drawable.Drawable glyph =
+                androidx.core.content.ContextCompat.getDrawable(activity, railIcon);
+        if (glyph != null) {
+            glyph = glyph.mutate();
+            glyph.setBounds(0, 0, dp(20), dp(20));
+            button.setCompoundDrawables(null, glyph, null, null);
+        }
         button.setCompoundDrawableTintList(
                 android.content.res.ColorStateList.valueOf(WHITE));
         button.setContentDescription(label);
@@ -512,18 +518,12 @@ public final class MarsTvShell {
      * @return true when the shell consumed the gesture
      */
     /** Single BACK state machine for key and Android dispatcher. */
-    /** Fire TV: BACK returns to Browse in one press, preserving the media session. */
+    /** BACK is the universal navigation shortcut, not a minimize/exit shortcut. */
     public boolean handleBack() {
         if (released || pip) return false;
         cancelHold();
-        if (infoOpen) {
-            infoOpen = false;
-            render();
-            return true;
-        }
-        focus = Focus.VIDEO;
+        openRail();
         render();
-        actions.minimize();
         return true;
     }
 
@@ -632,7 +632,8 @@ public final class MarsTvShell {
                 break;
             case KeyEvent.KEYCODE_DPAD_RIGHT:
                 if (focus == Focus.RAIL) {
-                    focus = adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;
+                    focus = actions.isShortsPlayback() ? Focus.VIDEO
+                            : adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;
                 } else if (focus == Focus.CARDS
                         && cardPosition < adapter.getItemCount() - 1) {
                     cardPosition++;
@@ -828,7 +829,7 @@ public final class MarsTvShell {
                 rail.setTranslationX(0f);
             }
         }
-        railHint.setVisibility(focus == Focus.RAIL ? View.VISIBLE : View.GONE);
+        railHint.setVisibility(View.GONE); // no clipped labels on narrow video rail
         infoPanel.setVisibility(!pip && infoOpen ? View.VISIBLE : View.GONE);
 
         if (focus == Focus.RAIL) {

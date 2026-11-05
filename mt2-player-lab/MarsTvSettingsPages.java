@@ -219,9 +219,10 @@ public final class MarsTvSettingsPages {
     private static SettingsPages.Page remote(Context context) {
         List<SettingsRow> rows = new ArrayList<>();
         rows.add(SettingsRow.header("Fernbedienung"));
-        rows.add(SettingsRow.note("BACK im Player: zurück zur Übersicht; bei aktivem "
-                + "Miniplayer darf das Video weiterlaufen. MENU öffnet die einheitliche "
-                + "schmale TV-Navigation. BACK im Infodialog schließt zuerst den Dialog."));
+        rows.add(SettingsRow.note("BACK fokussiert auf jeder TV-Seite die linke Navigation, "
+                + "auch aus Shorts, aus dem Videoplayer und aus Untermenüs. "
+                + "Im Player läuft das Video währenddessen weiter. "
+                + "Rechts aus der Navigation öffnet die Inhalte der aktuellen Seite."));
         rows.add(SettingsRow.note("OK kurz: Wiedergabe/Pause. OK gehalten: vorübergehend 2×, "
                 + "beim Loslassen sicher zurück auf 1×. Kein Pause-Loop."));
         rows.add(SettingsRow.note("Shorts haben eine eigene Fernbedienungsmaske: "

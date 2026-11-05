@@ -53,8 +53,8 @@ checks = {
     "Shorts hold to speed": "if (actions.isShortsPlayback() && focus != Focus.RAIL) return true" in shell,
     "Settings root direct update entry": settings.count('SettingsRow.action("Auf Updates prüfen"') >= 2,
     "Shorts queue during prepare": "return video == null || contains(video)" in shorts,
-    "player v0.0.14": 'version.setText("0.0.14")' in shell,
-    "rail v0.0.14": 'version.setText("0.0.14")' in rail,
+    "player v0.0.14+ UI": any(f'version.setText("0.0.{v}")' in shell for v in (14, 15)),
+    "rail v0.0.14+ UI": any(f'version.setText("0.0.{v}")' in rail for v in (14, 15)),
 }
 for item, condition in checks.items():
     if not condition:
