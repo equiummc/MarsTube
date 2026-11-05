@@ -106,7 +106,7 @@ public final class MarsTvShell {
     }
 
     private enum Focus {
-        VIDEO, CARDS, CONTROLS, RAIL
+        VIDEO, CARDS, CONTROLS, PROGRESS, RAIL
     }
 
     private static final int CYAN = 0xFF16B8FF;
@@ -175,6 +175,8 @@ public final class MarsTvShell {
     private Focus focus = Focus.VIDEO;
     private int cardPosition;
     private int controlPosition = CONTROL_PLAY;
+    /** Pending D-pad seek position; committed only with OK. */
+    private long seekPreviewMs = -1L;
     private int railPosition;
     private int lastHighlightedCard = -1;
     private boolean pip;
@@ -328,7 +330,8 @@ public final class MarsTvShell {
                 super.onDraw(canvas);
                 ExoPlayer exo = player.current();
                 long duration = exo == null ? 0 : exo.getDuration();
-                long position = exo == null ? 0 : exo.getCurrentPosition();
+                long position = seekPreviewMs >= 0L ? seekPreviewMs
+                        : exo == null ? 0 : exo.getCurrentPosition();
                 float fraction = duration <= 0 || duration == C.TIME_UNSET ? 0f
                         : Math.max(0f, Math.min(1f, (float) position / duration));
                 float y = getHeight() / 2f;
@@ -342,16 +345,16 @@ public final class MarsTvShell {
                 paint.setStrokeWidth(dp(6));
                 canvas.drawLine(0, y, getWidth() * fraction, y, paint);
                 paint.setShader(null);
-                paint.setColor(WHITE);
-                canvas.drawCircle(getWidth() * fraction, y, dp(5), paint);
+                paint.setColor(focus == Focus.PROGRESS ? CYAN : WHITE);
+                canvas.drawCircle(getWidth() * fraction, y,
+                        dp(focus == Focus.PROGRESS ? 8 : 5), paint);
             }
         };
         progressRow.addView(progress, new LinearLayout.LayoutParams(0, dp(30), 1f));
         remaining = text(13, WHITE);
         remaining.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         progressRow.addView(remaining, new LinearLayout.LayoutParams(dp(72), dp(30)));
-        panelContent.addView(progressRow, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
+        // Progress is inserted after the control buttons, not above them.
 
         controls = new LinearLayout(activity);
         controls.setGravity(Gravity.CENTER);
@@ -360,6 +363,9 @@ public final class MarsTvShell {
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
         controlsLp.topMargin = dp(5);
         panelContent.addView(controls, controlsLp);
+        progressRow.setContentDescription("Fortschritt: links/rechts jeweils fünf Prozent, OK bestätigt");
+        panelContent.addView(progressRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
 
         for (int i = 0; i < CONTROL_ICONS.length; i++) {
             final int index = i;
@@ -621,6 +627,8 @@ public final class MarsTvShell {
             case KeyEvent.KEYCODE_DPAD_LEFT:
                 if (focus == Focus.RAIL) {
                     focus = Focus.VIDEO;
+                } else if (focus == Focus.PROGRESS) {
+                    moveSeekPreview(-1);
                 } else if (focus == Focus.CARDS && cardPosition > 0) {
                     cardPosition--;
                     cards.scrollToPosition(cardPosition);
@@ -634,6 +642,8 @@ public final class MarsTvShell {
                 if (focus == Focus.RAIL) {
                     focus = actions.isShortsPlayback() ? Focus.VIDEO
                             : adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;
+                } else if (focus == Focus.PROGRESS) {
+                    moveSeekPreview(1);
                 } else if (focus == Focus.CARDS
                         && cardPosition < adapter.getItemCount() - 1) {
                     cardPosition++;
@@ -654,6 +664,9 @@ public final class MarsTvShell {
                         focus = Focus.CONTROLS;
                     }
                 } else if (focus == Focus.CARDS) {
+                    focus = Focus.PROGRESS;
+                } else if (focus == Focus.PROGRESS) {
+                    seekPreviewMs = -1L;
                     focus = Focus.CONTROLS;
                 } else {
                     focus = Focus.VIDEO;
@@ -668,8 +681,11 @@ public final class MarsTvShell {
                     } else {
                         focus = adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;
                     }
-                } else if (focus == Focus.CONTROLS && adapter.getItemCount() > 0) {
-                    focus = Focus.CARDS;
+                } else if (focus == Focus.CONTROLS) {
+                    focus = Focus.PROGRESS;
+                } else if (focus == Focus.PROGRESS) {
+                    seekPreviewMs = -1L;
+                    focus = adapter.getItemCount() > 0 ? Focus.CARDS : Focus.VIDEO;
                 } else {
                     focus = Focus.VIDEO;
                 }
@@ -709,6 +725,12 @@ public final class MarsTvShell {
             actions.openVideo(adapter.items.get(cardPosition));
         } else if (focus == Focus.CONTROLS) {
             executeControl();
+        } else if (focus == Focus.PROGRESS) {
+            ExoPlayer exo = player.current();
+            if (exo != null && seekPreviewMs >= 0L && exo.isCurrentMediaItemSeekable()) {
+                exo.seekTo(seekPreviewMs);
+            }
+            seekPreviewMs = -1L;
         } else {
             actions.toggle();
             // OK is also the natural way to reveal the controls; the next OK still
@@ -735,10 +757,24 @@ public final class MarsTvShell {
 
     private void openRail() {
         cancelHold();
+        seekPreviewMs = -1L;
         infoOpen = false;
         focus = Focus.RAIL;
         railEverOpened = true;
         railPosition = Math.max(0, Math.min(railPosition, railButtons.size() - 1));
+    }
+
+    /** Stage a coarse seek, retaining the original playback position until OK. */
+    private void moveSeekPreview(int direction) {
+        ExoPlayer exo = player.current();
+        if (exo == null || !exo.isCurrentMediaItemSeekable()) return;
+        long duration = exo.getDuration();
+        if (duration <= 0L || duration == C.TIME_UNSET) return;
+        long base = seekPreviewMs >= 0L ? seekPreviewMs : exo.getCurrentPosition();
+        long step = Math.max(10_000L, duration / 20L);
+        long offset = direction < 0 ? -step : step;
+        seekPreviewMs = Math.max(0L, Math.min(duration, base + offset));
+        progress.invalidate();
     }
 
     private void seek(long delta) {
@@ -861,6 +897,7 @@ public final class MarsTvShell {
             lastHighlightedCard = highlight;
         }
 
+        progress.invalidate();
         handler.removeCallbacks(autoHide);
         if (!infoOpen && (focus == Focus.CARDS || focus == Focus.CONTROLS)) {
             handler.postDelayed(autoHide, AUTO_HIDE_MS);
@@ -883,7 +920,8 @@ public final class MarsTvShell {
         }
         ExoPlayer exo = player.current();
         long duration = exo == null ? 0 : exo.getDuration();
-        long position = exo == null ? 0 : exo.getCurrentPosition();
+        long position = seekPreviewMs >= 0L ? seekPreviewMs
+                : exo == null ? 0 : exo.getCurrentPosition();
         elapsed.setText(formatTime(position));
         remaining.setText(duration <= 0 || duration == C.TIME_UNSET
                 ? "--:--" : formatTime(Math.max(0L, duration - position)));
