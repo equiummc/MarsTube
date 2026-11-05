@@ -46,8 +46,24 @@ once(manifest, 'android:label="MarsTube 0.0.15"', 'android:label="MarsTube"')
 once(manifest, '        android:label="MarsTube"\n',
      '        android:label="MarsTube"\n'
      '        android:icon="@drawable/mars_m_logo"\n')
-once(manifest, 'tools:replace="android:name,android:theme,android:label"',
-     'tools:replace="android:name,android:theme,android:label,android:icon"')
+# Legacy migration may append other manifest tools:replace fields. Update only
+# the <application> header so earlier steps are free to keep their own values.
+import re
+xml = manifest.read_text(encoding="utf-8")
+app_start = xml.find("<application")
+app_end = xml.find(">", app_start)
+if app_start < 0 or app_end < 0:
+    raise SystemExit("Missing application manifest header")
+header = xml[app_start:app_end]
+match = re.search(r'tools:replace="([^"]+)"', header)
+if match:
+    attributes = match.group(1).split(",")
+    if "android:icon" not in attributes:
+        attributes.append("android:icon")
+    header = header[:match.start()] + 'tools:replace="' + ",".join(attributes) + '"' + header[match.end():]
+else:
+    header += '\n        tools:replace="android:icon"'
+manifest.write_text(xml[:app_start] + header + xml[app_end:], encoding="utf-8")
 
 # Do not display a stale literal version on the left rail or player overlay.
 for target in (tv / "common/MarsTvRail.java",
