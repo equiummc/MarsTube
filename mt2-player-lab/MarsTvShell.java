@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * MarsTube 0.0.11 TV player chrome.
+ * MarsTube 0.0.12 TV player chrome.
  *
  * <p>Dark-blue translucent bar, white/cyan vector glyphs, rounded focus, no live blur and
  * no permanent animation. The Media3 surface, the SABR adapter and the decoder stay
@@ -267,7 +267,7 @@ public final class MarsTvShell {
         logo.setContentDescription("MarsTube");
         rail.addView(logo, new LinearLayout.LayoutParams(dp(54), dp(58)));
         TextView version = text(11, MUTED);
-        version.setText("0.0.11");
+        version.setText("0.0.12");
         version.setGravity(Gravity.CENTER);
         rail.addView(version, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(22)));
