@@ -6,6 +6,7 @@ Release builds are signed with one private, permanent owner-controlled keystore.
 This script contains NO private key or signing password.
 """
 from pathlib import Path
+import json
 import sys
 
 if len(sys.argv) != 2:
@@ -13,6 +14,12 @@ if len(sys.argv) != 2:
 root = Path(sys.argv[1]).resolve()
 if not (root / "sabr-media3").is_dir():
     raise SystemExit("MT2 production requires pinned SABR Media3 checkout")
+meta = json.loads((Path(__file__).parent / "production-version.json").read_text(encoding="utf-8"))
+version_name = meta["versionName"]
+version_code = int(meta["versionCode"])
+app_id = "de.equiummc.marstube2"
+if meta["packageName"] != app_id or version_code < 12016:
+    raise SystemExit("Invalid immutable production package or version")
 mobile = root / "smarttubetv/src/stmobile"
 gradle = root / "smarttubetv/build.gradle"
 manifest = mobile / "AndroidManifest.xml"
@@ -29,9 +36,9 @@ def once(path, old, new):
 
 # The production applicationId is NEVER versioned. It stays identical forever.
 once(gradle, 'applicationId "de.equiummc.marstube2.firetest015"',
-             'applicationId "de.equiummc.marstube2"')
-once(gradle, 'versionCode 12015', 'versionCode 12016')
-once(gradle, 'versionName "0.0.15"', 'versionName "0.0.16"')
+             f'applicationId "{app_id}"')
+once(gradle, 'versionCode 12015', f'versionCode {version_code}')
+once(gradle, 'versionName "0.0.15"', f'versionName "{version_name}"')
 once(manifest, 'android:label="MarsTube 0.0.15"', 'android:label="MarsTube"')
 
 # Do not display a stale literal version on the left rail or player overlay.
@@ -54,6 +61,6 @@ if 'android:icon="@drawable/mars_m_logo"' not in manifest.read_text(encoding="ut
     raise SystemExit("MarsTube app identity icon missing from manifest")
 
 final = gradle.read_text(encoding="utf-8")
-if 'applicationId "de.equiummc.marstube2"' not in final:
+if f'applicationId "{app_id}"' not in final:
     raise SystemExit("Production app identity was not set")
-print("MarsTube production 0.0.16: permanent ID, stable update channel, release signing required.")
+print(f"MarsTube production {version_name}: permanent ID, stable update channel, release signing required.")
