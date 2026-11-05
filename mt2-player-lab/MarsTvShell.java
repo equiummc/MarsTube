@@ -815,7 +815,19 @@ public final class MarsTvShell {
         panel.setVisibility(panelVisible ? View.VISIBLE : View.GONE);
         clock.setVisibility(!pip && (panelVisible || focus == Focus.RAIL || infoOpen)
                 ? View.VISIBLE : View.GONE);
-        rail.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
+        boolean railOpen = !pip && focus == Focus.RAIL;
+        int desiredRailVisibility = railOpen ? View.VISIBLE : View.GONE;
+        if (rail.getVisibility() != desiredRailVisibility) {
+            rail.animate().cancel();
+            if (railOpen) {
+                rail.setTranslationX(-dp(com.newtube.mobile.ui.common.MarsTvNavigationTheme.WIDTH_DP));
+                rail.setVisibility(View.VISIBLE);
+                rail.animate().translationX(0f).setDuration(150L).start();
+            } else {
+                rail.setVisibility(View.GONE);
+                rail.setTranslationX(0f);
+            }
+        }
         railHint.setVisibility(focus == Focus.RAIL ? View.VISIBLE : View.GONE);
         infoPanel.setVisibility(!pip && infoOpen ? View.VISIBLE : View.GONE);
 
