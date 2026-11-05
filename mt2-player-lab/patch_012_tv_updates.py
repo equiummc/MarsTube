@@ -60,7 +60,8 @@ feed.write_text('''<?xml version="1.0" encoding="utf-8"?>
 # The UI already has the user-driven update/download/progress/install screen.
 # Replace the 0.0.11 no-op with the actual check and TV focus.
 settings = tv / "settings/MarsTvSettingsPages.java"
-once(settings,
+if 'rows.add(SettingsRow.action("Auf Updates prüfen",' not in settings.read_text(encoding="utf-8"):
+    once(settings,
 '''        rows.add(SettingsRow.action("MarsTube-Updates",
                 "Diese Testversion wird als APK lokal installiert.", page -> { }));''',
 '''        rows.add(SettingsRow.action("Auf Updates prüfen",
