@@ -84,6 +84,15 @@ public final class MarsTvSettingsPages {
                         : context.getString(R.string.mobile_settings_account_signed_out),
                 page -> AccountsSheet.show(page.requireActivity(), page::rebuild)));
 
+        // Update status is a first-level TV setting, not buried after advanced options.
+        rows.add(SettingsRow.header("Updates & Info"));
+        rows.add(SettingsRow.action("Auf Updates prüfen",
+                "MarsTube-Versionen prüfen und auf dem Fernseher installieren.",
+                page -> com.newtube.mobile.ui.update.MobileUpdateActivity
+                        .startCheck(page.requireContext())));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_about, "Info",
+                versionLine(context), TV_INFO));
+
         rows.add(SettingsRow.header("Wiedergabe & Darstellung"));
         rows.add(SettingsRow.page(R.drawable.ic_settings_playback, "Video & Wiedergabe",
                 videoSummary(context), TV_VIDEO));
@@ -112,13 +121,6 @@ public final class MarsTvSettingsPages {
                 context.getString(R.string.mobile_settings_advanced),
                 context.getString(R.string.mobile_settings_advanced_summary), SettingsPages.ADVANCED));
 
-        rows.add(SettingsRow.header("Updates & Info"));
-        rows.add(SettingsRow.action("Auf Updates prüfen",
-                "MarsTube-Versionen prüfen und auf dem Fernseher installieren.",
-                page -> com.newtube.mobile.ui.update.MobileUpdateActivity
-                        .startCheck(page.requireContext())));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_about, "Info",
-                versionLine(context), TV_INFO));
 
         return new SettingsPages.Page("Einstellungen", rows);
     }
@@ -210,8 +212,8 @@ public final class MarsTvSettingsPages {
                 new int[]{4, 6, 8, 10}));
 
         rows.add(SettingsRow.header("Shorts"));
-        rows.add(SettingsRow.note("Shorts zeigen drei vollständig sichtbare 9:16-Karten, "
-                + "wenn der Bildschirm breit genug ist; auf kleinen Geräten zwei."));
+        rows.add(SettingsRow.note("Shorts zeigen vier 9:16-Karten pro Reihe, "
+                + "soweit sie vollständig in den sichtbaren Bereich passen."));
 
         return new SettingsPages.Page("Darstellung", rows);
     }
