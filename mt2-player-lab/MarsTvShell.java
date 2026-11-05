@@ -256,21 +256,21 @@ public final class MarsTvShell {
         rail.setGravity(Gravity.CENTER_HORIZONTAL);
         rail.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 new int[]{0xFA112D52, 0xFA08182F}));
-        rail.setPadding(dp(5), dp(10), dp(5), dp(8));
+        rail.setPadding(dp(4), dp(9), dp(4), dp(6));
         FrameLayout.LayoutParams railLp = new FrameLayout.LayoutParams(
-                dp(100), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT | Gravity.TOP);
+                dp(64), ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT | Gravity.TOP);
         root.addView(rail, railLp);
 
         ImageView logo = new ImageView(activity);
         logo.setImageResource(R.drawable.mars_m_logo);
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
         logo.setContentDescription("MarsTube");
-        rail.addView(logo, new LinearLayout.LayoutParams(dp(54), dp(58)));
+        rail.addView(logo, new LinearLayout.LayoutParams(dp(38), dp(40)));
         TextView version = text(11, MUTED);
-        version.setText("0.0.12");
+        version.setText("0.0.13");
         version.setGravity(Gravity.CENTER);
         rail.addView(version, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(22)));
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(16)));
 
         railItems = new LinearLayout(activity);
         railItems.setOrientation(LinearLayout.VERTICAL);
@@ -286,12 +286,12 @@ public final class MarsTvShell {
         addRailItem("Profil", 6);
         addRailItem("Einstellungen", 5);
 
-        railHint = text(15, WHITE);
+        railHint = text(12, WHITE);
         railHint.setGravity(Gravity.CENTER_VERTICAL);
         railHint.setPadding(dp(14), 0, dp(14), 0);
         railHint.setBackground(shape(0xF00A1D33, CYAN, 1, 10));
         rail.addView(railHint, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(38)));
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(28)));
 
         // Translucent paint, not a GPU blur. The video keeps rendering behind it.
         panel = new FrameLayout(activity);
@@ -301,11 +301,11 @@ public final class MarsTvShell {
         chrome.setCornerRadius(dp(22));
         chrome.setStroke(dp(1), 0xAA21A8EB);
         panel.setBackground(chrome);
-        int panelHeight = dp(4) + dp(32) + dp(8) + dp(56) + dp(8)
+        int panelHeight = dp(4) + dp(32) + dp(6) + dp(44) + dp(8)
                 + thumbnailHeightPx + dp(34) + dp(8);
         FrameLayout.LayoutParams playerPanelLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, panelHeight, Gravity.BOTTOM);
-        playerPanelLp.leftMargin = dp(104);
+        playerPanelLp.leftMargin = dp(72);
         playerPanelLp.rightMargin = dp(12);
         playerPanelLp.bottomMargin = dp(12);
         root.addView(panel, playerPanelLp);
@@ -358,8 +358,8 @@ public final class MarsTvShell {
         controls.setGravity(Gravity.CENTER);
         controls.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams controlsLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(56));
-        controlsLp.topMargin = dp(8);
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
+        controlsLp.topMargin = dp(5);
         panelContent.addView(controls, controlsLp);
 
         for (int i = 0; i < CONTROL_ICONS.length; i++) {
@@ -371,10 +371,10 @@ public final class MarsTvShell {
             button.setColorFilter(WHITE);
             button.setBackground(buttonChrome(false, index == CONTROL_PLAY));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    dp(index == CONTROL_PLAY ? 58 : 48),
-                    dp(index == CONTROL_PLAY ? 58 : 48));
-            lp.leftMargin = dp(4);
-            lp.rightMargin = dp(4);
+                    dp(index == CONTROL_PLAY ? 38 : 32),
+                    dp(index == CONTROL_PLAY ? 38 : 32));
+            lp.leftMargin = dp(3);
+            lp.rightMargin = dp(3);
             controls.addView(button, lp);
             button.setOnClickListener(v -> {
                 controlPosition = index;
@@ -446,7 +446,7 @@ public final class MarsTvShell {
         TextView button = text(15, WHITE);
         button.setText("");
         button.setGravity(Gravity.CENTER);
-        button.setPadding(dp(8), dp(5), dp(8), dp(5));
+        button.setPadding(dp(3), dp(3), dp(3), dp(3));
         int railIcon;
         switch (destination) {
             case 0: railIcon = R.drawable.ic_nav_home; break;
@@ -464,7 +464,7 @@ public final class MarsTvShell {
         button.setContentDescription(label);
         button.setBackground(shape(0x00000000, 0, 0, 10));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(52));
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(38));
         lp.topMargin = dp(3);
         railItems.addView(button, lp);
         button.setOnClickListener(v -> {
@@ -521,6 +521,7 @@ public final class MarsTvShell {
      * @return true when the shell consumed the gesture
      */
     /** Single BACK state machine for key and Android dispatcher. */
+    /** Fire TV: BACK returns to Browse in one press, preserving the media session. */
     public boolean handleBack() {
         if (released || pip) return false;
         cancelHold();
@@ -529,19 +530,9 @@ public final class MarsTvShell {
             render();
             return true;
         }
-        if (focus == Focus.RAIL) {
-            focus = Focus.VIDEO;
-            render();
-            actions.minimize();
-            return true;
-        }
-        if (focus == Focus.CONTROLS || focus == Focus.CARDS) {
-            focus = Focus.VIDEO;
-            render();
-            return true;
-        }
-        openRail();
+        focus = Focus.VIDEO;
         render();
+        actions.minimize();
         return true;
     }
 
@@ -798,7 +789,8 @@ public final class MarsTvShell {
         panel.setVisibility(panelVisible ? View.VISIBLE : View.GONE);
         clock.setVisibility(!pip && (panelVisible || focus == Focus.RAIL || infoOpen)
                 ? View.VISIBLE : View.GONE);
-        rail.setVisibility(!pip ? View.VISIBLE : View.GONE);
+        rail.setVisibility(!pip && focus == Focus.RAIL ? View.VISIBLE : View.GONE);
+        railHint.setVisibility(focus == Focus.RAIL ? View.VISIBLE : View.GONE);
         infoPanel.setVisibility(!pip && infoOpen ? View.VISIBLE : View.GONE);
 
         if (focus == Focus.RAIL) {
@@ -815,7 +807,7 @@ public final class MarsTvShell {
             controlButtons.get(i).setColorFilter(selected ? CYAN : WHITE);
             controlButtons.get(i).setBackground(
                     buttonChrome(selected, i == CONTROL_PLAY));
-            controlButtons.get(i).setPadding(dp(8), dp(8), dp(8), dp(8));
+            controlButtons.get(i).setPadding(dp(4), dp(4), dp(4), dp(4));
         }
 
         int highlight = focus == Focus.CARDS ? cardPosition : -1;
