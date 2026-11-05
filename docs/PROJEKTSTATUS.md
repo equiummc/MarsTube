@@ -90,7 +90,7 @@ Jeder Agent **ergänzt** hier:
 - [x] Echter TV-Info-Menüpunkt „Auf Updates prüfen“ startet vorhandene Updateoberfläche mit D-Pad-Fokus und Bestätigungsdialog; alte Dummy-Aktion entfernt.
 - [x] **Fremde Updatequelle entfernt:** Ausschließlich `https://github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json`, Debug-Systemproperty als Umleitungsweg gesperrt.
 - [x] `MarsUpdateApkGuard` prüft APK-Datei, unveränderte Paket-ID, steigenden Versionscode und identische Signatur vor Android-Installationsdialog. `REQUEST_INSTALL_PACKAGES` mit CI-Sicherheitsausnahme für explizites Update.
-- [ ] CI-Build **[41941226412](https://github.com/equiummc/MarsTube/actions/runs/41941226412)**: Ergebnis beim Eintrag noch offen; keine Behauptung über fertige APK.
+- [x] CI-Build **[41941226412](https://github.com/equiummc/MarsTube/actions/runs/41941226412)**: **erfolgreich**; SABR-/Media3-Prüfung, TV-Einstellungen, Shorts-Tests, neue APK-Guard-Tests und Berechtigungsprüfung bestanden. Testartefakt [marstube-v0.0.12-firetv-inapp-updater-debug](https://github.com/equiummc/MarsTube/actions/runs/41941226412/artifacts/13375973504). **Noch keine Geräteabnahme und keine dauerhaft signierte Updatebasis.**
 - [ ] **Dauerhafte Signatur** einrichten, bevor 0.0.12 als echte Updatebasis installiert wird. Die normalen CI-Debug-Schlüssel wechseln zwischen Läufen; diese APKs sind keine zuverlässige Updatekette.
 - [ ] Eigenes GitHub Release mit signierter höherer Version und validem Update-Manifest veröffentlichen. Bis dahin zeigt Updateprüfung ggf. einen Fehler (kein Feed verfügbar).
 - [ ] Reale Geräteabnahme der Updateoberfläche/Installer-Berechtigungen auf Fire TV Cube und Thomson; 0.0.12 → 0.0.13 tatsächlich testen, ohne Einstellungen zu verlieren.
