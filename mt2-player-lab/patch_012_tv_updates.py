@@ -68,7 +68,7 @@ once(settings,
                 page -> com.newtube.mobile.ui.update.MobileUpdateActivity
                         .startCheck(page.requireContext())));''')
 
-updater = tv / "update/AppUpdates.java"
+updater = mobile / "java/com/newtube/mobile/update/AppUpdates.java"
 once(updater,
 '''    private static String[] manifestUrls(Context context) {
         String override = BuildConfig.DEBUG ? MobileMainApplication.getDebugSystemProperty("debug.arc.update_manifest") : "";
@@ -113,7 +113,7 @@ once(updater,
 '''        return "https://github.com/equiummc/MarsTube/releases/tag/v" + versionName;''')
 
 guard = Path(__file__).resolve().parent / "MarsUpdateApkGuard.java"
-dst = tv / "update/MarsUpdateApkGuard.java"
+dst = mobile / "java/com/newtube/mobile/update/MarsUpdateApkGuard.java"
 if not guard.is_file():
     raise SystemExit("MT2-012 missing MarsUpdateApkGuard.java")
 dst.write_text(guard.read_text(encoding="utf-8"), encoding="utf-8")
