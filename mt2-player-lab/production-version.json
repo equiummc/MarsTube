@@ -1,0 +1,11 @@
+{
+  "versionName": "0.0.16",
+  "versionCode": 12016,
+  "packageName": "de.equiummc.marstube2",
+  "changelog_de": [
+    "Ein einziges dauerhaftes MarsTube-Paket statt separater Test-Apps",
+    "Überarbeitete Zurück-Taste und Fernbedienungsnavigation",
+    "Fortschrittsleiste unter den Player-Bedienelementen und Fernbedienungs-Seeking",
+    "MarsTube-M-Logo und sichtbarer Updatebereich"
+  ]
+}
