@@ -1,0 +1,1 @@
+MarsTube production signing bootstrap. This file is updated by the owner's local setup script after GitHub secrets are configured.
