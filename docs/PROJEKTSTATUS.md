@@ -126,3 +126,16 @@ Details: [MT2-013-ABNAHME.md](MT2-013-ABNAHME.md).
 - **Quelltests:** `MarsShortsSessionTest.java` erweitert um Vorschau/Ende/Leerlauf. `.github/workflows/mt2-017-shorts-ci.yml` kompiliert und prüft ohne Release; **Ergebnis gesondert nachtragen**. Aus einem laufenden CI-Job darf kein Erfolg abgeleitet werden.
 - **Offene Punkte:** GitHub-CI erfolgreich abschließen, Paket-Signierung und reale OTA-Aktualisierung belegen, Fire TV Cube und Thomson auf Darstellung, Fokus, Rücktaste, Spulen, Shorts Auto-Auswahl, Decoder, Startzeiten, RAM und Spinner testen. 0.0.16 bis dahin behalten.
 - **Spezifikation:** [MT2-017-SHORTS-STAGE.md](MT2-017-SHORTS-STAGE.md). Der frühere Videostream-Ausfall trat laut Nutzer plötzlich nicht mehr auf; Ursache unbestätigt, weder SABR noch Netzwerk als definitiv behoben markieren.
+
+
+## MT2-019 – Shorts im festen Drei-Spalten-Layout (06.11.2026)
+
+- Arbeitsbranch: `feature/mt2-019-shorts-three-column-20261106`, Ausgangsstand `feature/mt2-018-shorts-miniplayer-ux`. Nicht auf `master` oder `mars/production-2` entwickelt.
+- Version: `0.0.19`, `versionCode=12019`, **unveränderte** Paketkennung `de.equiummc.marstube2`. Produktives Android-Update benötigt weiterhin denselben privaten Signaturschlüssel und ein geprüftes GitHub-Release mit `marstube-tv.json`; Debug-APK ist kein sicheres In-place-Update.
+- Links: exakt drei größere Vorschaubilder in Hochkantdarstellung und mehrzeilige Titel; technische Vorschauliste bleibt selektiv und puffert keine drei kompletten Videos.
+- Mitte: Branding SHORTS und kleinere Uhr oben, kompakter Auto-EIN/AUS-Schalter, eine Laufzeitkapsel mit Trennstrich, vertikale gelbe Symbolaktionen (Like, Dislike, echtes Speichern in YouTube-Playlist).
+- Rechts: ein vorhandener Media3-Player mit festem 9:16-Fenster bis zum rechten Rand. Auch breitere Videos werden per ZOOM seitlich beschnitten. Der 7-dp-Balken sitzt direkt darunter an der unteren Bildschirmkante und verdeckt kein Videobild.
+- D-Pad: Vorschau → mittlere Aktionen → Video; Links aus der Vorschau öffnet die vorhandene Rail. UP/DOWN im Videofokus wechselt Shorts. Richtungstasten an fokussiertem Fortschrittsbalken und dedizierte Medien-Spultasten: Stage-Seek bei Halten, einmaliger Commit beim Loslassen. OK lang: 2× im Videofokus wie zuvor. PLAY/PAUSE ergänzt.
+- Unverändert: BACK über bestehende Rail, vorhandene Wiedergabe- und Netzwerkpfade, Autoplay nach tatsächlichem Shorts-Ende, 5-Sekunden-Ladespinner, TV-System-PiP-Sperre, Ein-App-Updateprüfung und Signaturprüfung.
+- Geändert: `mt2-player-lab/MarsTvShortsStage.java`, `MarsTvShell.java`, `patch_019_shorts_three_column.py`, `production-version.json`, `test_019_shorts_contract.py`, `tools/build-marstube-production.sh`, `.github/workflows/mt2-019-shorts-ci.yml`.
+- **Prüfung (Stand GitHub-Änderung):** Statische Vertragsprüfung im CI vorgesehen, Android-Java-Compile/Unit-Test/Debug-Build angestoßen. Reale Fire-TV- und Thomson-Tests, Fokusprüfung, Cropping an breiten Shorts und produktive Updateinstallation **noch offen**. Ohne nachweislich grüne CI keine Freigabe.
