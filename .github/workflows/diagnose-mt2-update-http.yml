@@ -1,0 +1,45 @@
+name: MarsTube feed HTTP diagnostics (no APK build)
+on:
+  push:
+    branches:
+      - diagnostics/mt2-update-feed-20261107
+    paths:
+      - '.github/workflows/diagnose-mt2-update-http.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check real public latest URLs as Android would
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="https://github.com/equiummc/MarsTube/releases"
+          for kind in stable cache_bust pinned github_api; do
+            case "$kind" in
+              stable) u="$root/latest/download/marstube-tv.json";;
+              cache_bust) u="$root/latest/download/marstube-tv.json?mars_check=$(date +%s%N)";;
+              pinned) u="$root/download/v0.0.21/marstube-tv.json";;
+              github_api) u="https://api.github.com/repos/equiummc/MarsTube/releases/latest";;
+            esac
+            echo "::group::FETCH $kind"
+            http=$(curl -sSL --max-time 28 --retry 2 --retry-delay 1 \
+              -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/91.0.4472.114' \
+              -H 'Accept: */*' -H 'Cache-Control: no-cache' \
+              -o "response-$kind.json" -D "headers-$kind.txt" \
+              -w 'HTTP=%{http_code} REDIRECTS=%{num_redirects} CONTENT_TYPE=%{content_type} EFFECTIVE=%{url_effective}' "$u")
+            echo "$http"
+            grep -iE '^cache-control:|^x-cache:|^location:|^content-type:' "headers-$kind.txt" | tail -12 || true
+            if [ "$kind" = "github_api" ]; then
+              jq -r '"api_latest=" + .tag_name + " files=" + ([.assets[].name]|join(","))' "response-$kind.json"
+            else
+              jq -r '"manifest=" + ((keys - ["package"])|join(",")) + " code=" + ([to_entries[]|select(.key != "package")|.value.versionCode]|max|tostring)' "response-$kind.json"
+            fi
+            echo "::endgroup::"
+          done
+          for kind in stable cache_bust pinned; do
+            jq -e '.["0.0.21"].versionCode == 12021' "response-$kind.json"
+          done
