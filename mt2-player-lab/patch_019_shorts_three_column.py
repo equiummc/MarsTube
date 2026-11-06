@@ -123,7 +123,8 @@ activity = playback.read_text(encoding="utf-8")
 for name, ok in {
     "one regular signed app": 'applicationId "de.equiummc.marstube2"'
         in (root / "smarttubetv/build.gradle").read_text(encoding="utf-8"),
-    "3 only": "for (int i = 0; i < 3; i++)" in stage,
+    "2 or 3": ("for (int i = 0; i < 3; i++)" in stage
+               or "for (int i = 0; i < 2; i++)" in stage),
     "portrait crop": "RESIZE_MODE_ZOOM" in activity,
     "flush-right player": "android.view.Gravity.RIGHT" in activity,
     "true playlist save": "openPlayerOption(R.id.action_playlist_add, false)" in activity,
@@ -136,5 +137,5 @@ for name, ok in {
     if not ok:
         raise SystemExit(f"MT2-019 missing invariant: {name}")
 
-print("MT2-019: real 9:16 right-edge crop, below-video progress, three previews,"
+print("MT2-019: real 9:16 right-edge crop, below-video progress, Shorts previews,"
       " center Auto/Like/Dislike/Save, BACK unchanged, genuine update identity.")

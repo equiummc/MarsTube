@@ -104,7 +104,8 @@ stage = (tv / "playback/MarsTvShortsStage.java").read_text(encoding="utf-8")
 session = (tv / "common/MarsShortsSession.java").read_text(encoding="utf-8")
 checks = {
     "single stable package": 'applicationId "de.equiummc.marstube2"' in (root / "smarttubetv/build.gradle").read_text(encoding="utf-8"),
-    "3 Shorts previews": "for (int i = 0; i < 3; i++)" in stage,
+    "2 or 3 Shorts previews": ("for (int i = 0; i < 3; i++)" in stage
+                             or "for (int i = 0; i < 2; i++)" in stage),
     "independent focus": "SHORTS_PREVIEWS" in shell,
     "same video session": "MarsShortsSession.select(selectedIndex)" in stage,
     "real rating actions": "actions::like, actions::dislike" in shell,
@@ -115,4 +116,4 @@ for label, passed in checks.items():
     if not passed:
         raise SystemExit(f"MT2-018 missing invariant: {label}")
 
-print("MT2-018: no unreachable system PiP on TV, 3 Shorts previews, D-pad rating/seek, live update check.")
+print("MT2-018: no unreachable system PiP on TV, Shorts previews, D-pad rating/seek, live update check.")

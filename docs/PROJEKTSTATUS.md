@@ -155,3 +155,15 @@ Details: [MT2-013-ABNAHME.md](MT2-013-ABNAHME.md).
 - **Prüfstatus:** CI-Compile und Tests laufen über isolierten Featurebranch; realer HTTP-/Installationsnachweis auf Fire TV / Thomson weiterhin ausstehend. Vor diesem Nachweis bitte nicht behaupten, der Update-End-to-End-Weg funktioniere auf beiden Geräten.
 
 - **MT2-020 CI-Ergebnis:** Erfolgreich: gepinnter Checkout, alle 020-Patches, statische Update-Vertragsprüfung, Android-Java-Kompilierung, Unit-Tests und `assembleStmobileDebug`. Nachweis: https://github.com/equiummc/MarsTube/actions/runs/42302058616. Offen bleiben der signierte Produktions-Release und der Gerätetest des Versionsabrufs.
+
+
+## MT2-021 – Player → Start pausiert; Shorts zwei Vorschauen (06.11.2026)
+
+- Bestätigt durch Quellcode: TV-Rail-Navigation `MarsTvShell.Actions.navigate()` öffnet `MobileBrowseActivity` bisher ohne Media3-Wiedergabe anzuhalten. Die absichtlich unveränderte BACK-Taste öffnet lediglich die Rail; Video darf dabei weiterlaufen.
+- Neuer UX-Vertrag: **Expliziter Wechsel in Start/Suche/Abos/Verlauf/Einstellungen** pausiert den bestehenden `mPlayer` direkt vor `startActivity`. Die Media3-Session wird nicht destruktiv beendet und keine Daten werden gelöscht; beim erneuten Öffnen wird nicht automatisch weiter abgespielt. **BACK selbst bleibt exakt gleich.**
+- Shorts-Vorschau von **drei auf zwei** reduziert, deutlich größere hochkantige Voransichten mit `fitCenter` statt Zuschneiden kleiner Querformat-Thumbnails; sicheres Nachladen wie zuvor über `MarsShortsSession.at()`.
+- Mittelspalte schmaler: statt 30 % nun 25 % der Menu-Breite. Like/Dislike/Speichern unverändert; zusätzlich **⏪ 5 s / ⏩ 5 s** innerhalb des Menüs, per OK/D-Pad erreichbar. Spulen über dedizierte Medientasten und Fortschrittsbalken bleibt erhalten. Standard-Halte-Schritt für Shorts 5 s statt 10 s, später beschleunigt.
+- Videoausgabe auf rechtem Bildschirmrand unverändert mit korrektem **9:16** (bei 1920×1080 ca. 603 px Breite nach 7dp-Fortschrittsreserve). Breitere Quellvideos werden durch Media3-ZOOM weiterhin auf das gewählte Fenster beschnitten. Eine Erweiterung auf 10:16 wäre nicht ohne zusätzliche vertikale Beschneidung echter 9:16-Videos möglich.
+- Vorhandene permanente Paketkennung `de.equiummc.marstube2`, Signaturprüfung, erzwungene Update-Frische aus MT2-020 und Release-Kanal bleiben unverändert; Version `0.0.21` / `12021`.
+- Patch nach allen Vorgängern: `patch_021_shorts_home_pause.py` kopiert aktualisierte TV-Klassen in den gepinnten Checkout und ergänzt genau die absichtliche Wiedergabepause beim Navigieren. Kein Eingriff in `handleBack` und kein Umstellen des Decoders.
+- CI: `.github/workflows/mt2-021-tv-ci.yml` führt Patches/Vertragsprüfungen/Android-Unit-Tests/Debug-APK aus. Signierter Release und echter Fernseher-Test bleiben separate Gates; erst nach jeweils nachweislich grünem Build freigeben.
