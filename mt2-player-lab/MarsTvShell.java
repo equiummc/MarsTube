@@ -80,6 +80,8 @@ public final class MarsTvShell {
 
         void dislike();
 
+        void save();
+
         void quality();
 
         /** Is this playback from the dedicated Shorts feed (not merely portrait)? */
@@ -109,7 +111,7 @@ public final class MarsTvShell {
 
     private enum Focus {
         VIDEO, CARDS, CONTROLS, PROGRESS, RAIL,
-        SHORTS_PREVIEWS, SHORTS_REACTIONS, SHORTS_PROGRESS
+        SHORTS_PREVIEWS, SHORTS_REACTIONS, SHORTS_AUTO, SHORTS_PROGRESS
     }
 
     private static final int CYAN = 0xFF16B8FF;
@@ -263,7 +265,7 @@ public final class MarsTvShell {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         // A translucent Shorts stage above the one existing player surface.
         shortsStage = new MarsTvShortsStage(activity, root, this::render,
-                actions::like, actions::dislike);
+                actions::like, actions::dislike, actions::save);
 
         // Left rail. It is an overlay over the playing video, never a second player.
         rail = new LinearLayout(activity);
@@ -564,6 +566,8 @@ public final class MarsTvShell {
                 || key == KeyEvent.KEYCODE_DPAD_DOWN
                 || key == KeyEvent.KEYCODE_BACK
                 || key == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+                || key == KeyEvent.KEYCODE_MEDIA_PLAY
+                || key == KeyEvent.KEYCODE_MEDIA_PAUSE
                 || key == KeyEvent.KEYCODE_MEDIA_REWIND
                 || key == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
                 || key == KeyEvent.KEYCODE_MEDIA_NEXT
@@ -574,7 +578,7 @@ public final class MarsTvShell {
         }
 
         if (action == KeyEvent.ACTION_DOWN) {
-            if (isSeekHoldKey(key) && isSeekHoldContext()) {
+            if (isSeekHoldKey(key) && isSeekHoldContext(key)) {
                 stageSeekHold(key);
                 render();
                 return true;
@@ -617,13 +621,19 @@ public final class MarsTvShell {
     }
 
     private boolean isSeekHoldKey(int key) {
-        return key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT;
+        return key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT
+                || key == KeyEvent.KEYCODE_MEDIA_REWIND
+                || key == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD;
     }
 
-    private boolean isSeekHoldContext() {
-        return !infoOpen && focus != Focus.RAIL
-                && (actions.isShortsPlayback() ? focus == Focus.SHORTS_PROGRESS
-                        : focus == Focus.VIDEO || focus == Focus.PROGRESS);
+    private boolean isSeekHoldContext(int key) {
+        if (infoOpen || focus == Focus.RAIL) return false;
+        if (key == KeyEvent.KEYCODE_MEDIA_REWIND
+                || key == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
+            return actions.isShortsPlayback();
+        }
+        return actions.isShortsPlayback() ? focus == Focus.SHORTS_PROGRESS
+                : focus == Focus.VIDEO || focus == Focus.PROGRESS;
     }
 
     /** Move the indicated target during key-repeat; issue one seek only on release. */
@@ -642,8 +652,9 @@ public final class MarsTvShell {
         long distance = heldMs < 650L ? 10_000L
                 : heldMs < 1_800L ? 10_000L + (heldMs - 650L) * 20L
                 : 33_000L + (heldMs - 1_800L) * 80L;
-        long target = key == KeyEvent.KEYCODE_DPAD_LEFT
-                ? seekHoldOrigin - distance : seekHoldOrigin + distance;
+        boolean backwards = key == KeyEvent.KEYCODE_DPAD_LEFT
+                || key == KeyEvent.KEYCODE_MEDIA_REWIND;
+        long target = backwards ? seekHoldOrigin - distance : seekHoldOrigin + distance;
         seekPreviewMs = Math.max(0L, Math.min(duration, target));
         progress.invalidate();
     }
@@ -670,10 +681,12 @@ public final class MarsTvShell {
                     if (focus == Focus.SHORTS_PREVIEWS) {
                         shortsStage.movePreview(-1);
                     } else if (focus == Focus.SHORTS_REACTIONS) {
-                        shortsReactionPosition = 0;
+                        if (shortsReactionPosition > 0) shortsReactionPosition--;
+                        else focus = Focus.SHORTS_AUTO;
                     } else if (focus == Focus.SHORTS_PROGRESS) {
                         focus = Focus.SHORTS_REACTIONS;
-                    } else {
+                        shortsReactionPosition = 2;
+                    } else if (focus != Focus.SHORTS_AUTO) {
                         actions.previous();
                     }
                     render();
@@ -681,8 +694,12 @@ public final class MarsTvShell {
                 case KeyEvent.KEYCODE_DPAD_DOWN:
                     if (focus == Focus.SHORTS_PREVIEWS) {
                         shortsStage.movePreview(1);
+                    } else if (focus == Focus.SHORTS_AUTO) {
+                        focus = Focus.SHORTS_REACTIONS;
+                        shortsReactionPosition = 0;
                     } else if (focus == Focus.SHORTS_REACTIONS) {
-                        focus = Focus.SHORTS_PROGRESS;
+                        if (shortsReactionPosition < 2) shortsReactionPosition++;
+                        else focus = Focus.SHORTS_PROGRESS;
                     } else if (focus == Focus.SHORTS_PROGRESS) {
                         focus = Focus.VIDEO;
                     } else {
@@ -699,33 +716,31 @@ public final class MarsTvShell {
                     render();
                     return true;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
-                    if (focus == Focus.VIDEO) {
-                        focus = Focus.SHORTS_PREVIEWS;
-                    } else if (focus == Focus.SHORTS_REACTIONS) {
+                    if (focus == Focus.VIDEO || focus == Focus.SHORTS_PROGRESS) {
+                        focus = Focus.SHORTS_REACTIONS;
                         shortsReactionPosition = 0;
-                        focus = Focus.VIDEO;
+                    } else if (focus == Focus.SHORTS_REACTIONS
+                            || focus == Focus.SHORTS_AUTO) {
+                        focus = Focus.SHORTS_PREVIEWS;
                     } else if (focus == Focus.SHORTS_PREVIEWS) {
                         openRail();
-                    } else {
-                        focus = Focus.VIDEO;
                     }
                     render();
                     return true;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
                     if (focus == Focus.SHORTS_PREVIEWS) {
+                        focus = Focus.SHORTS_REACTIONS;
+                        shortsReactionPosition = 0;
+                    } else if (focus == Focus.SHORTS_REACTIONS
+                            || focus == Focus.SHORTS_AUTO) {
                         focus = Focus.VIDEO;
                     } else if (focus == Focus.VIDEO) {
-                        shortsReactionPosition = 0;
-                        focus = Focus.SHORTS_REACTIONS;
-                    } else if (focus == Focus.SHORTS_REACTIONS) {
-                        shortsReactionPosition = 1;
-                    } else {
-                        focus = Focus.SHORTS_REACTIONS;
+                        focus = Focus.SHORTS_PROGRESS;
                     }
                     render();
                     return true;
                 default:
-                    break; // BACK and MENU still use the global rail.
+                    break; // BACK and MENU still use the unchanged global rail.
             }
         }
         switch (key) {
@@ -804,6 +819,12 @@ public final class MarsTvShell {
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                 actions.toggle();
                 break;
+            case KeyEvent.KEYCODE_MEDIA_PLAY:
+                if (player.current() != null) player.current().play();
+                break;
+            case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                if (player.current() != null) player.current().pause();
+                break;
             case KeyEvent.KEYCODE_MEDIA_REWIND:
                 seek(-10_000L);
                 break;
@@ -831,7 +852,10 @@ public final class MarsTvShell {
                 if (selected != null) actions.openVideo(selected);
             } else if (focus == Focus.SHORTS_REACTIONS) {
                 if (shortsReactionPosition == 0) actions.like();
-                else actions.dislike();
+                else if (shortsReactionPosition == 1) actions.dislike();
+                else actions.save();
+            } else if (focus == Focus.SHORTS_AUTO) {
+                shortsStage.toggleAutoNext();
             } else if (focus == Focus.SHORTS_PROGRESS) {
                 ExoPlayer exo = player.current();
                 if (exo != null && exo.isCurrentMediaItemSeekable()
@@ -983,6 +1007,7 @@ public final class MarsTvShell {
         shortsStage.setPreviewsFocused(shortsMode && focus == Focus.SHORTS_PREVIEWS);
         shortsStage.setReactionsFocused(shortsMode && focus == Focus.SHORTS_REACTIONS,
                 shortsReactionPosition);
+        shortsStage.setAutoFocused(shortsMode && focus == Focus.SHORTS_AUTO);
         shortsStage.setProgressFocused(shortsMode && focus == Focus.SHORTS_PROGRESS);
         shortsStage.show(shortsMode && !pip, player.current(), seekPreviewMs);
         railPosition = Math.min(railPosition,
