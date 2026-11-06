@@ -159,6 +159,29 @@ jobs:
             newtube-reference/smarttubetv/build/reports/tests/**
           if-no-files-found: ignore
 
+  powershell_syntax:
+    name: PowerShell 7 diagnostics script parses safely
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse, never execute, the Windows diagnostic script
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            'tools/Test-MarsTube-Update.ps1', [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List | Out-String | Write-Error
+            exit 1
+          }
+          $content = Get-Content -Raw 'tools/Test-MarsTube-Update.ps1'
+          if ($content -match 'adb\s+.*(install|uninstall|logcat\s+-c|pm\s+clear)') {
+            throw 'Diagnostics script may not install, uninstall or clear app data/logs.'
+          }
+          Write-Host 'PASS: PS7 syntax valid, no device modifications in the diagnostic script.'
+
   apk_identity:
     name: Same package, increasing code and identical signature 0.0.20->0.0.21
     runs-on: ubuntu-24.04
