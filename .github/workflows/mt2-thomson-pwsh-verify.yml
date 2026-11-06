@@ -1,0 +1,51 @@
+name: Thomson MarsTube update-compare script verification
+
+on:
+  push:
+    branches:
+      - diagnostics/mt2-022-update-regression-20261107
+    paths:
+      - 'tools/Test-MarsTube-Thomson.ps1'
+      - '.github/workflows/mt2-thomson-pwsh-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: PowerShell 7 syntax and installation safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse and inspect, never connect to or change TV
+        shell: pwsh
+        run: |
+          $script = 'tools/Test-MarsTube-Thomson.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $script, [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -gt 0) {
+            foreach ($error in $parseErrors) { Write-Error $error.Message }
+            throw 'PowerShell 7 parse errors'
+          }
+          $text = Get-Content -LiteralPath $script -Raw
+          foreach ($required in @(
+            'de.equiummc.marstube2',
+            'MarsTube-0.0.20.apk',
+            'B4E0350FF5FACAA2663200AC8579D967AD5CBC2363AA8BC645718C9131E4BE7C',
+            'Get-FileHash',
+            'Get-TvIdentification',
+            'IsThomson',
+            '12020',
+            '12021',
+            'install -r'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing safety assertion: $required" }
+          }
+          if ($text -match '(?im)^\s*&\s*\$adb.*\b(uninstall|pm\s+clear|install\s+-d|logcat\s+-c)\b') {
+            throw 'Forbidden operation in TV installation script'
+          }
+          Write-Host 'PASS: syntax checked, package/brand/version/SHA guard and non-destructive -r installation found.'
