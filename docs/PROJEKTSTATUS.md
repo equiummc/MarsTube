@@ -139,3 +139,6 @@ Details: [MT2-013-ABNAHME.md](MT2-013-ABNAHME.md).
 - Unverändert: BACK über bestehende Rail, vorhandene Wiedergabe- und Netzwerkpfade, Autoplay nach tatsächlichem Shorts-Ende, 5-Sekunden-Ladespinner, TV-System-PiP-Sperre, Ein-App-Updateprüfung und Signaturprüfung.
 - Geändert: `mt2-player-lab/MarsTvShortsStage.java`, `MarsTvShell.java`, `patch_019_shorts_three_column.py`, `production-version.json`, `test_019_shorts_contract.py`, `tools/build-marstube-production.sh`, `.github/workflows/mt2-019-shorts-ci.yml`.
 - **Prüfung (Stand GitHub-Änderung):** Statische Vertragsprüfung im CI vorgesehen, Android-Java-Compile/Unit-Test/Debug-Build angestoßen. Reale Fire-TV- und Thomson-Tests, Fokusprüfung, Cropping an breiten Shorts und produktive Updateinstallation **noch offen**. Ohne nachweislich grüne CI keine Freigabe.
+
+- **CI-Befund vom 06.11.2026:** Pinned Checkout, komplette Patch-Pipeline inklusive Patch 019, Vertragsprüfungen, Android-Java-Compile, `:smarttubetv:testStmobileDebugUnitTest` und `:smarttubetv:assembleStmobileDebug` **erfolgreich**. Nachweis: https://github.com/equiummc/MarsTube/actions/runs/42298137973. Dies ist noch kein signierter Produktions-Build oder realer TV-Test.
+- Konfliktfreier Produktions-PR: https://github.com/equiummc/MarsTube/pull/54 (squash-freundlich, nur acht geänderte Dateien auf 0.0.18-Produktions-HEAD).
