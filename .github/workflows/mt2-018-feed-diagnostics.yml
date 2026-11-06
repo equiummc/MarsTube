@@ -1,0 +1,71 @@
+name: MarsTube update feed diagnosis (no release)
+
+on:
+  push:
+    branches:
+      - feature/mt2-018-feed-diagnostics-20261106
+    paths:
+      - '.github/workflows/mt2-018-feed-diagnostics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: Live GitHub JSON versus shipped 0.0.16
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Test the exact latest/download URL used by 0.0.16
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json"
+          direct="https://github.com/equiummc/MarsTube/releases/download/v0.0.17/marstube-tv.json"
+          curl --fail --location --silent --show-error --max-time 100 --dump-header /tmp/default.headers --output /tmp/default.json --write-out "DEFAULT: HTTP %{http_code}; final %{url_effective}; bytes %{size_download}\n" "$url"
+          curl --fail --location --silent --show-error --max-time 100 --header 'Cache-Control: no-cache' --header 'Pragma: no-cache' --dump-header /tmp/fresh.headers --output /tmp/fresh.json --write-out "NO-CACHE: HTTP %{http_code}; final %{url_effective}; bytes %{size_download}\n" "$url"
+          curl --fail --location --silent --show-error --max-time 100 --dump-header /tmp/direct.headers --output /tmp/direct.json --write-out "DIRECT: HTTP %{http_code}; final %{url_effective}; bytes %{size_download}\n" "$direct"
+          curl --fail --location --silent --show-error --max-time 100 --output /tmp/github-latest.json "https://api.github.com/repos/equiummc/MarsTube/releases/latest"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          latest=json.loads(Path('/tmp/github-latest.json').read_text())
+          print('GitHub API latest:',latest['tag_name'])
+          assert latest['tag_name']=='v0.0.17', 'Wrong GitHub latest release'
+          for label in ('default','fresh','direct'):
+              obj=json.loads(Path('/tmp/'+label+'.json').read_text())
+              key='0.0.17'
+              version=obj.get(key,{})
+              print(label,'version keys:',list(obj.keys()),'versionCode:',version.get('versionCode'),
+                    'package URL:',obj.get('package',{}).get('downloadUrlList'))
+              assert version.get('versionCode')==12017, label+' did not expose update 12017'
+              assert obj['package']['downloadUrlList'][0].endswith('/v0.0.17/MarsTube-0.0.17.apk')
+          print('PASS: exact 0.0.16 feed URL returns valid, newer 0.0.17 on GitHub-hosted runner')
+          PY
+          echo "GitHub response cache headers (no secrets):"
+          grep -Ei '^(HTTP/|location:|cache-control:|age:|content-type:)' /tmp/default.headers | tail -n 16 || true
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools build-tools;35.0.0'
+      - name: Inspect actual published v0.0.16 APK resources (not local source assumptions)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --silent --show-error --max-time 240 \
+            --output /tmp/MarsTube-0.0.16.apk \
+            https://github.com/equiummc/MarsTube/releases/download/v0.0.16/MarsTube-0.0.16.apk
+          test "$(stat -c%s /tmp/MarsTube-0.0.16.apk)" -gt 1000000
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging /tmp/MarsTube-0.0.16.apk | head -n 5
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump resources /tmp/MarsTube-0.0.16.apk > /tmp/installed-resources.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          res=Path('/tmp/installed-resources.txt').read_text(errors='replace')
+          own='https://github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json'
+          bad='https://github.com/aleixrodriala/newtube/releases/latest/download/newtube.json'
+          print('MarsTube release feed string in actual APK:',own in res)
+          print('Legacy NewTube release feed string in actual APK:',bad in res)
+          assert own in res, 'Shipped 0.0.16 APK lacks MarsTube own update URL'
+          assert bad not in res, 'Shipped 0.0.16 APK accidentally includes a NewTube update URL'
+          PY
+          echo "PASS: installed 0.0.16 resource is MarsTube-owned, not NewTube feed."
