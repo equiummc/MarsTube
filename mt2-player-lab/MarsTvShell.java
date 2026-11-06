@@ -539,6 +539,7 @@ public final class MarsTvShell {
     public boolean handleBack() {
         if (released || pip) return false;
         cancelHold();
+        cancelSeekHold();
         openRail();
         render();
         return true;
@@ -570,6 +571,11 @@ public final class MarsTvShell {
         }
 
         if (action == KeyEvent.ACTION_DOWN) {
+            if (isSeekHoldKey(key) && isSeekHoldContext()) {
+                stageSeekHold(key);
+                render();
+                return true;
+            }
             if (event.getRepeatCount() > 0) {
                 return true;
             }
@@ -585,6 +591,11 @@ public final class MarsTvShell {
             return handleDown(key);
         }
         if (action == KeyEvent.ACTION_UP) {
+            if (key == seekHoldKey) {
+                finishSeekHold();
+                render();
+                return true;
+            }
             if (okKey && okDown) {
                 handler.removeCallbacks(holdRunnable);
                 if (holdTriggered) {
@@ -600,6 +611,50 @@ public final class MarsTvShell {
             return true;
         }
         return true;
+    }
+
+    private boolean isSeekHoldKey(int key) {
+        return key == KeyEvent.KEYCODE_DPAD_LEFT || key == KeyEvent.KEYCODE_DPAD_RIGHT;
+    }
+
+    private boolean isSeekHoldContext() {
+        return !infoOpen && focus != Focus.RAIL
+                && (actions.isShortsPlayback() || focus == Focus.VIDEO || focus == Focus.PROGRESS);
+    }
+
+    /** Move the indicated target during key-repeat; issue one seek only on release. */
+    private void stageSeekHold(int key) {
+        ExoPlayer exo = player.current();
+        if (exo == null || !exo.isCurrentMediaItemSeekable()) return;
+        long duration = exo.getDuration();
+        if (duration <= 0L || duration == C.TIME_UNSET) return;
+        if (seekHoldKey != key) {
+            seekHoldKey = key;
+            seekHoldOrigin = exo.getCurrentPosition();
+            seekHoldStarted = android.os.SystemClock.uptimeMillis();
+        }
+        long heldMs = Math.max(0L, android.os.SystemClock.uptimeMillis() - seekHoldStarted);
+        // One press = 10 seconds. Holding accelerates without repeated network seeks.
+        long distance = heldMs < 650L ? 10_000L
+                : heldMs < 1_800L ? 10_000L + (heldMs - 650L) * 20L
+                : 33_000L + (heldMs - 1_800L) * 80L;
+        long target = key == KeyEvent.KEYCODE_DPAD_LEFT
+                ? seekHoldOrigin - distance : seekHoldOrigin + distance;
+        seekPreviewMs = Math.max(0L, Math.min(duration, target));
+        progress.invalidate();
+    }
+
+    private void finishSeekHold() {
+        ExoPlayer exo = player.current();
+        if (exo != null && exo.isCurrentMediaItemSeekable() && seekPreviewMs >= 0L) {
+            exo.seekTo(seekPreviewMs);
+        }
+        cancelSeekHold();
+    }
+
+    private void cancelSeekHold() {
+        seekHoldKey = -1;
+        seekPreviewMs = -1L;
     }
 
     private boolean handleDown(int key) {
@@ -768,7 +823,7 @@ public final class MarsTvShell {
 
     private void openRail() {
         cancelHold();
-        seekPreviewMs = -1L;
+        cancelSeekHold();
         infoOpen = false;
         focus = Focus.RAIL;
         railEverOpened = true;
