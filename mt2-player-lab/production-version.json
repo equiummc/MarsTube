@@ -1,12 +1,13 @@
 {
-  "versionName": "0.0.20",
-  "versionCode": 12020,
+  "versionName": "0.0.21",
+  "versionCode": 12021,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Updateprüfung: Neue Versionsdatei wird mit eindeutiger Anfrage frisch geladen statt aus altem GitHub-/CDN-Cache",
-    "Updateprüfung: Manuelle Suche nach bereits gestarteter Automatikprüfung führt eine zweite frische Prüfung aus",
-    "Diagnose: Versionsnummer und VersionCode aus tatsächlich empfangener Versionsdatei im Protokoll",
-    "MarsTube 0.0.19: neue Shorts-Ansicht mit drei Hochkantvorschauen, rechtem 9:16-Video und mittiger Steuerung",
-    "Die vorhandene App-ID und Android-Signatur bleiben für Updates unverändert"
+    "TV: Beim Wechsel vom Player auf Start, Suche oder andere Hauptseiten pausiert das laufende Video; Zurück-Taste und Hauptmenü bleiben unverändert",
+    "Shorts: Zwei statt drei größere Hochkant-Vorschauen mit weniger Bildbeschnitt",
+    "Shorts: Schmalere Mittelspalte; zusätzliche gut erreichbare Tasten für jeweils fünf Sekunden zurück und vor",
+    "Shorts: Fünf Sekunden pro kurzem Spulschritt statt zehn; langes Drücken beschleunigt weiterhin",
+    "Shorts: 9:16-Videofenster rechts bleibt technisch unverändert und bis zum rechten Bildschirmrand",
+    "Update-Logik von 0.0.20, App-ID, Signaturschutz und bestehender Release-Kanal bleiben erhalten"
   ]
 }
