@@ -1,12 +1,13 @@
 {
-  "versionName": "0.0.17",
-  "versionCode": 12017,
+  "versionName": "0.0.18",
+  "versionCode": 12018,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Neue Shorts-Seite: rechts direktes 9:16-Video, links vier Vorschauen und Uhrzeit",
-    "Schmale Shorts-Fortschrittsleiste mit Laufzeit und Gesamtdauer",
-    "Automatische Shorts-Wiedergabe wahlweise ein oder aus; Fernbedienung hoch/runter",
-    "Langes Links-/Rechtsdrücken für beschleunigtes Spulen ohne wiederholtes Nachladen",
-    "Einheitliche moderne Navigationssymbole und verzögerte Shorts-Ladeanzeige"
+    "Fire TV: Kein unbedienbares Android-Bild-in-Bild-Fenster über dem Startbildschirm",
+    "Shorts: Drei größere Vorschauen mit Titel und Kanal; unabhängige Auswahl mit Fernbedienung",
+    "Shorts: Gezielt zu späteren Videos springen, ohne jedes vorherige abzuspielen",
+    "Shorts: Gefällt mir und Gefällt mir nicht über die vorhandenen YouTube-Aktionen",
+    "Shorts: Fortschrittsleiste unten rechts mit eigener Zeit-Anzeige und Fernbedienungs-Spulen",
+    "Updateprüfung: Manuelle Prüfung lädt den Versionsstand frisch und protokolliert den Vergleich"
   ]
 }
