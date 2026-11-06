@@ -1,0 +1,90 @@
+name: MarsTube update feed diagnosis (no release)
+
+on:
+  push:
+    branches:
+      - feature/mt2-018-feed-diagnostics-20261106
+    paths:
+      - '.github/workflows/mt2-018-feed-diagnostics.yml'
+      - 'tools/Diagnose-MarsTube-Update.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: Live GitHub JSON versus shipped 0.0.16
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell 7 script syntax and ADB-regex preflight
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'tools/Diagnose-MarsTube-Update.ps1').Path, [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { throw ($errors | Out-String) }
+          $sample = "192.168.41.24:5555" + [char]9 + "device"
+          if (-not ($sample -match '^(\S+)\s+device$') -or $Matches[1] -ne '192.168.41.24:5555') { throw 'ADB device parsing failed' }
+          Write-Host 'PASS: PowerShell 7 syntax and ADB pattern'
+      - name: Test the exact latest/download URL used by 0.0.16
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json"
+          direct="https://github.com/equiummc/MarsTube/releases/download/v0.0.17/marstube-tv.json"
+          curl --fail --location --silent --show-error --max-time 100 --dump-header /tmp/default.headers --output /tmp/default.json --write-out "DEFAULT: HTTP %{http_code}; final %{url_effective}; bytes %{size_download}\n" "$url"
+          curl --fail --location --silent --show-error --max-time 100 --header 'Cache-Control: no-cache' --header 'Pragma: no-cache' --dump-header /tmp/fresh.headers --output /tmp/fresh.json --write-out "NO-CACHE: HTTP %{http_code}; final %{url_effective}; bytes %{size_download}\n" "$url"
+          curl --fail --location --silent --show-error --max-time 100 --dump-header /tmp/direct.headers --output /tmp/direct.json --write-out "DIRECT: HTTP %{http_code}; final %{url_effective}; bytes %{size_download}\n" "$direct"
+          curl --fail --location --silent --show-error --max-time 100 --output /tmp/github-latest.json "https://api.github.com/repos/equiummc/MarsTube/releases/latest"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          latest=json.loads(Path('/tmp/github-latest.json').read_text())
+          print('GitHub API latest:',latest['tag_name'])
+          assert latest['tag_name']=='v0.0.17', 'Wrong GitHub latest release'
+          for label in ('default','fresh','direct'):
+              obj=json.loads(Path('/tmp/'+label+'.json').read_text())
+              key='0.0.17'
+              version=obj.get(key,{})
+              print(label,'version keys:',list(obj.keys()),'versionCode:',version.get('versionCode'),
+                    'package URL:',obj.get('package',{}).get('downloadUrlList'))
+              assert version.get('versionCode')==12017, label+' did not expose update 12017'
+              assert obj['package']['downloadUrlList'][0].endswith('/v0.0.17/MarsTube-0.0.17.apk')
+          print('PASS: exact 0.0.16 feed URL returns valid, newer 0.0.17 on GitHub-hosted runner')
+          PY
+          echo "GitHub response cache headers (no secrets):"
+          grep -Ei '^(HTTP/|location:|cache-control:|age:|content-type:)' /tmp/default.headers | tail -n 16 || true
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools build-tools;35.0.0'
+      - name: Inspect actual published v0.0.16 APK resources (not local source assumptions)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 2 --silent --show-error --max-time 240 \
+            --output /tmp/MarsTube-0.0.16.apk \
+            https://github.com/equiummc/MarsTube/releases/download/v0.0.16/MarsTube-0.0.16.apk
+          test "$(stat -c%s /tmp/MarsTube-0.0.16.apk)" -gt 1000000
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging /tmp/MarsTube-0.0.16.apk | head -n 5
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump --values resources /tmp/MarsTube-0.0.16.apk > /tmp/installed-resources.txt
+          echo 'Relevant strings in actual signed APK resource table:'
+          grep -Ei 'update_urls|marstube-tv.json|newtube.json|github.com/equiummc|aleixrodriala/newtube' /tmp/installed-resources.txt | head -n 55 || true
+          unzip -p /tmp/MarsTube-0.0.16.apk resources.arsc > /tmp/resources.arsc
+          strings -a /tmp/resources.arsc > /tmp/utf8-strings.txt
+          strings -a -el /tmp/resources.arsc > /tmp/utf16-strings.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          tables={name:Path('/tmp/'+name).read_text(errors='replace')
+                 for name in ['installed-resources.txt','utf8-strings.txt','utf16-strings.txt']}
+          own='https://github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json'
+          bad='https://github.com/aleixrodriala/newtube/releases/latest/download/newtube.json'
+          print('Source tables with full MarsTube feed:',[name for name,data in tables.items() if own in data])
+          print('Source tables with legacy NewTube feed:',[name for name,data in tables.items() if bad in data])
+          print('Source table contains update_urls:',[name for name,data in tables.items() if 'update_urls' in data])
+          assert any(own in data for data in tables.values()), 'Shipped 0.0.16 APK lacks MarsTube own update URL'
+          assert not any(bad in data for data in tables.values()), 'Shipped 0.0.16 APK accidentally includes NewTube updater URL'
+          PY
+          echo "PASS: installed 0.0.16 resource is MarsTube-owned, not NewTube feed."
