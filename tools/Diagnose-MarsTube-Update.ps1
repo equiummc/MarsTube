@@ -8,7 +8,7 @@ if (-not (Get-Command adb -ErrorAction SilentlyContinue)) {
     throw 'adb ist nicht im PATH. Bitte Android Platform-Tools starten.'
 }
 $connected = @(& adb devices | ForEach-Object {
-    if ($_ -match '^(\S+)\s+device) { $Matches[1] }
+    if ($_ -match '^(\S+)\s+device$') { $Matches[1] }
 })
 if ($Device -eq '') {
     if ($connected.Count -eq 0) { throw 'Kein freigegebenes Android-ADB-Gerät verbunden.' }
