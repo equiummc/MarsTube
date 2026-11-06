@@ -108,7 +108,8 @@ public final class MarsTvShell {
     }
 
     private enum Focus {
-        VIDEO, CARDS, CONTROLS, PROGRESS, RAIL
+        VIDEO, CARDS, CONTROLS, PROGRESS, RAIL,
+        SHORTS_PREVIEWS, SHORTS_REACTIONS, SHORTS_PROGRESS
     }
 
     private static final int CYAN = 0xFF16B8FF;
@@ -178,6 +179,7 @@ public final class MarsTvShell {
     private Focus focus = Focus.VIDEO;
     private int cardPosition;
     private int controlPosition = CONTROL_PLAY;
+    private int shortsReactionPosition;
     /** Pending D-pad seek position; committed only with OK. */
     private long seekPreviewMs = -1L;
     private int seekHoldKey = -1;
@@ -260,7 +262,8 @@ public final class MarsTvShell {
         infoPanel.addView(infoText, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         // A translucent Shorts stage above the one existing player surface.
-        shortsStage = new MarsTvShortsStage(activity, root, this::render);
+        shortsStage = new MarsTvShortsStage(activity, root, this::render,
+                actions::like, actions::dislike);
 
         // Left rail. It is an overlay over the playing video, never a second player.
         rail = new LinearLayout(activity);
@@ -619,7 +622,8 @@ public final class MarsTvShell {
 
     private boolean isSeekHoldContext() {
         return !infoOpen && focus != Focus.RAIL
-                && (actions.isShortsPlayback() || focus == Focus.VIDEO || focus == Focus.PROGRESS);
+                && (actions.isShortsPlayback() ? focus == Focus.SHORTS_PROGRESS
+                        : focus == Focus.VIDEO || focus == Focus.PROGRESS);
     }
 
     /** Move the indicated target during key-repeat; issue one seek only on release. */
@@ -658,29 +662,70 @@ public final class MarsTvShell {
     }
 
     private boolean handleDown(int key) {
-        // Shorts is its own remote-control mode, never the generic video rail.
-        // Commands are stable even when recommendations have focus or no track
-        // metadata has arrived yet. Only MENU explicitly opens the TV rail.
+        // TV Shorts: browsing is decoupled from playback. D-pad controls are
+        // deliberately distinct from the normal player carousel.
         if (actions.isShortsPlayback() && focus != Focus.RAIL && !infoOpen) {
             switch (key) {
                 case KeyEvent.KEYCODE_DPAD_UP:
+                    if (focus == Focus.SHORTS_PREVIEWS) {
+                        shortsStage.movePreview(-1);
+                    } else if (focus == Focus.SHORTS_REACTIONS) {
+                        shortsReactionPosition = 0;
+                    } else if (focus == Focus.SHORTS_PROGRESS) {
+                        focus = Focus.SHORTS_REACTIONS;
+                    } else {
+                        actions.previous();
+                    }
+                    render();
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                    if (focus == Focus.SHORTS_PREVIEWS) {
+                        shortsStage.movePreview(1);
+                    } else if (focus == Focus.SHORTS_REACTIONS) {
+                        focus = Focus.SHORTS_PROGRESS;
+                    } else if (focus == Focus.SHORTS_PROGRESS) {
+                        focus = Focus.VIDEO;
+                    } else {
+                        actions.next();
+                    }
+                    render();
+                    return true;
                 case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
                     actions.previous();
                     render();
                     return true;
-                case KeyEvent.KEYCODE_DPAD_DOWN:
                 case KeyEvent.KEYCODE_MEDIA_NEXT:
                     actions.next();
                     render();
                     return true;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
-                    seek(-10_000L);
+                    if (focus == Focus.VIDEO) {
+                        focus = Focus.SHORTS_PREVIEWS;
+                    } else if (focus == Focus.SHORTS_REACTIONS) {
+                        shortsReactionPosition = 0;
+                        focus = Focus.VIDEO;
+                    } else if (focus == Focus.SHORTS_PREVIEWS) {
+                        openRail();
+                    } else {
+                        focus = Focus.VIDEO;
+                    }
+                    render();
                     return true;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    seek(10_000L);
+                    if (focus == Focus.SHORTS_PREVIEWS) {
+                        focus = Focus.VIDEO;
+                    } else if (focus == Focus.VIDEO) {
+                        shortsReactionPosition = 0;
+                        focus = Focus.SHORTS_REACTIONS;
+                    } else if (focus == Focus.SHORTS_REACTIONS) {
+                        shortsReactionPosition = 1;
+                    } else {
+                        focus = Focus.SHORTS_REACTIONS;
+                    }
+                    render();
                     return true;
                 default:
-                    break; // BACK, MENU and media play/pause keep normal handling.
+                    break; // BACK and MENU still use the global rail.
             }
         }
         switch (key) {
@@ -779,10 +824,22 @@ public final class MarsTvShell {
     }
 
     private void executeOkShort() {
-        // Short tap = toggle, long press = 2x while held; never open controls.
+        // Shorts previews are selection-only until OK; meanwhile video keeps playing.
         if (actions.isShortsPlayback() && focus != Focus.RAIL) {
-            actions.toggle();
-            focus = Focus.VIDEO;
+            if (focus == Focus.SHORTS_PREVIEWS) {
+                Video selected = shortsStage.choosePreview();
+                if (selected != null) actions.openVideo(selected);
+            } else if (focus == Focus.SHORTS_REACTIONS) {
+                if (shortsReactionPosition == 0) actions.like();
+                else actions.dislike();
+            } else if (focus == Focus.SHORTS_PROGRESS) {
+                ExoPlayer exo = player.current();
+                if (exo != null && exo.isCurrentMediaItemSeekable()
+                        && seekPreviewMs >= 0L) exo.seekTo(seekPreviewMs);
+                cancelSeekHold();
+            } else {
+                actions.toggle();
+            }
             return;
         }
         if (focus == Focus.RAIL) {
@@ -807,7 +864,7 @@ public final class MarsTvShell {
     }
 
     private boolean canHold() {
-        if (actions.isShortsPlayback() && focus != Focus.RAIL) return true;
+        if (actions.isShortsPlayback()) return focus == Focus.VIDEO;
         return focus == Focus.VIDEO
                 || (focus == Focus.CONTROLS && controlPosition == CONTROL_PLAY);
     }
@@ -923,6 +980,10 @@ public final class MarsTvShell {
             lastShortsPositioned = shortsMode && !pip;
             actions.positionShortsVideo(lastShortsPositioned);
         }
+        shortsStage.setPreviewsFocused(shortsMode && focus == Focus.SHORTS_PREVIEWS);
+        shortsStage.setReactionsFocused(shortsMode && focus == Focus.SHORTS_REACTIONS,
+                shortsReactionPosition);
+        shortsStage.setProgressFocused(shortsMode && focus == Focus.SHORTS_PROGRESS);
         shortsStage.show(shortsMode && !pip, player.current(), seekPreviewMs);
         railPosition = Math.min(railPosition,
                 shortsMode ? railButtons.size() - 1 : railButtons.size() - 2);
