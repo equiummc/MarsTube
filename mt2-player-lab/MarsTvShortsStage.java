@@ -56,6 +56,7 @@ public final class MarsTvShortsStage {
     private int selectedIndex = -1;
     private int lastRenderedStart = -1;
     private boolean lastRenderedFocus;
+    private int lastRenderedSelection = -1;
     private final LinearLayout previewColumn;
     private final List<Preview> previews = new ArrayList<>();
     private final SimpleDateFormat clockFormat = new SimpleDateFormat("HH:mm", Locale.GERMANY);
@@ -328,11 +329,13 @@ public final class MarsTvShortsStage {
         }
         if (lastPreviewFingerprint.contentEquals(fingerprint)
                 && lastQueuePosition == position && lastRenderedStart == start
-                && lastRenderedFocus == previewsFocused) return;
+                && lastRenderedFocus == previewsFocused
+                && lastRenderedSelection == selectedIndex) return;
         lastPreviewFingerprint = fingerprint.toString();
         lastQueuePosition = position;
         lastRenderedStart = start;
         lastRenderedFocus = previewsFocused;
+        lastRenderedSelection = selectedIndex;
         for (int i = 0; i < previews.size(); i++) {
             Preview preview = previews.get(i);
             int index = start + i;
