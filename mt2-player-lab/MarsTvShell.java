@@ -265,7 +265,8 @@ public final class MarsTvShell {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         // A translucent Shorts stage above the one existing player surface.
         shortsStage = new MarsTvShortsStage(activity, root, this::render,
-                actions::like, actions::dislike, actions::save);
+                actions::like, actions::dislike, actions::save,
+                () -> seek(-5_000L), () -> seek(5_000L));
 
         // Left rail. It is an overlay over the playing video, never a second player.
         rail = new LinearLayout(activity);
@@ -648,10 +649,15 @@ public final class MarsTvShell {
             seekHoldStarted = android.os.SystemClock.uptimeMillis();
         }
         long heldMs = Math.max(0L, android.os.SystemClock.uptimeMillis() - seekHoldStarted);
-        // One press = 10 seconds. Holding accelerates without repeated network seeks.
-        long distance = heldMs < 650L ? 10_000L
-                : heldMs < 1_800L ? 10_000L + (heldMs - 650L) * 20L
-                : 33_000L + (heldMs - 1_800L) * 80L;
+        // Shorts are often only 20–60s: 10s skips too much. Seek only once
+        // on key UP, while repeated key-down events stage a precise preview.
+        boolean shortVideo = actions.isShortsPlayback();
+        long base = shortVideo ? 5_000L : 10_000L;
+        long midSpeed = shortVideo ? 8L : 20L;
+        long highSpeed = shortVideo ? 30L : 80L;
+        long distance = heldMs < 650L ? base
+                : heldMs < 1_800L ? base + (heldMs - 650L) * midSpeed
+                : base + 1_150L * midSpeed + (heldMs - 1_800L) * highSpeed;
         boolean backwards = key == KeyEvent.KEYCODE_DPAD_LEFT
                 || key == KeyEvent.KEYCODE_MEDIA_REWIND;
         long target = backwards ? seekHoldOrigin - distance : seekHoldOrigin + distance;
@@ -681,7 +687,8 @@ public final class MarsTvShell {
                     if (focus == Focus.SHORTS_PREVIEWS) {
                         shortsStage.movePreview(-1);
                     } else if (focus == Focus.SHORTS_REACTIONS) {
-                        if (shortsReactionPosition > 0) shortsReactionPosition--;
+                        if (shortsReactionPosition >= 3) shortsReactionPosition = 2;
+                        else if (shortsReactionPosition > 0) shortsReactionPosition--;
                         else focus = Focus.SHORTS_AUTO;
                     } else if (focus == Focus.SHORTS_PROGRESS) {
                         focus = Focus.SHORTS_REACTIONS;
@@ -698,7 +705,7 @@ public final class MarsTvShell {
                         focus = Focus.SHORTS_REACTIONS;
                         shortsReactionPosition = 0;
                     } else if (focus == Focus.SHORTS_REACTIONS) {
-                        if (shortsReactionPosition < 2) shortsReactionPosition++;
+                        if (shortsReactionPosition < 3) shortsReactionPosition++;
                         else focus = Focus.SHORTS_PROGRESS;
                     } else if (focus == Focus.SHORTS_PROGRESS) {
                         focus = Focus.VIDEO;
@@ -719,8 +726,10 @@ public final class MarsTvShell {
                     if (focus == Focus.VIDEO || focus == Focus.SHORTS_PROGRESS) {
                         focus = Focus.SHORTS_REACTIONS;
                         shortsReactionPosition = 0;
-                    } else if (focus == Focus.SHORTS_REACTIONS
-                            || focus == Focus.SHORTS_AUTO) {
+                    } else if (focus == Focus.SHORTS_REACTIONS) {
+                        if (shortsReactionPosition == 4) shortsReactionPosition = 3;
+                        else focus = Focus.SHORTS_PREVIEWS;
+                    } else if (focus == Focus.SHORTS_AUTO) {
                         focus = Focus.SHORTS_PREVIEWS;
                     } else if (focus == Focus.SHORTS_PREVIEWS) {
                         openRail();
@@ -731,8 +740,10 @@ public final class MarsTvShell {
                     if (focus == Focus.SHORTS_PREVIEWS) {
                         focus = Focus.SHORTS_REACTIONS;
                         shortsReactionPosition = 0;
-                    } else if (focus == Focus.SHORTS_REACTIONS
-                            || focus == Focus.SHORTS_AUTO) {
+                    } else if (focus == Focus.SHORTS_REACTIONS) {
+                        if (shortsReactionPosition == 3) shortsReactionPosition = 4;
+                        else focus = Focus.VIDEO;
+                    } else if (focus == Focus.SHORTS_AUTO) {
                         focus = Focus.VIDEO;
                     } else if (focus == Focus.VIDEO) {
                         focus = Focus.SHORTS_PROGRESS;
@@ -853,7 +864,9 @@ public final class MarsTvShell {
             } else if (focus == Focus.SHORTS_REACTIONS) {
                 if (shortsReactionPosition == 0) actions.like();
                 else if (shortsReactionPosition == 1) actions.dislike();
-                else actions.save();
+                else if (shortsReactionPosition == 2) actions.save();
+                else if (shortsReactionPosition == 3) seek(-5_000L);
+                else if (shortsReactionPosition == 4) seek(5_000L);
             } else if (focus == Focus.SHORTS_AUTO) {
                 shortsStage.toggleAutoNext();
             } else if (focus == Focus.SHORTS_PROGRESS) {
