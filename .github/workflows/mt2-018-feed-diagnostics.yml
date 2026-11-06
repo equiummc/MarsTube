@@ -57,15 +57,22 @@ jobs:
             https://github.com/equiummc/MarsTube/releases/download/v0.0.16/MarsTube-0.0.16.apk
           test "$(stat -c%s /tmp/MarsTube-0.0.16.apk)" -gt 1000000
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging /tmp/MarsTube-0.0.16.apk | head -n 5
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump resources /tmp/MarsTube-0.0.16.apk > /tmp/installed-resources.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump --values resources /tmp/MarsTube-0.0.16.apk > /tmp/installed-resources.txt
+          echo 'Relevant strings in actual signed APK resource table:'
+          grep -Ei 'update_urls|marstube-tv.json|newtube.json|github.com/equiummc|aleixrodriala/newtube' /tmp/installed-resources.txt | head -n 55 || true
+          unzip -p /tmp/MarsTube-0.0.16.apk resources.arsc > /tmp/resources.arsc
+          strings -a /tmp/resources.arsc > /tmp/utf8-strings.txt
+          strings -a -el /tmp/resources.arsc > /tmp/utf16-strings.txt
           python3 - <<'PY'
           from pathlib import Path
-          res=Path('/tmp/installed-resources.txt').read_text(errors='replace')
+          tables={name:Path('/tmp/'+name).read_text(errors='replace')
+                 for name in ['installed-resources.txt','utf8-strings.txt','utf16-strings.txt']}
           own='https://github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json'
           bad='https://github.com/aleixrodriala/newtube/releases/latest/download/newtube.json'
-          print('MarsTube release feed string in actual APK:',own in res)
-          print('Legacy NewTube release feed string in actual APK:',bad in res)
-          assert own in res, 'Shipped 0.0.16 APK lacks MarsTube own update URL'
-          assert bad not in res, 'Shipped 0.0.16 APK accidentally includes a NewTube update URL'
+          print('Source tables with full MarsTube feed:',[name for name,data in tables.items() if own in data])
+          print('Source tables with legacy NewTube feed:',[name for name,data in tables.items() if bad in data])
+          print('Source table contains update_urls:',[name for name,data in tables.items() if 'update_urls' in data])
+          assert any(own in data for data in tables.values()), 'Shipped 0.0.16 APK lacks MarsTube own update URL'
+          assert not any(bad in data for data in tables.values()), 'Shipped 0.0.16 APK accidentally includes NewTube updater URL'
           PY
           echo "PASS: installed 0.0.16 resource is MarsTube-owned, not NewTube feed."
