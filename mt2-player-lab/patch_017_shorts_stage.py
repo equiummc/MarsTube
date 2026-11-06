@@ -65,6 +65,11 @@ once(playback,
                     @Override public void positionShortsVideo(boolean enabled) {
                         // The *same* Media3 PlayerView is shifted into the 9:16 right column.
                         // No second decoder, no new source/seek/pause. Immediately reversible.
+                        if (mVideoArea != null) {
+                            // Letterbox space is MarsTube blue, not hard black.
+                            mVideoArea.setBackgroundColor(enabled
+                                    ? 0xFF081A33 : android.graphics.Color.BLACK);
+                        }
                         if (mPlayerView != null) {
                             mPlayerView.animate().cancel();
                             mPlayerView.setTranslationX(enabled
