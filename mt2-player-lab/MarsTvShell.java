@@ -84,6 +84,8 @@ public final class MarsTvShell {
 
         /** Is this playback from the dedicated Shorts feed (not merely portrait)? */
         default boolean isShortsPlayback() { return false; }
+        /** Shift the existing 9:16 video for the Shorts split layout. */
+        default void positionShortsVideo(boolean shorts) { }
         /** Dock the current player to in-app mini mode, maintaining its session. */
         default void minimize() { }
         /** Temporary 2x while OK is held. */
@@ -165,6 +167,7 @@ public final class MarsTvShell {
     private final TextView remaining;
     private final TextView clock;
     private final TextView railHint;
+    private final MarsTvShortsStage shortsStage;
     private final FrameLayout infoPanel;
     private final TextView infoText;
     private final ImageView playPauseIcon;
@@ -177,6 +180,11 @@ public final class MarsTvShell {
     private int controlPosition = CONTROL_PLAY;
     /** Pending D-pad seek position; committed only with OK. */
     private long seekPreviewMs = -1L;
+    private int seekHoldKey = -1;
+    private long seekHoldStarted;
+    private long seekHoldOrigin;
+    private boolean lastShortsPositioned;
+    private boolean shortsAutoAdvanceArmed = true;
     private int railPosition;
     private int lastHighlightedCard = -1;
     private boolean pip;
@@ -251,6 +259,8 @@ public final class MarsTvShell {
         infoText.setGravity(Gravity.START);
         infoPanel.addView(infoText, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        // A translucent Shorts stage above the one existing player surface.
+        shortsStage = new MarsTvShortsStage(activity, root, this::render);
 
         // Left rail. It is an overlay over the playing video, never a second player.
         rail = new LinearLayout(activity);
@@ -286,6 +296,7 @@ public final class MarsTvShell {
         addRailItem("Verlauf", 3);
         addRailItem("Profil", 6);
         addRailItem("Einstellungen", 5);
+        addRailItem("Shorts Auto", -18);
 
         railHint = text(12, WHITE);
         railHint.setGravity(Gravity.CENTER_VERTICAL);
