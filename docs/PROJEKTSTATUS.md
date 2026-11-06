@@ -142,3 +142,14 @@ Details: [MT2-013-ABNAHME.md](MT2-013-ABNAHME.md).
 
 - **CI-Befund vom 06.11.2026:** Pinned Checkout, komplette Patch-Pipeline inklusive Patch 019, Vertragsprüfungen, Android-Java-Compile, `:smarttubetv:testStmobileDebugUnitTest` und `:smarttubetv:assembleStmobileDebug` **erfolgreich**. Nachweis: https://github.com/equiummc/MarsTube/actions/runs/42298137973. Dies ist noch kein signierter Produktions-Build oder realer TV-Test.
 - Konfliktfreier Produktions-PR: https://github.com/equiummc/MarsTube/pull/54 (squash-freundlich, nur acht geänderte Dateien auf 0.0.18-Produktions-HEAD).
+
+
+## MT2-020 – Updateprüfung: Frische Metadaten statt falscher „aktuell“-Meldung (06.11.2026)
+
+- Nutzerbild mit **installierter 0.0.18** zeigt in der Updateprüfung **„MarsTube ist aktuell“**, obwohl GitHub `v0.0.19` mit APK, Manifest und SHA-256 am 06.11.2026 um 21:52 UTC veröffentlicht hat. Fehler tritt **vor Download/PackageInstaller** auf. Aktueller genauer Grund auf Gerät (HTTP-Cache, CDN-Redirect oder konkurrierender Auto-Check) ohne HTTP-Trace noch nicht bewiesen.
+- `patch_020_update_freshness.py` patcht den in der gepinnten externen SharedModules-Unterkomponente vorhandenen `AppVersionChecker`: Metadaten-Abfragen erhalten einen eindeutigen `mars_check`-Queryparameter aus Uhrzeit und monotonic nanos. APK-Download-URLs und Signaturprüfung bleiben unverändert.
+- In `AppUpdates` führt eine manuelle Anfrage während eines laufenden Autochecks nach dessen Antwort eine neue HTTP-Abfrage aus. Log erfasst verarbeitete `manifestLatest`-/`manifestCode`-Werte und installierte Version. Keine stillschweigende Gleichsetzung von automatisch zuletzt ermittelter Antwort und neuer Nutzerprüfung.
+- Die Info-Seite sagt nun „reguläre MarsTube-App“ statt historisch falschem „separate Test-App“; Paketkennung bleibt `de.equiummc.marstube2`.
+- Versionsvertrag: **0.0.20 / 12020**. Neues Release darf nur mit derselben permanenten Besitzer-Signatur über `mars/production-2` gebaut werden, niemals mit dem internen Compile-Signaturschlüssel.
+- Änderungen: `mt2-player-lab/patch_020_update_freshness.py`, `production-version.json`, `MarsTvSettingsPages.java`, `test_020_update_contract.py`, `tools/build-marstube-production.sh`, `.github/workflows/mt2-020-update-ci.yml`.
+- **Prüfstatus:** CI-Compile und Tests laufen über isolierten Featurebranch; realer HTTP-/Installationsnachweis auf Fire TV / Thomson weiterhin ausstehend. Vor diesem Nachweis bitte nicht behaupten, der Update-End-to-End-Weg funktioniere auf beiden Geräten.
