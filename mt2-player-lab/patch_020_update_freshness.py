@@ -50,7 +50,7 @@ once(checker,
 # The previous patch adds basic comparison logs, but a false "up to date"
 # needs an explicit server version to explain which manifest was actually read.
 once(app,
-     '''        Log.i(TAG, "check result=up_to_date installedCode=" + mInstalledCode
+     '''        android.util.Log.i(TAG, "check result=up_to_date installedCode=" + mInstalledCode
                 + " remoteCode=" + (info == null ? -1 : info.versionCode)
                 + " remoteName=" + (info == null ? "unknown" : info.versionName));''',
      '''        Log.i(TAG, "check result=up_to_date installed=" + mInstalledName
