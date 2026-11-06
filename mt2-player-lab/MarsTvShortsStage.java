@@ -49,9 +49,12 @@ public final class MarsTvShortsStage {
     private final View progress;
     private final TextView likeButton;
     private final TextView dislikeButton;
+    private final TextView saveButton;
+    private final Runnable onSave;
     private boolean previewsFocused;
     private boolean progressFocused;
     private boolean reactionsFocused;
+    private boolean autoFocused;
     private int reactionIndex;
     private int selectedIndex = -1;
     private int lastRenderedStart = -1;
@@ -65,77 +68,70 @@ public final class MarsTvShortsStage {
     private long currentPosition;
     private long currentDuration;
 
+    /**
+     * Right-hand video width is derived from a 9:16 picture at screen height.
+     * The visual scrub bar owns the bottom 7dp; the video never draws over it.
+     */
+    public static int videoWidth(Activity activity) {
+        int height = activity.getResources().getDisplayMetrics().heightPixels;
+        float density = activity.getResources().getDisplayMetrics().density;
+        return Math.round(Math.max(1, height - Math.round(7 * density)) * 9f / 16f);
+    }
+
     public MarsTvShortsStage(Activity activity, FrameLayout host, Runnable onAutoChange,
-                             Runnable onLike, Runnable onDislike) {
+                             Runnable onLike, Runnable onDislike, Runnable onSave) {
         this.activity = activity;
+        this.onSave = onSave;
         root = new FrameLayout(activity);
         root.setVisibility(View.GONE);
         root.setFocusable(false);
         host.addView(root, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
+        final int screenWidth = activity.getResources().getDisplayMetrics().widthPixels;
+        final int videoWidth = Math.min(screenWidth, videoWidth(activity));
+        final int menuWidth = screenWidth - videoWidth;
+        final int listWidth = Math.round(menuWidth * 0.70f);
+
+        LinearLayout surface = new LinearLayout(activity);
+        surface.setOrientation(LinearLayout.HORIZONTAL);
+        surface.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{0xFF081B34, 0xFF0B3761, 0xFF064D83}));
+        root.addView(surface, new FrameLayout.LayoutParams(
+                menuWidth, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
+
+        // Left: three portrait preview cards, no bottom key legend.
         LinearLayout left = new LinearLayout(activity);
         left.setOrientation(LinearLayout.VERTICAL);
-        left.setPadding(dp(29), dp(15), dp(17), dp(15));
-        left.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-                new int[]{0xFF081A33, 0xF6122E50, 0xE414355B}));
-        FrameLayout.LayoutParams leftLp = new FrameLayout.LayoutParams(
-                Math.round(activity.getResources().getDisplayMetrics().widthPixels * 0.57f),
-                ViewGroup.LayoutParams.MATCH_PARENT, Gravity.LEFT | Gravity.TOP);
-        root.addView(left, leftLp);
-
-        LinearLayout header = new LinearLayout(activity);
-        header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        clock = label(27, WHITE);
-        clock.setGravity(Gravity.CENTER_VERTICAL);
-        header.addView(clock, new LinearLayout.LayoutParams(0, dp(43), 1f));
-        TextView heading = label(16, WHITE);
-        heading.setText("SHORTS");
-        heading.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-        header.addView(heading, new LinearLayout.LayoutParams(dp(115), dp(43)));
-        left.addView(header);
-
-        autoButton = label(14, WHITE);
-        autoButton.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-        autoButton.setPadding(dp(15), 0, dp(15), 0);
-        autoButton.setContentDescription("Shorts automatisch weiter, Ein oder Aus");
-        autoButton.setClickable(true);
-        autoButton.setOnClickListener(v -> {
-            toggleAutoNext();
-            onAutoChange.run();
-        });
-        LinearLayout.LayoutParams autoLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(37));
-        autoLp.bottomMargin = dp(11);
-        left.addView(autoButton, autoLp);
+        left.setPadding(dp(18), dp(22), dp(12), dp(19));
+        surface.addView(left, new LinearLayout.LayoutParams(listWidth,
+                ViewGroup.LayoutParams.MATCH_PARENT));
 
         previewColumn = new LinearLayout(activity);
         previewColumn.setOrientation(LinearLayout.VERTICAL);
-        previewColumn.setGravity(Gravity.TOP);
         left.addView(previewColumn, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         for (int i = 0; i < 3; i++) {
-            final Preview preview = new Preview();
+            Preview preview = new Preview();
             LinearLayout row = new LinearLayout(activity);
             row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setPadding(dp(7), dp(4), dp(9), dp(4));
+            row.setPadding(dp(5), dp(5), dp(9), dp(5));
             row.setBackground(chrome(false));
             ImageView image = new ImageView(activity);
             image.setScaleType(ImageView.ScaleType.CENTER_CROP);
             image.setClipToOutline(true);
             image.setBackground(chrome(false));
-            row.addView(image, new LinearLayout.LayoutParams(dp(91), ViewGroup.LayoutParams.MATCH_PARENT));
+            row.addView(image, new LinearLayout.LayoutParams(dp(76),
+                    ViewGroup.LayoutParams.MATCH_PARENT));
             LinearLayout texts = new LinearLayout(activity);
             texts.setOrientation(LinearLayout.VERTICAL);
-            texts.setPadding(dp(14), 0, 0, 0);
-            TextView number = label(12, BLUE);
-            TextView title = label(15, WHITE);
+            texts.setPadding(dp(11), 0, 0, 0);
+            TextView number = label(11, BLUE);
+            TextView title = label(14, WHITE);
             title.setMaxLines(3);
             title.setEllipsize(TextUtils.TruncateAt.END);
-            TextView author = label(13, 0xFFC0D5ED);
-            author.setMaxLines(1);
+            TextView author = label(12, 0xFFC0D5ED);
+            author.setMaxLines(2);
             author.setEllipsize(TextUtils.TruncateAt.END);
             texts.addView(number);
             texts.addView(title);
@@ -144,7 +140,7 @@ public final class MarsTvShortsStage {
                     ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
             LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-            rowLp.bottomMargin = dp(7);
+            rowLp.bottomMargin = dp(9);
             previewColumn.addView(row, rowLp);
             preview.row = row;
             preview.image = image;
@@ -154,85 +150,116 @@ public final class MarsTvShortsStage {
             previews.add(preview);
         }
 
-        TextView hint = label(12, 0xFFC0D5ED);
-        hint.setText("← Vorschau   ↑ ↓ Blättern   OK Auswählen   → Video");
-        hint.setGravity(Gravity.CENTER_VERTICAL);
-        left.addView(hint, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(25)));
+        // Centre: brand and clock, compact autoplay, time capsule, real YouTube actions.
+        LinearLayout centre = new LinearLayout(activity);
+        centre.setOrientation(LinearLayout.VERTICAL);
+        centre.setGravity(Gravity.CENTER_HORIZONTAL);
+        centre.setPadding(dp(9), dp(11), dp(10), dp(11));
+        surface.addView(centre, new LinearLayout.LayoutParams(
+                Math.max(0, menuWidth - listWidth), ViewGroup.LayoutParams.MATCH_PARENT));
 
-        // Ratings operate on the real YouTube actions, never a local fake rating.
-        LinearLayout reactions = new LinearLayout(activity);
-        reactions.setOrientation(LinearLayout.HORIZONTAL);
-        reactions.setGravity(Gravity.CENTER_VERTICAL);
-        likeButton = label(14, WHITE);
-        likeButton.setText("👍  Gefällt mir");
-        likeButton.setGravity(Gravity.CENTER);
-        likeButton.setBackground(chrome(false));
-        likeButton.setClickable(true);
-        likeButton.setContentDescription("Short gefällt mir");
-        likeButton.setOnClickListener(v -> onLike.run());
-        reactions.addView(likeButton, new LinearLayout.LayoutParams(0, dp(39), 1f));
-        dislikeButton = label(14, WHITE);
-        dislikeButton.setText("👎  Gefällt mir nicht");
-        dislikeButton.setGravity(Gravity.CENTER);
-        dislikeButton.setBackground(chrome(false));
-        dislikeButton.setClickable(true);
-        dislikeButton.setContentDescription("Short gefällt mir nicht");
-        dislikeButton.setOnClickListener(v -> onDislike.run());
-        LinearLayout.LayoutParams dislikeLp = new LinearLayout.LayoutParams(0, dp(39), 1f);
-        dislikeLp.leftMargin = dp(7);
-        reactions.addView(dislikeButton, dislikeLp);
-        LinearLayout.LayoutParams ratingLp = new LinearLayout.LayoutParams(
+        TextView heading = label(19, WHITE);
+        heading.setText("▶ SHORTS");
+        heading.setGravity(Gravity.CENTER);
+        heading.setLetterSpacing(0.06f);
+        heading.setContentDescription("MarsTube Shorts");
+        centre.addView(heading, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(34)));
+
+        clock = label(18, WHITE);
+        clock.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams clockLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(33));
+        clockLp.bottomMargin = dp(12);
+        centre.addView(clock, clockLp);
+
+        autoButton = label(15, WHITE);
+        autoButton.setGravity(Gravity.CENTER);
+        autoButton.setPadding(dp(6), 0, dp(6), 0);
+        autoButton.setClickable(true);
+        autoButton.setOnClickListener(v -> {
+            toggleAutoNext();
+            onAutoChange.run();
+        });
+        LinearLayout.LayoutParams autoLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(39));
-        ratingLp.bottomMargin = dp(10);
-        left.addView(reactions, ratingLp);
+        autoLp.bottomMargin = dp(13);
+        centre.addView(autoButton, autoLp);
 
-        // Separate time capsule at the right edge; no text overlaps the scrub bar.
         LinearLayout times = new LinearLayout(activity);
+        times.setGravity(Gravity.CENTER_HORIZONTAL);
         times.setOrientation(LinearLayout.VERTICAL);
-        times.setPadding(dp(12), dp(9), dp(12), dp(9));
+        times.setPadding(dp(6), dp(7), dp(6), dp(7));
         times.setBackground(chrome(false));
-        elapsed = label(16, WHITE);
-        elapsed.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-        durationText = label(12, 0xFFC0D5ED);
-        durationText.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-        times.addView(elapsed);
-        times.addView(durationText);
-        FrameLayout.LayoutParams timeLp = new FrameLayout.LayoutParams(
-                dp(116), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.RIGHT | Gravity.TOP);
-        timeLp.rightMargin = dp(15);
-        timeLp.topMargin = dp(70);
-        root.addView(times, timeLp);
+        elapsed = label(15, WHITE);
+        elapsed.setGravity(Gravity.CENTER);
+        durationText = label(13, 0xFFC0D5ED);
+        durationText.setGravity(Gravity.CENTER);
+        View timeDivider = new View(activity);
+        timeDivider.setBackgroundColor(0x7767B9EC);
+        times.addView(elapsed, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(22)));
+        LinearLayout.LayoutParams dividerLp = new LinearLayout.LayoutParams(dp(50), dp(1));
+        dividerLp.topMargin = dp(2);
+        dividerLp.bottomMargin = dp(2);
+        times.addView(timeDivider, dividerLp);
+        times.addView(durationText, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(20)));
+        LinearLayout.LayoutParams timeLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(63));
+        centre.addView(times, timeLp);
 
-        // The seek rail sits flush against the bottom of the right video area.
-        // Remote focus is managed by MarsTvShell; this View is only its visual.
+        View spacer = new View(activity);
+        centre.addView(spacer, new LinearLayout.LayoutParams(1, 0, 1f));
+
+        likeButton = actionButton("👍", "Short gefällt mir", onLike);
+        dislikeButton = actionButton("👎", "Short gefällt mir nicht", onDislike);
+        saveButton = actionButton("★", "Short in YouTube-Playlist speichern", onSave);
+        addAction(centre, likeButton);
+        addAction(centre, dislikeButton);
+        addAction(centre, saveButton);
+        View lowerSpace = new View(activity);
+        centre.addView(lowerSpace, new LinearLayout.LayoutParams(1, 0, 1f));
+
+        // The bar is *below* the right-hand video, exactly at the screen edge.
         progress = new View(activity) {
             private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
             @Override protected void onDraw(Canvas canvas) {
                 super.onDraw(canvas);
-                final float width = getWidth();
-                final float y = getHeight() / 2f;
+                final float width = getWidth(), height = getHeight();
                 paint.setShader(null);
-                paint.setColor(progressFocused ? 0xFFB4DBFF : 0xA4617591);
-                paint.setStrokeWidth(dp(progressFocused ? 5 : 3));
-                canvas.drawLine(0f, y, width, y, paint);
+                paint.setColor(progressFocused ? 0xFF9EC8E8 : 0xFF24516E);
+                canvas.drawRect(0f, 0f, width, height, paint);
                 float fraction = currentDuration <= 0 || currentDuration == C.TIME_UNSET
                         ? 0f : Math.max(0f, Math.min(1f,
                         (float) currentPosition / currentDuration));
-                paint.setStrokeWidth(dp(progressFocused ? 7 : 5));
-                paint.setShader(new LinearGradient(0f, y, Math.max(1f, width), y,
+                paint.setShader(new LinearGradient(0f, 0f, Math.max(1f, width), 0f,
                         BLUE, 0xFF354FEA, Shader.TileMode.CLAMP));
-                canvas.drawLine(0f, y, width * fraction, y, paint);
+                canvas.drawRect(0f, 0f, width * fraction, height, paint);
                 paint.setShader(null);
             }
         };
-        FrameLayout.LayoutParams progressLp = new FrameLayout.LayoutParams(
-                Math.round(activity.getResources().getDisplayMetrics().widthPixels * 0.43f),
-                dp(10), Gravity.RIGHT | Gravity.BOTTOM);
-        progressLp.bottomMargin = 0;
-        progressLp.rightMargin = 0;
-        root.addView(progress, progressLp);
+        root.addView(progress, new FrameLayout.LayoutParams(
+                videoWidth, dp(7), Gravity.RIGHT | Gravity.BOTTOM));
         updateAutoText();
+    }
+
+    private TextView actionButton(String glyph, String description, Runnable action) {
+        TextView button = label(27, 0xFFFFD456);
+        button.setText(glyph);
+        button.setGravity(Gravity.CENTER);
+        button.setBackground(chrome(false));
+        button.setContentDescription(description);
+        button.setClickable(true);
+        button.setOnClickListener(v -> action.run());
+        return button;
+    }
+
+    private void addAction(LinearLayout parent, TextView button) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                dp(67), dp(45));
+        lp.bottomMargin = dp(9);
+        parent.addView(button, lp);
     }
 
     public boolean isAutoNext() {
@@ -248,8 +275,10 @@ public final class MarsTvShortsStage {
 
     private void updateAutoText() {
         boolean enabled = isAutoNext();
-        autoButton.setText(enabled ? "Automatisch weiter  ● EIN" : "Automatisch weiter  ○ AUS");
-        autoButton.setBackground(chrome(enabled));
+        autoButton.setText(enabled ? "↻  EIN" : "↻  AUS");
+        autoButton.setContentDescription(enabled
+                ? "Automatisch zum nächsten Short: Ein" : "Automatisch zum nächsten Short: Aus");
+        autoButton.setBackground(chrome(autoFocused));
     }
 
     public void show(boolean visible, ExoPlayer exo, long pendingSeek) {
@@ -310,6 +339,13 @@ public final class MarsTvShortsStage {
         reactionIndex = selection;
         likeButton.setBackground(chrome(focused && selection == 0));
         dislikeButton.setBackground(chrome(focused && selection == 1));
+        saveButton.setBackground(chrome(focused && selection == 2));
+    }
+
+    public void setAutoFocused(boolean focused) {
+        if (autoFocused == focused) return;
+        autoFocused = focused;
+        updateAutoText();
     }
 
     private void updatePreviews() {
