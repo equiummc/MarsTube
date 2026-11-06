@@ -65,6 +65,31 @@ public final class MarsShortsSession {
         return video == null || contains(video);
     }
 
+    /** Upcoming items only; never cross into the general video suggestions. */
+    public static synchronized List<Video> upcoming(int limit) {
+        List<Video> upcoming = new ArrayList<>();
+        if (currentId == null || limit <= 0) return upcoming;
+        int start = currentIndex();
+        if (start < 0) return upcoming;
+        for (int i = start + 1; i < ITEMS.size() && upcoming.size() < limit; i++) {
+            upcoming.add(ITEMS.get(i));
+        }
+        return upcoming;
+    }
+
+    public static synchronized int currentIndex() {
+        if (currentId == null) return -1;
+        for (int i = 0; i < ITEMS.size(); i++) {
+            if (currentId.equals(ITEMS.get(i).videoId)) return i;
+        }
+        return -1;
+    }
+
+    public static synchronized boolean hasNext() {
+        int index = currentIndex();
+        return index >= 0 && index + 1 < ITEMS.size();
+    }
+
     @Nullable
     public static synchronized Video step(@Nullable Video playing, int direction) {
         if (!isActiveFor(playing) || direction == 0) return null;
