@@ -6,6 +6,8 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+# Setze die Variable fuer native Programm-Aufrufe explizit, auch unter StrictMode.
+$global:LASTEXITCODE = 0
 
 # adb.exe kann installiert sein, ohne im Windows-PATH zu stehen.
 $candidates = [System.Collections.Generic.List[string]]::new()
@@ -39,8 +41,9 @@ if (-not $adb) {
     throw 'Android Platform-Tools fehlen oder liegen an einem anderen Ort. Bei bekanntem Pfad: Skript mit -AdbPath "C:\...\adb.exe" aufrufen.'
 }
 Write-Host ("ADB gefunden: " + $adb) -ForegroundColor Green
-& $adb version | Select-Object -First 2
+$adbVersion = @(& $adb version)
 if ($LASTEXITCODE -ne 0) { throw 'Gefundene adb.exe konnte nicht ausgefuehrt werden.' }
+$adbVersion | Select-Object -First 2
 
 $connected = @(& $adb devices | ForEach-Object {
     if ($_ -match '^(\S+)\s+device(?:\s|$)') { $Matches[1] }
