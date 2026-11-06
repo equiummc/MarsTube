@@ -1,14 +1,12 @@
 {
-  "versionName": "0.0.19",
-  "versionCode": 12019,
+  "versionName": "0.0.20",
+  "versionCode": 12020,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Shorts: Video im festen 9:16-Hochformat direkt am rechten Bildrand; breitere Quellen werden seitlich beschnitten",
-    "Shorts: Drei größere Hochkant-Vorschauen mit kürzeren Texten links",
-    "Shorts: Mittige Steuerleiste mit Shorts-Schriftzug, Uhr, Automatisch weiter, kompakter Laufzeit und gelben Symbolen",
-    "Shorts: Echte YouTube-Aktionen Gefällt mir, Gefällt mir nicht und In Playlist speichern",
-    "Shorts: Breiterer Fortschrittsbalken unterhalb des Videos direkt am unteren Bildrand",
-    "Shorts: Navigation Links/Rechts zwischen Vorschau, Aktionen und Video; Medientasten spulen auch per Gedrückthalten",
-    "Bestehende Zurück-Taste, Video-Wiedergabe und Update-Prüfung bleiben erhalten"
+    "Updateprüfung: Neue Versionsdatei wird mit eindeutiger Anfrage frisch geladen statt aus altem GitHub-/CDN-Cache",
+    "Updateprüfung: Manuelle Suche nach bereits gestarteter Automatikprüfung führt eine zweite frische Prüfung aus",
+    "Diagnose: Versionsnummer und VersionCode aus tatsächlich empfangener Versionsdatei im Protokoll",
+    "MarsTube 0.0.19: neue Shorts-Ansicht mit drei Hochkantvorschauen, rechtem 9:16-Video und mittiger Steuerung",
+    "Die vorhandene App-ID und Android-Signatur bleiben für Updates unverändert"
   ]
 }
