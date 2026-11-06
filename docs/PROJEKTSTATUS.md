@@ -153,3 +153,5 @@ Details: [MT2-013-ABNAHME.md](MT2-013-ABNAHME.md).
 - Versionsvertrag: **0.0.20 / 12020**. Neues Release darf nur mit derselben permanenten Besitzer-Signatur über `mars/production-2` gebaut werden, niemals mit dem internen Compile-Signaturschlüssel.
 - Änderungen: `mt2-player-lab/patch_020_update_freshness.py`, `production-version.json`, `MarsTvSettingsPages.java`, `test_020_update_contract.py`, `tools/build-marstube-production.sh`, `.github/workflows/mt2-020-update-ci.yml`.
 - **Prüfstatus:** CI-Compile und Tests laufen über isolierten Featurebranch; realer HTTP-/Installationsnachweis auf Fire TV / Thomson weiterhin ausstehend. Vor diesem Nachweis bitte nicht behaupten, der Update-End-to-End-Weg funktioniere auf beiden Geräten.
+
+- **MT2-020 CI-Ergebnis:** Erfolgreich: gepinnter Checkout, alle 020-Patches, statische Update-Vertragsprüfung, Android-Java-Kompilierung, Unit-Tests und `assembleStmobileDebug`. Nachweis: https://github.com/equiummc/MarsTube/actions/runs/42302058616. Offen bleiben der signierte Produktions-Release und der Gerätetest des Versionsabrufs.
