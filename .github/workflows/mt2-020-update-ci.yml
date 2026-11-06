@@ -80,7 +80,6 @@ jobs:
           python3 mt2-player-lab/test_019_shorts_contract.py
           python3 mt2-player-lab/test_020_update_contract.py
           grep -Fq 'mars_check' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
-          grep -Fq 'mars_check' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
           grep -Fq 'A manual check always contacts' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java
       - name: Java compiler, Shorts unit tests and debug APK
         shell: bash
