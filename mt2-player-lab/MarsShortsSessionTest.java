@@ -74,6 +74,41 @@ public class MarsShortsSessionTest {
     }
 
     @Test
+    public void upcomingPreviewsTrackOnlyActualShortsInTheirOwnOrder() {
+        Video first = video("ppppppppppp", true);
+        Video second = video("qqqqqqqqqqq", true);
+        Video third = video("rrrrrrrrrrr", true);
+        Video fourth = video("sssssssssss", true);
+        Video fifth = video("ttttttttttt", true);
+        MarsShortsSession.begin(Arrays.asList(first, second, third, fourth, fifth), first);
+        assertEquals(0, MarsShortsSession.currentIndex());
+        assertEquals(Arrays.asList(second, third, fourth, fifth), MarsShortsSession.upcoming(4));
+        assertTrue(MarsShortsSession.hasNext());
+        assertEquals(second.videoId, MarsShortsSession.step(first, 1).videoId);
+        assertEquals(1, MarsShortsSession.currentIndex());
+        assertEquals(Arrays.asList(third, fourth), MarsShortsSession.upcoming(2));
+        assertEquals(third.videoId, MarsShortsSession.step(second, 1).videoId);
+        assertEquals(fourth.videoId, MarsShortsSession.step(third, 1).videoId);
+        assertEquals(fifth.videoId, MarsShortsSession.step(fourth, 1).videoId);
+        assertFalse(MarsShortsSession.hasNext());
+        assertTrue(MarsShortsSession.upcoming(4).isEmpty());
+    }
+
+    @Test
+    public void emptyQueueIsSafeForAutoplayAndPreviews() {
+        assertEquals(-1, MarsShortsSession.currentIndex());
+        assertTrue(MarsShortsSession.upcoming(4).isEmpty());
+        assertFalse(MarsShortsSession.hasNext());
+        Video first = video("uuuuuuuuuuu", true);
+        MarsShortsSession.begin(Collections.singletonList(first), first);
+        assertEquals(0, MarsShortsSession.currentIndex());
+        assertFalse(MarsShortsSession.hasNext());
+        assertTrue(MarsShortsSession.upcoming(4).isEmpty());
+        MarsShortsSession.clear();
+        assertEquals(-1, MarsShortsSession.currentIndex());
+    }
+
+    @Test
     public void explicitClearReleasesPreviousQueue() {
         Video first = video("ggggggggggg", true);
         MarsShortsSession.begin(Collections.singletonList(first), first);

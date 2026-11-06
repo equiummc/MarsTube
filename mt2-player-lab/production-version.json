@@ -1,11 +1,12 @@
 {
-  "versionName": "0.0.16",
-  "versionCode": 12016,
+  "versionName": "0.0.17",
+  "versionCode": 12017,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Ein einziges dauerhaftes MarsTube-Paket statt separater Test-Apps",
-    "Überarbeitete Zurück-Taste und Fernbedienungsnavigation",
-    "Fortschrittsleiste unter den Player-Bedienelementen und Fernbedienungs-Seeking",
-    "MarsTube-M-Logo und sichtbarer Updatebereich"
+    "Neue Shorts-Seite: rechts direktes 9:16-Video, links vier Vorschauen und Uhrzeit",
+    "Schmale Shorts-Fortschrittsleiste mit Laufzeit und Gesamtdauer",
+    "Automatische Shorts-Wiedergabe wahlweise ein oder aus; Fernbedienung hoch/runter",
+    "Langes Links-/Rechtsdrücken für beschleunigtes Spulen ohne wiederholtes Nachladen",
+    "Einheitliche moderne Navigationssymbole und verzögerte Shorts-Ladeanzeige"
   ]
 }

@@ -113,3 +113,16 @@ Details: [MT2-012-UPDATE-FUNKTION.md](MT2-012-UPDATE-FUNKTION.md), GitHub [Issue
 - [ ] Dauerhafter Signaturschlüssel für spätere echte Updates; Testschlüssel pro Lab-CI nicht über mehrere Builds stabil.
 
 Details: [MT2-013-ABNAHME.md](MT2-013-ABNAHME.md).
+
+
+### MT2-017 – Shorts-Split-Screen und durchgehende TV-Fernbedienung
+
+**06.11.2026 – implementierter Codeentwurf; keine Gerätefreigabe.**
+
+- **Branch:** `feature/mt2-017-shorts-stage-20261106`, erstellt vom Diagnosezweig `feature/mt2-017-stream-recovery-20261106`; die zuletzt funktionierende App 0.0.16 wurde nicht verändert.
+- **Quellstand:** `mt2-player-lab/MarsTvShortsStage.java` (vier Vorschauen links, Uhr, blaues Glasdesign, rechts 9:16-Short, Timeline und Auto-Fortsetzung), `MarsShortsSession.java` (auf echte Shorts beschränkte Vorschau- und Queue-Ende-Methoden), `MarsTvShell.java` (D-Pad-Beschleunigung beim Halten, vorhandene BACK-Logik, automatisches Weiter ohne normales Video).
+- **Overlay & UI:** `patch_017_shorts_stage.py` (einmaliger Sofortstart auf Shorts-Seite, Positionierung des **bestehenden** Media3-Views, verzögerter Ladeindikator nach 5 Sekunden), `MarsTvNavigationTheme.java` und `assets/drawable/mars_tv_ic_nav_*.xml` (neue Kontur-Icons).
+- **Version:** nur als Buildkandidat `0.0.17`, Code `12017`, Paketkennung **unverändert** `de.equiummc.marstube2`. Produktives Release mit identischem Signierschlüssel notwendig; kein Side-by-Side-Testpaket.
+- **Quelltests:** `MarsShortsSessionTest.java` erweitert um Vorschau/Ende/Leerlauf. `.github/workflows/mt2-017-shorts-ci.yml` kompiliert und prüft ohne Release; **Ergebnis gesondert nachtragen**. Aus einem laufenden CI-Job darf kein Erfolg abgeleitet werden.
+- **Offene Punkte:** GitHub-CI erfolgreich abschließen, Paket-Signierung und reale OTA-Aktualisierung belegen, Fire TV Cube und Thomson auf Darstellung, Fokus, Rücktaste, Spulen, Shorts Auto-Auswahl, Decoder, Startzeiten, RAM und Spinner testen. 0.0.16 bis dahin behalten.
+- **Spezifikation:** [MT2-017-SHORTS-STAGE.md](MT2-017-SHORTS-STAGE.md). Der frühere Videostream-Ausfall trat laut Nutzer plötzlich nicht mehr auf; Ursache unbestätigt, weder SABR noch Netzwerk als definitiv behoben markieren.

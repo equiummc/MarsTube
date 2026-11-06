@@ -29,15 +29,16 @@ public final class MarsTvNavigationTheme {
 
     public static int iconFor(int destination) {
         switch (destination) {
-            case 0: return R.drawable.ic_nav_home;
-            case 8: return R.drawable.icon_shorts;
-            case 1: return R.drawable.ic_mobile_search;
-            case 2: return R.drawable.ic_nav_subscriptions;
-            case 3: return R.drawable.ic_nav_history;
-            case 5: return R.drawable.ic_mobile_settings;
-            case 6: return R.drawable.ic_nav_you;
+            case 0: return R.drawable.mars_tv_ic_nav_home;
+            case 8: return R.drawable.mars_tv_ic_nav_shorts;
+            case 1: return R.drawable.mars_tv_ic_nav_search;
+            case 2: return R.drawable.mars_tv_ic_nav_subscriptions;
+            case 3: return R.drawable.mars_tv_ic_nav_history;
+            case 5: return R.drawable.mars_tv_ic_nav_settings;
+            case 6: return R.drawable.mars_tv_ic_nav_profile;
+            case -18: return R.drawable.mars_tv_ic_nav_autoplay;
             case 7: return R.drawable.ic_player_fullscreen;
-            default: return R.drawable.ic_nav_home;
+            default: return R.drawable.mars_tv_ic_nav_home;
         }
     }
 }
