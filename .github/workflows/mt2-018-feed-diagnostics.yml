@@ -26,8 +26,10 @@ jobs:
           $errors = $null
           [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'tools/Diagnose-MarsTube-Update.ps1').Path, [ref]$tokens, [ref]$errors) | Out-Null
           if ($errors.Count -gt 0) { throw ($errors | Out-String) }
-          $sample = "192.168.41.24:5555`tdevice"
-          if (-not ($sample -match '^(\S+)\s+device
+          $sample = "192.168.41.24:5555" + [char]9 + "device"
+          if (-not ($sample -match '^(\S+)\s+device$') -or $Matches[1] -ne '192.168.41.24:5555') { throw 'ADB device parsing failed' }
+          Write-Host 'PASS: PowerShell 7 syntax and ADB pattern'
+      - name: Test the exact latest/download URL used by 0.0.16
         shell: bash
         run: |
           set -euo pipefail
