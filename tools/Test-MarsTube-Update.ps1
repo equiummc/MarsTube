@@ -44,7 +44,7 @@ if (-not $adb) {
 }
 
 Write-Host 'ADB gefunden:' $adb
-& $adb version | Select-Object -First 2
+& $adb version
 if ($LASTEXITCODE -ne 0) {
     throw 'ADB konnte nicht gestartet werden.'
 }
