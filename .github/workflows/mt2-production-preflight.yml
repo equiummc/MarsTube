@@ -50,7 +50,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s dist/MarsTube-0.0.16.apk
+          version=$(python3 -c 'import json; print(json.load(open("mt2-player-lab/production-version.json", encoding="utf-8"))["versionName"])')
+          test -s "dist/MarsTube-${version}.apk"
           test -s dist/marstube-tv.json
           (cd dist && sha256sum -c SHA256SUMS)
           echo "Produktionscode kompiliert. Keine CI-APK hochgeladen oder veröffentlicht."
