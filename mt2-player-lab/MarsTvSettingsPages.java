@@ -328,8 +328,8 @@ public final class MarsTvSettingsPages {
                         context.getString(R.string.about_license_url))));
         rows.add(SettingsRow.note("MarsTube "
                 + com.liskovsoft.smartyoutubetv2.tv.BuildConfig.VERSION_NAME
-                + " ist eine separate Test-App (" + context.getPackageName() + "). "
-                + "Andere MarsTube-Testinstallationen bleiben unberührt."));
+                + " · reguläre MarsTube-App (" + context.getPackageName() + "). "
+                + "Updates werden nur nach Signaturprüfung und Bestätigung installiert."));
         return new SettingsPages.Page("Info", rows);
     }
 
