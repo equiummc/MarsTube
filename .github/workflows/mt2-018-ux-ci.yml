@@ -1,0 +1,90 @@
+name: MarsTube 0.0.18 - Fire TV Shorts / PiP / Updates compile
+
+on:
+  push:
+    branches:
+      - feature/mt2-018-shorts-miniplayer-ux
+    paths:
+      - 'mt2-player-lab/**'
+      - 'tools/build-marstube-production.sh'
+      - '.github/workflows/mt2-018-ux-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mt2-018-ux-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile:
+    name: Compile + unit tests (no signing or release)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Pinned upstream, not a floating branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir newtube-reference
+          git -C newtube-reference init
+          git -C newtube-reference remote add origin https://github.com/aleixrodriala/newtube.git
+          git -C newtube-reference fetch --depth 1 origin 6f96a1b42bb9272935360d7e5aec34d35f2753f0
+          git -C newtube-reference checkout --detach FETCH_HEAD
+          git -C newtube-reference submodule update --init --recursive --depth 1
+          test "$(git -C newtube-reference rev-parse HEAD)" = 6f96a1b42bb9272935360d7e5aec34d35f2753f0
+      - name: Android 37 toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --channel=3 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;21.0.6113669'
+          test -f "$ANDROID_HOME/platforms/android-37.0/android.jar"
+          if [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s "$ANDROID_HOME/platforms/android-37.0" "$ANDROID_HOME/platforms/android-37"
+          fi
+          sed -i "s@'../SharedModules'@'./SharedModules'@g;s@'../MediaServiceCore'@'./MediaServiceCore'@g" newtube-reference/settings.gradle
+      - name: Apply whole reproducible production recipe including patch 018
+        shell: bash
+        run: |
+          set -euo pipefail
+          for patch in \
+            patch_tv_input.py patch_sabr_recovery.py patch_lab_identity.py \
+            patch_tv_shell.py patch_005_navigation.py patch_005_localize.py \
+            patch_005_mobile_de.py patch_006_unified.py patch_006_isolated_firetv.py \
+            patch_007_tv_quality.py patch_007_translate_common.py patch_008_tv_player.py \
+            patch_009_tv_shorts_ui.py patch_010_player_settings_ui.py \
+            patch_011_firetv_navigation.py patch_012_tv_updates.py \
+            patch_013_tv_focus_ui.py patch_014_tv_shorts_mode.py \
+            patch_015_universal_back.py patch_016_production.py \
+            patch_017_shorts_stage.py patch_018_tv_ux.py; do
+            python3 "mt2-player-lab/$patch" newtube-reference
+          done
+          grep -Fq 'applicationId "de.equiummc.marstube2"' newtube-reference/smarttubetv/build.gradle
+          grep -Fq 'versionCode 12018' newtube-reference/smarttubetv/build.gradle
+          grep -Fq 'versionName "0.0.18"' newtube-reference/smarttubetv/build.gradle
+          grep -Fq 'SHORTS_PREVIEWS' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
+          grep -Fq 'tv-no-system-pip' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
+          grep -Fq 'A manual check always contacts' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java
+      - name: Java compiler, Shorts unit tests and debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x newtube-reference/gradlew
+          (cd newtube-reference && ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m \
+            :smarttubetv:testStmobileDebugUnitTest :smarttubetv:assembleStmobileDebug --stacktrace)
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: mt2-018-compile-reports
+          path: newtube-reference/smarttubetv/build/reports/tests/**
+          if-no-files-found: ignore

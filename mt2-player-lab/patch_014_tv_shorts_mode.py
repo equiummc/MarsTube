@@ -50,7 +50,8 @@ checks = {
     "Shorts-only input block": "if (actions.isShortsPlayback() && focus != Focus.RAIL && !infoOpen)" in shell,
     "Shorts regular overlay hidden": "boolean panelVisible = !pip && !shortsMode" in shell,
     "Shorts single OK action": "if (actions.isShortsPlayback() && focus != Focus.RAIL)" in shell,
-    "Shorts hold to speed": "if (actions.isShortsPlayback() && focus != Focus.RAIL) return true" in shell,
+    "Shorts hold to speed": ("if (actions.isShortsPlayback() && focus != Focus.RAIL) return true" in shell
+                             or "if (actions.isShortsPlayback()) return focus == Focus.VIDEO;" in shell),
     "Settings root direct update entry": settings.count('SettingsRow.action("Auf Updates prüfen"') >= 2,
     "Shorts queue during prepare": "return video == null || contains(video)" in shorts,
     "player v0.0.14+ UI": any(f'version.setText("0.0.{v}")' in shell for v in (14, 15)),

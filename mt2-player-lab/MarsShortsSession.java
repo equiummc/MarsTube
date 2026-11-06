@@ -85,6 +85,24 @@ public final class MarsShortsSession {
         return -1;
     }
 
+    /** A stable, bounded snapshot; the selected preview does not advance playback. */
+    public static synchronized int size() {
+        return ITEMS.size();
+    }
+
+    @Nullable
+    public static synchronized Video at(int index) {
+        return index >= 0 && index < ITEMS.size() ? ITEMS.get(index) : null;
+    }
+
+    /** Only a confirmed OK changes the current Shorts position. */
+    @Nullable
+    public static synchronized Video select(int index) {
+        Video target = at(index);
+        if (target != null) currentId = target.videoId;
+        return target;
+    }
+
     public static synchronized boolean hasNext() {
         int index = currentIndex();
         return index >= 0 && index + 1 < ITEMS.size();

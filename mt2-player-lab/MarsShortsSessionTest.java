@@ -95,6 +95,29 @@ public class MarsShortsSessionTest {
     }
 
     @Test
+    public void previewDoesNotChangePlayingShortUntilSelectionConfirmed() {
+        Video first = video("aaaaaaaaaaa", true);
+        Video second = video("bbbbbbbbbbb", true);
+        Video third = video("ccccccccccc", true);
+        Video fourth = video("ddddddddddd", true);
+        MarsShortsSession.begin(Arrays.asList(first, second, third, fourth), first);
+        assertEquals(4, MarsShortsSession.size());
+        assertEquals(fourth, MarsShortsSession.at(3));
+        assertEquals(0, MarsShortsSession.currentIndex());
+        assertTrue(MarsShortsSession.isActiveFor(first));
+        // Focus can browse all four cards without selecting any.
+        assertNull(MarsShortsSession.at(4));
+        assertNull(MarsShortsSession.at(-1));
+        assertEquals(0, MarsShortsSession.currentIndex());
+        // OK on a preview intentionally skips ahead without changing the feed.
+        assertEquals(fourth, MarsShortsSession.select(3));
+        assertEquals(3, MarsShortsSession.currentIndex());
+        assertFalse(MarsShortsSession.hasNext());
+        assertNull(MarsShortsSession.select(4));
+        assertEquals(3, MarsShortsSession.currentIndex());
+    }
+
+    @Test
     public void emptyQueueIsSafeForAutoplayAndPreviews() {
         assertEquals(-1, MarsShortsSession.currentIndex());
         assertTrue(MarsShortsSession.upcoming(4).isEmpty());
