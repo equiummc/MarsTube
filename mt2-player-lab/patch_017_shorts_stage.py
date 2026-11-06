@@ -47,7 +47,7 @@ if not all([
 
 # New icons are brought into res/drawable by patch_010's mars_tv_ic_*.xml glob.
 drawable = root / "smarttubetv/src/stmobile/res/drawable"
-for name in ("home", "shorts", "search", "subscriptions", "history", "settings", "profile"):
+for name in ("home", "shorts", "search", "subscriptions", "history", "settings", "profile", "autoplay"):
     if not (drawable / ("mars_tv_ic_nav_" + name + ".xml")).is_file():
         raise SystemExit("MT2-017: missing modern navigation icon " + name)
 
