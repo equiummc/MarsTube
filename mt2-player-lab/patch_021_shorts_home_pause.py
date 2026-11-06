@@ -26,29 +26,17 @@ for file in ("MarsTvShortsStage.java", "MarsTvShell.java"):
     target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
 
 code = playback.read_text(encoding="utf-8")
-before = '''                    @Override public void navigate(int destination) {
-                        android.content.Intent intent = new android.content.Intent(
-                                MobilePlaybackActivity.this,
-                                com.newtube.mobile.ui.browse.MobileBrowseActivity.class);
-                        intent.putExtra("mars_tv_section", destination);
-                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                        startActivity(intent);
-                    }'''
+# Earlier patch_005_navigation.py deliberately replaces CLEAR_TOP with
+# mars_tv_return_to_player. Match only the callback header so that the
+# existing Android task/back-stack behavior is preserved byte-for-byte.
+before = '''                    @Override public void navigate(int destination) {'''
 after = '''                    @Override public void navigate(int destination) {
-                        // Leaving the actual playback screen for Home/Search/etc
-                        // is not just opening the rail. Stop background sound
-                        // without terminating the Media3 session or destroying
-                        // the playing queue and history.
-                        if (mPlayer != null) mPlayer.pause();
-                        android.content.Intent intent = new android.content.Intent(
-                                MobilePlaybackActivity.this,
-                                com.newtube.mobile.ui.browse.MobileBrowseActivity.class);
-                        intent.putExtra("mars_tv_section", destination);
-                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                        startActivity(intent);
-                    }'''
+                        // Leaving the playback screen is different from merely
+                        // opening the rail: pause audio/video before navigation.
+                        // Keep the Media3 session and Android return-to-player.
+                        if (mPlayer != null) mPlayer.pause();'''
+if "mars_tv_return_to_player" not in code or "mars_tv_section" not in code:
+    raise SystemExit("MT2-021: expected prior stable Browse navigation missing")
 if code.count(before) != 1:
     raise SystemExit(f"MT2-021 unsafe navigation anchor: {code.count(before)}")
 playback.write_text(code.replace(before, after, 1), encoding="utf-8")
