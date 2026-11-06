@@ -26,6 +26,14 @@ def once(path, old, new):
     path.write_text(data.replace(old, new, 1), encoding="utf-8")
 
 
+# The update dialog still uses the old purple NewTube N icon from @mipmap/app_icon.
+# Use the already-approved MarsTube M artwork in the production APK instead.
+update_sheet = root / "smarttubetv/src/stmobile/res/layout/sheet_mobile_update.xml"
+once(update_sheet, 'android:src="@mipmap/app_icon"',
+                 'android:src="@drawable/mars_m_logo"')
+if not (root / "smarttubetv/src/stmobile/res/drawable-nodpi/mars_m_logo.png").is_file():
+    raise SystemExit("MT2-017: MarsTube M artwork missing in release resources")
+
 stage = src / "MarsTvShortsStage.java"
 if not stage.is_file():
     raise SystemExit("MT2-017: missing versioned Shorts stage")
