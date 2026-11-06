@@ -31,7 +31,7 @@ import java.util.Locale;
 
 /**
  * TV-only Shorts page chrome. One existing Media3 player continues to render the video.
- * This overlay supplies four upcoming previews on the left, a large wall clock, a
+ * This overlay supplies two portrait previews on the left, a smaller wall clock, a
  * remote-accessible autoplay preference, and a thin progress indicator on the right.
  * No extra decoder, WebView or GPU blur is created.
  */
@@ -50,6 +50,8 @@ public final class MarsTvShortsStage {
     private final TextView likeButton;
     private final TextView dislikeButton;
     private final TextView saveButton;
+    private final TextView seekBackButton;
+    private final TextView seekForwardButton;
     private final Runnable onSave;
     private boolean previewsFocused;
     private boolean progressFocused;
@@ -79,7 +81,8 @@ public final class MarsTvShortsStage {
     }
 
     public MarsTvShortsStage(Activity activity, FrameLayout host, Runnable onAutoChange,
-                             Runnable onLike, Runnable onDislike, Runnable onSave) {
+                             Runnable onLike, Runnable onDislike, Runnable onSave,
+                             Runnable onSeekBack, Runnable onSeekForward) {
         this.activity = activity;
         this.onSave = onSave;
         root = new FrameLayout(activity);
@@ -91,7 +94,8 @@ public final class MarsTvShortsStage {
         final int screenWidth = activity.getResources().getDisplayMetrics().widthPixels;
         final int videoWidth = Math.min(screenWidth, videoWidth(activity));
         final int menuWidth = screenWidth - videoWidth;
-        final int listWidth = Math.round(menuWidth * 0.70f);
+        // Slightly slimmer control column; leaves more room for the Shorts cards.
+        final int listWidth = Math.round(menuWidth * 0.75f);
 
         LinearLayout surface = new LinearLayout(activity);
         surface.setOrientation(LinearLayout.HORIZONTAL);
@@ -111,17 +115,21 @@ public final class MarsTvShortsStage {
         previewColumn.setOrientation(LinearLayout.VERTICAL);
         left.addView(previewColumn, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        for (int i = 0; i < 3; i++) {
+        // Preserve the visible 9:16 thumbnail instead of slicing it vertically.
+        final int screenHeight = activity.getResources().getDisplayMetrics().heightPixels;
+        final int previewImageWidth = Math.min(Math.round(listWidth * 0.35f),
+                Math.max(dp(100), Math.round(Math.max(1, screenHeight - dp(70)) * 9f / 32f)));
+        for (int i = 0; i < 2; i++) {
             Preview preview = new Preview();
             LinearLayout row = new LinearLayout(activity);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setPadding(dp(5), dp(5), dp(9), dp(5));
             row.setBackground(chrome(false));
             ImageView image = new ImageView(activity);
-            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
             image.setClipToOutline(true);
             image.setBackground(chrome(false));
-            row.addView(image, new LinearLayout.LayoutParams(dp(76),
+            row.addView(image, new LinearLayout.LayoutParams(previewImageWidth,
                     ViewGroup.LayoutParams.MATCH_PARENT));
             LinearLayout texts = new LinearLayout(activity);
             texts.setOrientation(LinearLayout.VERTICAL);
@@ -218,6 +226,20 @@ public final class MarsTvShortsStage {
         addAction(centre, likeButton);
         addAction(centre, dislikeButton);
         addAction(centre, saveButton);
+        // Compact on-screen 5-second seek buttons. Stay entirely inside menu.
+        LinearLayout seekActions = new LinearLayout(activity);
+        seekActions.setOrientation(LinearLayout.HORIZONTAL);
+        seekActions.setGravity(Gravity.CENTER);
+        seekBackButton = actionButton("⏪", "Fünf Sekunden zurückspulen", onSeekBack);
+        seekForwardButton = actionButton("⏩", "Fünf Sekunden vorspulen", onSeekForward);
+        seekBackButton.setTextSize(21);
+        seekForwardButton.setTextSize(21);
+        LinearLayout.LayoutParams seekBackLp = new LinearLayout.LayoutParams(dp(50), dp(42));
+        seekBackLp.rightMargin = dp(5);
+        seekActions.addView(seekBackButton, seekBackLp);
+        seekActions.addView(seekForwardButton, new LinearLayout.LayoutParams(dp(50), dp(42)));
+        centre.addView(seekActions, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(43)));
         View lowerSpace = new View(activity);
         centre.addView(lowerSpace, new LinearLayout.LayoutParams(1, 0, 1f));
 
@@ -340,6 +362,8 @@ public final class MarsTvShortsStage {
         likeButton.setBackground(chrome(focused && selection == 0));
         dislikeButton.setBackground(chrome(focused && selection == 1));
         saveButton.setBackground(chrome(focused && selection == 2));
+        seekBackButton.setBackground(chrome(focused && selection == 3));
+        seekForwardButton.setBackground(chrome(focused && selection == 4));
     }
 
     public void setAutoFocused(boolean focused) {
@@ -354,9 +378,10 @@ public final class MarsTvShortsStage {
         if (selectedIndex < minimum || selectedIndex >= MarsShortsSession.size()) {
             selectedIndex = minimum;
         }
-        int start = previewsFocused ? Math.max(minimum, selectedIndex - 1) : minimum;
-        if (start + 3 > MarsShortsSession.size()) {
-            start = Math.max(minimum, MarsShortsSession.size() - 3);
+        int count = previews.size();
+        int start = previewsFocused ? Math.max(minimum, selectedIndex - (count - 1)) : minimum;
+        if (start + count > MarsShortsSession.size()) {
+            start = Math.max(minimum, MarsShortsSession.size() - count);
         }
         StringBuilder fingerprint = new StringBuilder();
         for (int i = 0; i < previews.size(); i++) {
@@ -394,7 +419,7 @@ public final class MarsTvShortsStage {
             Glide.with(activity).load(item.getCardImageUrl())
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .format(DecodeFormat.PREFER_RGB_565)
-                    .centerCrop().dontAnimate().into(preview.image);
+                    .fitCenter().dontAnimate().into(preview.image);
         }
     }
 
