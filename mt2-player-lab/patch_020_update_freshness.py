@@ -53,7 +53,7 @@ once(app,
      '''        android.util.Log.i(TAG, "check result=up_to_date installedCode=" + mInstalledCode
                 + " remoteCode=" + (info == null ? -1 : info.versionCode)
                 + " remoteName=" + (info == null ? "unknown" : info.versionName));''',
-     '''        Log.i(TAG, "check result=up_to_date installed=" + mInstalledName
+     '''        android.util.Log.i(TAG, "check result=up_to_date installed=" + mInstalledName
                 + " code=" + mInstalledCode
                 + " manifestLatest=" + (info == null ? "unknown" : info.versionName)
                 + " manifestCode=" + (info == null ? -1 : info.versionCode)
