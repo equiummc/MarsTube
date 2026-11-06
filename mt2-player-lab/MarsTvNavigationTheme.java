@@ -36,6 +36,7 @@ public final class MarsTvNavigationTheme {
             case 3: return R.drawable.mars_tv_ic_nav_history;
             case 5: return R.drawable.mars_tv_ic_nav_settings;
             case 6: return R.drawable.mars_tv_ic_nav_profile;
+            case -18: return R.drawable.mars_tv_ic_nav_autoplay;
             case 7: return R.drawable.ic_player_fullscreen;
             default: return R.drawable.mars_tv_ic_nav_home;
         }
