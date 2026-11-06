@@ -3,7 +3,7 @@ name: MarsTube update feed diagnosis (no release)
 on:
   push:
     branches:
-      - feature/mt2-018-feed-diagnostics-20261106
+      - feature/mt2-018-adb-autodiscovery-20261106
     paths:
       - '.github/workflows/mt2-018-feed-diagnostics.yml'
       - 'tools/Diagnose-MarsTube-Update.ps1'
