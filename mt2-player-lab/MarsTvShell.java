@@ -903,7 +903,14 @@ public final class MarsTvShell {
         if (railPosition < 0 || railPosition >= railDestinations.size()) {
             return;
         }
-        actions.navigate(railDestinations.get(railPosition).destination);
+        int destination = railDestinations.get(railPosition).destination;
+        if (destination == -18) {
+            shortsStage.toggleAutoNext();
+            focus = Focus.VIDEO;
+            render();
+            return;
+        }
+        actions.navigate(destination);
     }
 
     private void render() {
@@ -912,11 +919,18 @@ public final class MarsTvShell {
         }
         root.setVisibility(pip ? View.GONE : View.VISIBLE);
         boolean shortsMode = actions.isShortsPlayback();
+        if (lastShortsPositioned != (shortsMode && !pip)) {
+            lastShortsPositioned = shortsMode && !pip;
+            actions.positionShortsVideo(lastShortsPositioned);
+        }
+        shortsStage.show(shortsMode && !pip, player.current(), seekPreviewMs);
+        railPosition = Math.min(railPosition,
+                shortsMode ? railButtons.size() - 1 : railButtons.size() - 2);
         // Dedicated Shorts canvas has no regular-video carousel/control overlay.
         boolean panelVisible = !pip && !shortsMode
                 && focus != Focus.VIDEO && focus != Focus.RAIL;
         panel.setVisibility(panelVisible ? View.VISIBLE : View.GONE);
-        clock.setVisibility(!pip && (panelVisible || focus == Focus.RAIL || infoOpen)
+        clock.setVisibility(!pip && !shortsMode && (panelVisible || focus == Focus.RAIL || infoOpen)
                 ? View.VISIBLE : View.GONE);
         boolean railOpen = !pip && focus == Focus.RAIL;
         int desiredRailVisibility = railOpen ? View.VISIBLE : View.GONE;
@@ -938,6 +952,11 @@ public final class MarsTvShell {
             railHint.setText(railDestinations.get(railPosition).label);
         }
         for (int i = 0; i < railButtons.size(); i++) {
+            if (railDestinations.get(i).destination == -18) {
+                railButtons.get(i).setVisibility(shortsMode ? View.VISIBLE : View.GONE);
+                railButtons.get(i).setContentDescription(shortsStage.isAutoNext()
+                        ? "Shorts Automatisch weiter: Ein" : "Shorts Automatisch weiter: Aus");
+            }
             boolean selected = focus == Focus.RAIL && railPosition == i;
             railButtons.get(i).setTextColor(selected ? CYAN : WHITE);
             railButtons.get(i).setBackground(
@@ -1000,6 +1019,21 @@ public final class MarsTvShell {
         }
         if (panel.getVisibility() == View.VISIBLE) {
             progress.invalidate();
+        }
+        boolean shorts = actions.isShortsPlayback();
+        shortsStage.show(shorts && !pip, exo, seekPreviewMs);
+        if (shorts && exo != null
+                && exo.getPlaybackState() == androidx.media3.common.Player.STATE_ENDED) {
+            if (shortsAutoAdvanceArmed) {
+                shortsAutoAdvanceArmed = false;
+                if (shortsStage.isAutoNext()
+                        && com.newtube.mobile.ui.common.MarsShortsSession.hasNext()) {
+                    actions.next();
+                }
+            }
+        } else if (exo != null
+                && exo.getPlaybackState() == androidx.media3.common.Player.STATE_READY) {
+            shortsAutoAdvanceArmed = true;
         }
         handler.postDelayed(ticker, 1000L);
     }
@@ -1069,6 +1103,8 @@ public final class MarsTvShell {
 
     public void release() {
         released = true;
+        cancelSeekHold();
+        actions.positionShortsVideo(false);
         handler.removeCallbacks(ticker);
         handler.removeCallbacks(autoHide);
         handler.removeCallbacks(holdRunnable);
