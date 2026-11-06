@@ -3,18 +3,18 @@ name: MarsTube 0.0.20 - Update-Freshness und TV-Shorts CI
 on:
   push:
     branches:
-      - feature/mt2-020-shorts-three-column-20261106
+      - feature/mt2-020-update-feed-refresh-20261106
     paths:
       - 'mt2-player-lab/**'
       - 'tools/build-marstube-production.sh'
-      - '.github/workflows/mt2-020-shorts-ci.yml'
+      - '.github/workflows/mt2-020-update-ci.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: mt2-020-shorts-ci-${{ github.ref }}
+  group: mt2-020-update-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -79,6 +79,7 @@ jobs:
           grep -Fq 'SHORTS_AUTO' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
           python3 mt2-player-lab/test_019_shorts_contract.py
           python3 mt2-player-lab/test_020_update_contract.py
+          grep -Fq 'mars_check' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
           grep -Fq 'mars_check' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
           grep -Fq 'A manual check always contacts' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java
       - name: Java compiler, Shorts unit tests and debug APK
