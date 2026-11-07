@@ -13,15 +13,17 @@ public final class MarsTvNavigationModel {
         }
     }
 
+    // The user-approved seven visible destinations; M is the central zero point.
     private static final Entry[] MAIN = {
-            new Entry("Startseite", 0),     // Focusable M logo, not a decorative header.
-            new Entry("Shorts", 8),
             new Entry("Suche", 1),
             new Entry("Abos", 2),
             new Entry("Verlauf", 3),
+            new Entry("Startseite", 0),
+            new Entry("Shorts", 8),
             new Entry("Profil", 6),
             new Entry("Einstellungen", 5)
     };
+    public static final int HOME_INDEX = 3;
 
     public static Entry[] main() {
         return MAIN.clone();

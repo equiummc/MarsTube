@@ -39,7 +39,8 @@ for patch in \
   patch_017_shorts_stage.py patch_018_tv_ux.py \
   patch_019_shorts_three_column.py patch_020_update_freshness.py \
   patch_021_shorts_home_pause.py patch_022_update_reliability.py \
-  patch_023_tv_settings.py patch_024_unified_navigation.py; do
+  patch_023_tv_settings.py patch_024_unified_navigation.py \
+  patch_025_tv_ui.py; do
   python3 "mt2-player-lab/$patch" "$root"
 done
 grep -Fq 'applicationId "de.equiummc.marstube2"' "$root/smarttubetv/build.gradle"
@@ -55,6 +56,11 @@ test -s "$root/smarttubetv/src/stmobile/res/drawable/mars_m_flat.xml"
 grep -Fq 'MarsTvNavigationModel.wrap(index, -1' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java"
 grep -Fq 'MarsTvNavigationModel.playerCount(shortsMode)' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java"
 grep -Fq 'SETTINGS_WIDTH_DP = WIDTH_DP' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvNavigationTheme.java"
+grep -Fq 'MarsTvNavigationModel.HOME_INDEX' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java"
+grep -Fq 'mPlayerView.setClipToOutline(true)' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java"
+grep -Fq 'Math.round(22f * density)' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsStage.java"
+grep -Fq 'label.setTranslationY(alignedTop);' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRailLabel.java"
+test -s "$root/smarttubetv/src/stmobile/res/drawable/mars_m_flat.xml"
 grep -Fq 'releases/latest/download/marstube-tv.json' "$root/common/src/main/res/values/update_urls.xml"
 grep -Fq 'raw.githubusercontent.com/equiummc/MarsTube/mars/production-2/updates/stable.json' "$root/common/src/main/res/values/update_urls.xml"
 if grep -Fq 'aleixrodriala/newtube' "$root/common/src/main/res/values/update_urls.xml"; then echo '::error::Falscher Updater'; exit 1; fi

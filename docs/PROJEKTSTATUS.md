@@ -1,5 +1,19 @@
 # MarsTube – laufender Projektstatus und Agentenübergabe
 
+## 07.11.2026 – MT2-025, echtes TV-UI mit Original-M
+
+- **Branch:** `feature/mt2-025-tv-ui-shorts-20261107`, aufbauend auf signierter 0.0.24.
+- **Konzept und Abnahme:** `docs/MT2-025-TV-UI-CONCEPT.md`.
+- **Implementiert:** identische sieben Menüziele, M auf Index 3, mittig schwebende Rail, Original-M weiß/hellblau per Tint, sechs neue einheitliche 24dp-Outline-Vektoren, korrigierter Tooltip-Y-Offset.
+- **Shorts:** zwei echte Vorschauen links, mittiger 9:16-Media3-Player mit Rand, rechts Uhr/Like/Dislike/Zeit, dünner Fortschritt, keine Kommentaranzeige oder Teilen.
+- **Autoplay:** durch realen Schalter unter Einstellungen → Darstellung steuerbar; keine versteckte Extra-Navigation.
+- **Reproduzierbare Build-Pipeline:** `mt2-player-lab/patch_025_tv_ui.py` nach 024, GitHub CI `mt2-025-tv-ui-ci.yml`, `production-version.json` 0.0.25 / 12025. Alle Vorversionen bleiben als signierte Releases auf GitHub; Installation über die bestehende App-ID.
+- **Noch offen:** vollständiges CI-Ergebnis, Signatur-/Releasebuild, danach Fire-TV- und Thomson-Abnahme, insbesondere 9:16-Clip bei SurfaceView und Fokus im Shorts-Fortschritt. **Keinen Gerätetest behaupten.**
+- **Weitere Option:** Datumsfilter für Verlauf (Gestern/Woche) noch nicht implementiert, benötigt verlässlich verfügbare Ansichtszeitstempel.
+- **Altstand:** die nachfolgenden Abschnitte dokumentieren vorherige Entwicklungsphasen und sind nicht der letzte Release-Status.
+
+---
+
 ## Aktualisierung 07.11.2026 – MT2-024, TV-Menü (isolierter Entwicklungsbranch)
 
 - Freigegebene letzte produktive App: MarsTube **0.0.23**; das hier beschriebene **0.0.24 ist noch nicht veröffentlicht**.

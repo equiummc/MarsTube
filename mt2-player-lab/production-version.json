@@ -1,12 +1,14 @@
 {
-  "versionName": "0.0.24",
-  "versionCode": 12024,
+  "versionName": "0.0.25",
+  "versionCode": 12025,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Ein einheitliches, schmales TV-Menü für Startseite, Shorts, Player und Einstellungen",
-    "Das einfarbige M-Logo ist der auswählbare Startseiten-Knopf; getrenntes Haus-Symbol und Versionszahlen im Menü entfallen",
-    "Fernbedienung: Menüpunkte oben/unten umlaufend; keine unsichtbaren Shorts-Sondereinträge",
-    "Fokus-Beschriftungen erscheinen rechts neben dem Menü, ohne das Layout zu verschieben",
-    "Bisherige Player-Zurück-Taste, Media3, Update-Quellen, App-ID und Signatur bleiben erhalten"
+    "Ein einheitlicher, mittig schwebender TV-Navigationsbereich mit sieben identischen Hauptzielen",
+    "Das unveränderte historische weiße Mars-M sitzt in der Menümitte und wird bei Fokus hellblau",
+    "Neue proportionierte Outline-Symbole; korrigierte Position des rechts eingeblendeten Menütitels",
+    "Shorts: genau zwei abgerundete Vorschauen links, ein einziger mittiger 9:16-Media3-Player mit Abstand zum Rand",
+    "Shorts: schmale rechte Aktionsleiste mit Uhrzeit, Like/Dislike, Zeit und Fortschritt – ohne Kommentare oder Teilen",
+    "Automatischer Shorts-Wechsel jetzt in den Darstellungseinstellungen einstellbar",
+    "Versions-/Updateprüfung, dauerhaft signierte App-ID und die Player-Zurück-Funktion bleiben erhalten"
   ]
 }
