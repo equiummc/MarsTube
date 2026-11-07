@@ -180,6 +180,30 @@ public final class MarsTvSettingsPages {
                 new String[]{"Qualität zuerst", "Schnellstart"},
                 new int[]{MarsTvPlayerPrefs.START_QUALITY_FIRST, MarsTvPlayerPrefs.START_FAST}));
 
+        PlayerTweaksData tweaks = PlayerTweaksData.instance(context);
+        rows.add(SettingsRow.header("Qualität & Kompatibilität"));
+        rows.add(SettingsRow.toggle("Bei Ladeproblemen Qualität reduzieren",
+                "Nach einer längeren Pufferpause eine niedrigere Qualitätsstufe versuchen.",
+                () -> !tweaks.isNetworkErrorFixingDisabled(),
+                on -> tweaks.setNetworkErrorFixingDisabled(!on)));
+        rows.add(SettingsRow.toggle("Formate mit höherer Bitrate anfragen",
+                "Zusätzliche hochwertige Streams verwenden, falls der Dienst sie anbietet.",
+                tweaks::isHighBitrateFormatsEnabled, tweaks::setHighBitrateFormatsEnabled));
+        rows.add(SettingsRow.header("Livestreams"));
+        rows.add(SettingsRow.toggle("Näher an der Live-Position starten",
+                "Mit kleinerem Live-Puffer; auf schwachen Verbindungen kann es öfter nachladen.",
+                tweaks::isBufferOnStreamsDisabled, tweaks::setBufferOnStreamsDisabled));
+        rows.add(SettingsRow.toggle("HLS für Livestreams bevorzugen",
+                "Kompatibilitätsoption, falls die normale Live-Wiedergabe nicht funktioniert.",
+                tweaks::isHlsStreamsForced, tweaks::setHlsStreamsForced));
+        rows.add(SettingsRow.header("Untertitel"));
+        rows.add(intChoice(context, "Untertitel beim Videostart",
+                "Die CC-Taste im Player bleibt für jedes Video verfügbar.",
+                () -> MarsTvPlayerPrefs.getSubtitlePolicy(context),
+                value -> MarsTvPlayerPrefs.setSubtitlePolicy(context, value),
+                new String[]{"Aus", "Nur erzwungene", "Reguläre Untertitel"},
+                new int[]{MarsTvPlayerPrefs.SUBTITLES_OFF, MarsTvPlayerPrefs.SUBTITLES_FORCED_ONLY,
+                        MarsTvPlayerPrefs.SUBTITLES_REGULAR}));
         return new SettingsPages.Page("Video & Wiedergabe", rows);
     }
 
