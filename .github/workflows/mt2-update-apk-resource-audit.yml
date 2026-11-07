@@ -1,0 +1,43 @@
+name: MarsTube released APK update route and resource audit
+
+on:
+  push:
+    branches:
+      - diagnostics/mt2-022-update-regression-20261107
+    paths:
+      - '.github/workflows/mt2-update-apk-resource-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    name: Inspect LIVE signed 0.0.20 and 0.0.21 resources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: android-actions/setup-android@v3
+      - name: Android resource inspector
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'build-tools;35.0.0' >/dev/null
+          for version in 0.0.20 0.0.21; do
+            curl -fsSL --retry 2 --max-time 120 \
+              "https://github.com/equiummc/MarsTube/releases/download/v$version/MarsTube-$version.apk" \
+              -o "/tmp/MarsTube-$version.apk"
+            echo "::group::release $version, actual compiled resource strings"
+            "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump resources --values "/tmp/MarsTube-$version.apk" >/tmp/mt2-resources.txt
+            grep -E -i 'github.com/.*/(releases/latest/download|newtube.json|marstube-tv.json)|update_urls' \
+              /tmp/mt2-resources.txt | tail -80 || true
+            echo "Check compiled MarsTube release feed:"
+            grep -F 'github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json' /tmp/mt2-resources.txt
+            echo "Check that old NewTube feed did NOT survive:"
+            if grep -E 'github.com/aleixrodriala/newtube/releases/(latest|download)' /tmp/mt2-resources.txt; then
+              echo 'WARN: upstream NewTube feed still packaged in the MarsTube app!'
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
