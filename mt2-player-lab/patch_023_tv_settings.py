@@ -42,6 +42,27 @@ once(tv / "common/MarsTvRail.java",
     'version.setText("0.0.15");',
     'version.setText(com.liskovsoft.smartyoutubetv2.tv.BuildConfig.VERSION_NAME);')
 
+# Unify app/launcher, main rail and player with the historic flat Mars M.
+icon_src = here / "assets/drawable/mars_m_flat.xml"
+icon_dst = root / "smarttubetv/src/stmobile/res/drawable/mars_m_flat.xml"
+if not icon_src.is_file():
+    raise SystemExit("MT2-023: historic monochrome brand vector missing")
+icon_dst.parent.mkdir(parents=True, exist_ok=True)
+icon_dst.write_bytes(icon_src.read_bytes())
+
+manifest = root / "smarttubetv/src/stmobile/AndroidManifest.xml"
+manifest_xml = manifest.read_text(encoding="utf-8")
+if manifest_xml.count("@drawable/mars_m_logo") < 1:
+    raise SystemExit("MT2-023: expected existing MarsTube app/launcher icon")
+manifest.write_text(manifest_xml.replace("@drawable/mars_m_logo", "@drawable/mars_m_flat"),
+                    encoding="utf-8")
+once(tv / "common/MarsTvRail.java",
+    "tv.R.drawable.mars_m_logo",
+    "tv.R.drawable.mars_m_flat")
+once(tv / "playback/MarsTvShell.java",
+    "logo.setImageResource(R.drawable.mars_m_logo);",
+    "logo.setImageResource(R.drawable.mars_m_flat);")
+
 settings = tv / "settings/MobileSettingsActivity.java"
 once(settings,
     "    private void handleBack() {",
@@ -102,6 +123,8 @@ assert "Auf Updates prüfen" in pages_text
 assert 'versionLine(context)' in pages_text
 assert "SABR bevorzugen (experimentell)" in pages_text
 assert "mMarsTvUniversalBack.setEnabled(false)" in activity.read_text(encoding="utf-8")
+assert "@drawable/mars_m_flat" in manifest.read_text(encoding="utf-8")
+assert "mars_m_flat" in (tv / "playback/MarsTvShell.java").read_text(encoding="utf-8")
 assert "mCommentsPanel.prefetch();" in player.read_text(encoding="utf-8")
 assert 'applicationId "de.equiummc.marstube2"' in (
     root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
