@@ -40,7 +40,8 @@ for patch in \
   patch_019_shorts_three_column.py patch_020_update_freshness.py \
   patch_021_shorts_home_pause.py patch_022_update_reliability.py \
   patch_023_tv_settings.py patch_024_unified_navigation.py \
-  patch_025_tv_ui.py patch_026_shorts_actions.py; do
+  patch_025_tv_ui.py patch_026_shorts_actions.py \
+  patch_027_shorts_workspace.py; do
   python3 "mt2-player-lab/$patch" "$root"
 done
 grep -Fq 'applicationId "de.equiummc.marstube2"' "$root/smarttubetv/build.gradle"
@@ -51,6 +52,10 @@ grep -Fq 'Bei Ladeproblemen Qualität reduzieren' "$root/smarttubetv/src/stmobil
 grep -Fq 'no-system-pip' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java"
 grep -Fq 'SHORTS_PREVIEWS' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java"
 test -s "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsStage.java"
+grep -Fq 'onShortsPlaybackEnded()' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java"
+grep -Fq 'new MarsTvShortsSearchPanel(' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java"
+test -s "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsSearchPanel.java"
+
 grep -Fq 'android:icon="@drawable/mars_m_flat"' "$root/smarttubetv/src/stmobile/AndroidManifest.xml"
 test -s "$root/smarttubetv/src/stmobile/res/drawable/mars_m_flat.xml"
 grep -Fq 'MarsTvNavigationModel.wrap(index, -1' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRail.java"

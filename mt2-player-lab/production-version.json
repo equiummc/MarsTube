@@ -1,14 +1,15 @@
 {
-  "versionName": "0.0.26",
-  "versionCode": 12026,
+  "versionName": "0.0.27",
+  "versionCode": 12027,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Alle Hauptmenü-Symbole geometrisch in ihren unverändert positionierten Fokusrahmen zentriert",
-    "Shorts-Vorschau links: kleinere Schrift, bis zu vier Titelzeilen; mittiges 9:16-Video unverändert",
-    "Shorts: kleine runde Aktionssymbole rechts, sichtbare verfügbare Like-/Dislike-Zahlen",
-    "Shorts: Kommentare rechts auf Anforderung öffnen; vorhandene Antwort-Threads und Like-Funktion nutzen",
-    "Shorts: Schaltflächen für Kanal, Playlist, Untertitel, Geschwindigkeit, Suche, Teilen und Kontextmenü für Kein Interesse",
-    "Shorts: Umschalten zwischen nächstem Video und Wiederholung des aktuellen Shorts",
-    "Media3-Player, Zurück-Navigation, App-Paketkennung, Signatur und Update-Kanal bleiben unverändert"
+    "Shorts-Vorschau: Vorschau-Nummern entfernen und Creatornamen blau hervorheben",
+    "Beide Vorschaukacheln bis nahe an den linken Bildschirmrand ziehen; 9:16-Bilder ohne Streckung und mit kleineren Ecken",
+    "Rechts: Weiter/Wiederholung an den Anfang, Teilen entfernen, übrige Aktionen erhalten",
+    "Suche im Shorts-Fenster: echtes YouTube-Suchfeld und scrollbare Treffer; Spracheingabe, wenn am Fernseher verfügbar",
+    "Automatischer nächster Short und Wiederholung über tatsächliche Media3-Wiedergabeende-Ereignisse steuern",
+    "Fortschrittsbalken schmaler als der Hauptbildrahmen, mit seitlichem Abstand",
+    "Bei neuen Videomaßen 9:16-Playerrahmen sofort neu anlegen; originales Seitenverhältnis mit FIT beibehalten",
+    "Bestehende Update-Signatur, Paketkennung, Zurück-Taste, Media3-Player und Update-Kanal unverändert"
   ]
 }
