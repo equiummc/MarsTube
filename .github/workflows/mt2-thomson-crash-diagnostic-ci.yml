@@ -1,0 +1,41 @@
+name: MarsTube Thomson crash/updater diagnostics syntax verification
+on:
+  push:
+    branches:
+      - diagnostics/mt2-022-update-regression-20261107
+    paths:
+      - 'tools/Diagnose-MarsTube-Thomson-Absturz-Update.ps1'
+      - '.github/workflows/mt2-thomson-crash-diagnostic-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell 7 and check no data-destructive commands
+        shell: pwsh
+        run: |
+          $script = 'tools/Diagnose-MarsTube-Thomson-Absturz-Update.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $script, [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            throw 'Invalid PowerShell 7 syntax'
+          }
+          $source = Get-Content -LiteralPath $script -Raw
+          foreach ($required in @('logcat -b crash -d',
+            'dumpsys activity exit-info', 'de.equiummc.marstube2',
+            'Auf Updates pruefen', 'ERGEBNIS.txt')) {
+            if (-not $source.Contains($required)) { throw "Missing required gate: $required" }
+          }
+          foreach ($forbidden in @(' install -r ', ' uninstall ', ' pm clear ', ' logcat -c ', ' force-stop ')) {
+            if ($source.Contains($forbidden)) { throw "Unwanted mutation: $forbidden" }
+          }
+          Write-Host 'PASS: PS7 syntax valid. Crash captured before updater check. No app mutation.'
