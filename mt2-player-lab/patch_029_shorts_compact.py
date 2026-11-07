@@ -405,7 +405,7 @@ once(search,'''                input.setText(words.get(0));
 
 gradle=(root/"smarttubetv/build.gradle").read_text(encoding="utf-8")
 assert 'applicationId "de.equiummc.marstube2"' in gradle
-assert 'versionCode 12029' in gradle
+assert 'versionCode 12030' in gradle
 s=stage.read_text(encoding="utf-8")
 assert "dislikeCountLabel" not in s and "addRoundAction(" not in s
 assert "setVideoFocused(boolean focused)" in s
