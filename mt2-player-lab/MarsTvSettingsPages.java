@@ -9,6 +9,8 @@ import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
 import com.liskovsoft.sharedutils.helpers.AppInfoHelpers;
 import com.liskovsoft.smartyoutubetv2.common.misc.DiagnosticLog;
 import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager;
+import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerData;
+import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerTweaksData;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.newtube.mobile.player.MarsTvPlayerPrefs;
@@ -41,6 +43,7 @@ public final class MarsTvSettingsPages {
     public static final String TV_STREAMING = "tv_streaming";
     public static final String TV_PROFILE = "tv_profile";
     public static final String TV_INFO = "tv_info";
+    public static final String TV_CONTENT_TOOLS = "tv_content_tools";
 
     private MarsTvSettingsPages() {
     }
@@ -61,7 +64,11 @@ public final class MarsTvSettingsPages {
             case TV_STREAMING:
                 return streaming(context);
             case TV_PROFILE:
-                return profile(context);
+                return appearance(context);
+            case TV_CONTENT_TOOLS:
+                return contentTools(context);
+            case SettingsPages.ADVANCED:
+                return advanced(context);
             case TV_INFO:
                 return info(context);
             default:
@@ -84,43 +91,29 @@ public final class MarsTvSettingsPages {
                         : context.getString(R.string.mobile_settings_account_signed_out),
                 page -> AccountsSheet.show(page.requireActivity(), page::rebuild)));
 
-        // Update status is a first-level TV setting, not buried after advanced options.
-        rows.add(SettingsRow.header("Updates & Info"));
-        rows.add(SettingsRow.action("Auf Updates prüfen",
-                "MarsTube-Versionen prüfen und auf dem Fernseher installieren.",
-                page -> com.newtube.mobile.ui.update.MobileUpdateActivity
-                        .startCheck(page.requireContext())));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_about, "Info",
-                versionLine(context), TV_INFO));
-
-        rows.add(SettingsRow.header("Wiedergabe & Darstellung"));
+        rows.add(SettingsRow.header("Wiedergabe"));
         rows.add(SettingsRow.page(R.drawable.ic_settings_playback, "Video & Wiedergabe",
                 videoSummary(context), TV_VIDEO));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_feeds, "Darstellung",
-                appearanceSummary(context), TV_APPEARANCE));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_general, "Bedienung / Fernbedienung",
-                "D-Pad, OK kurz/gehalten, BACK und Miniplayer", TV_REMOTE));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_captions, "Untertitel",
-                subtitleSummary(context), TV_SUBTITLES));
         rows.add(SettingsRow.page(R.drawable.ic_settings_quality, "Streaming & Netzwerk",
                 streamingSummary(context), TV_STREAMING));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_account, "Profil & Konto",
-                "Konto, Raster für Profil, Verlauf und Abos", TV_PROFILE));
-
-        rows.add(SettingsRow.header("Weitere Einstellungen"));
+        rows.add(SettingsRow.header("MarsTube-Oberfläche"));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_feeds, "Darstellung",
+                "Startseite, Shorts, Profil, Verlauf und Abos", TV_APPEARANCE));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_general, "Bedienung & Fernbedienung",
+                "Tasten, Playersteuerung und Miniplayer", TV_REMOTE));
         rows.add(SettingsRow.page(R.drawable.ic_settings_sponsorblock,
-                context.getString(R.string.content_block_provider), null,
-                SettingsPages.SPONSORBLOCK).summary(() -> PlayerPages.sponsorBlockSummary(context)));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_dearrow,
-                context.getString(R.string.dearrow_provider), null,
-                SettingsPages.DEARROW).summary(() -> PlayerPages.deArrowSummary(context)));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_backup,
-                context.getString(R.string.mobile_settings_backup),
+                "SponsorBlock & DeArrow", "Videosegmente, Vorschaubilder und Titel",
+                TV_CONTENT_TOOLS));
+        rows.add(SettingsRow.header("System"));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_backup, "Sichern & Wiederherstellen",
                 context.getString(R.string.mobile_settings_backup_summary), SettingsPages.BACKUP));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_advanced,
-                context.getString(R.string.mobile_settings_advanced),
-                context.getString(R.string.mobile_settings_advanced_summary), SettingsPages.ADVANCED));
-
+        rows.add(SettingsRow.page(R.drawable.ic_settings_advanced, "Erweitert",
+                "Netzwerk, Kompatibilität und zusätzliche Funktionen", SettingsPages.ADVANCED));
+        rows.add(SettingsRow.action(R.drawable.ic_settings_about,
+                versionLine(context), () -> "Auf Updates prüfen",
+                page -> com.newtube.mobile.ui.update.MobileUpdateActivity.startCheck(page.requireContext())));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_about, "Informationen & Diagnose",
+                "GitHub, Protokoll und Open-Source-Lizenzen", TV_INFO));
 
         return new SettingsPages.Page("Einstellungen", rows);
     }
