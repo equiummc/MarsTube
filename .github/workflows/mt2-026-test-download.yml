@@ -1,0 +1,49 @@
+name: MT2-026 Test-APK direkt herunterladen (kein Stable-Update)
+
+on:
+  push:
+    branches:
+      - feature/mt2-026-shorts-actions-comments-20261107
+    paths:
+      - '.github/workflows/mt2-026-test-download.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-test-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Warten auf original signiertes MT2-026-Testartefakt
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run watch 42391398786 --exit-status --interval 15
+      - name: Geprüfte APK aus signiertem Build übernehmen
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh run download 42391398786 -n MarsTube-0.0.26-signed-test -D dist
+          (cd dist && sha256sum -c SHA256SUMS)
+          test -s dist/MarsTube-0.0.26.apk
+      - name: Test-APK als öffentliches Pre-Release zum einmaligen PC-Download
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=v0.0.26-test.1
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Test-Release already exists; no overwrite."
+            exit 1
+          fi
+          gh release create "$tag" dist/MarsTube-0.0.26.apk dist/SHA256SUMS \
+            --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title 'MarsTube 0.0.26 – signierte Testversion' \
+            --notes 'APK 0.0.26 / 12026, Originalsignatur. Kein Stable-Update. Auf Fire TV 0.0.25 installieren mit adb install -r. Keine App-Daten löschen.'
+          gh release view "$tag" --json isPrerelease,assets --jq '{pre:.isPrerelease,assets:[.assets[].name]}'
