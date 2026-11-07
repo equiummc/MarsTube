@@ -77,6 +77,8 @@ jobs:
           grep -Fq 'manifest chosen code=' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
           grep -Fq 'manual check tap installed=' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java
           grep -Fq 'mMarsTvUniversalBack.setEnabled(false)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MobileActivity.java
+          grep -Fq 'android:icon="@drawable/mars_m_flat"' newtube-reference/smarttubetv/src/stmobile/AndroidManifest.xml
+          test -s newtube-reference/smarttubetv/src/stmobile/res/drawable/mars_m_flat.xml
           grep -Fq 'marsTvGoToSettingsRoot' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MobileSettingsActivity.java
           grep -Fq 'SABR bevorzugen (experimentell)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MarsTvSettingsPages.java
           grep -Fq '&& !com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(this)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
