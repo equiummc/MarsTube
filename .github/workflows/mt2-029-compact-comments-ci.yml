@@ -87,7 +87,7 @@ jobs:
           grep -Fq 'SETTINGS_WIDTH_DP = WIDTH_DP' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvNavigationTheme.java
           grep -Fq 'MarsTvNavigationModel.HOME_INDEX' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
           grep -Fq 'label.setTranslationY(alignedTop);' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MarsTvRailLabel.java
-          grep -Fq 'rightButtons.get(i).setBackground(circle(selected))' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsStage.java
+          grep -Fq 'rightRows.get(i).setBackground(focusOutline(selected))' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsStage.java
           grep -Fq 'progressLp.leftMargin = videoLeft + dp(12)' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsStage.java
           grep -Fq 'MarsTvShortsSearchPanel' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java
           grep -Fq 'REPEAT_MODE_ONE' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java
