@@ -1,0 +1,75 @@
+name: MT2-029 signed compact Shorts test APK (no stable update)
+on:
+  push:
+    branches:
+      - feature/mt2-029-shorts-compact-focus-comments-20261107
+    paths:
+      - '.github/workflows/mt2-029-signed-test.yml'
+      - 'mt2-player-lab/**'
+      - 'tools/build-marstube-production.sh'
+  workflow_dispatch:
+
+concurrency:
+  group: mt2-029-signed-test
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  signed_test:
+    name: Build, validate and publish prerelease APK only
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      MARS_SIGNING_KEYSTORE_B64: ${{ secrets.MARS_SIGNING_KEYSTORE_B64 }}
+      MARS_SIGNING_STORE_PASS: ${{ secrets.MARS_SIGNING_STORE_PASS }}
+      MARS_SIGNING_KEY_PASS: ${{ secrets.MARS_SIGNING_KEY_PASS }}
+      MARS_SIGNING_KEY_ALIAS: ${{ secrets.MARS_SIGNING_KEY_ALIAS }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Build official-signature 0.0.29 without touching stable channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          p=json.load(open('mt2-player-lab/production-version.json'))
+          assert p['versionName']=='0.0.29'
+          assert p['versionCode']==12029
+          assert p['packageName']=='de.equiummc.marstube2'
+          PY
+          bash tools/build-marstube-production.sh
+      - name: Verify signed APK and package invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum -c SHA256SUMS)
+          test -s dist/MarsTube-0.0.29.apk
+          grep -Fq "name='de.equiummc.marstube2'" dist/badging.txt
+          grep -Fq "versionCode='12029'" dist/badging.txt
+          grep -Fq 'certificate SHA-256 digest:' dist/signature.txt
+      - name: Publish one direct-download prerelease, never latest stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag=v0.0.29-test.1
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Test tag already exists: $tag. Never overwrite APK."
+            exit 1
+          fi
+          gh release create "$tag" dist/MarsTube-0.0.29.apk dist/SHA256SUMS \
+            --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title 'MarsTube 0.0.29 – signierte Shorts-Testversion' \
+            --notes-file dist/release-notes.md
+          gh release view "$tag" --json isDraft,isPrerelease,assets \
+            --jq '{draft:.isDraft,prerelease:.isPrerelease,assets:[.assets[].name]}'
