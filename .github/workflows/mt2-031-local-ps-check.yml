@@ -34,7 +34,7 @@ jobs:
           foreach ($required in @(
               'source-030', 'source-031', 'patch_031_compact_shorts_feed.py',
               'release-credentials.dpapi', 'MarsTube-0.0.31.apk',
-              'versionCode=\x2712031\x27', 'git -C $Root worktree add --detach'
+              'versionCode 12031', 'git -C $Root worktree add --detach'
           )) {
               if (-not $content.Contains($required)) {
                   throw ('Missing guard: ' + $required)
