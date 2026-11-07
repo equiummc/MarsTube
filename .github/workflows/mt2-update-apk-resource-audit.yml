@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     steps:
-      - uses: android-actions/setup-android@v3
       - name: Android resource inspector
         shell: bash
         run: |
