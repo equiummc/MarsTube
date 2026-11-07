@@ -45,17 +45,11 @@ once(app, '''        final String trusted = "https://github.com/equiummc/MarsTub
             return new String[0];
         }
         return urls;''')
-once(app, '''    public void check() {
-        if (mPhase == Phase.CHECKING || mPhase == Phase.DOWNLOADING) {
-            return;
-        }''',
+once(app, '''    public void check() {''',
 '''    public void check() {
         android.util.Log.i(TAG, "manual check tap installed=" + mInstalledName
                 + " code=" + mInstalledCode + " phase=" + mPhase
-                + " sources=" + mManifestUrls.length);
-        if (mPhase == Phase.CHECKING || mPhase == Phase.DOWNLOADING) {
-            return;
-        }''')
+                + " sources=" + mManifestUrls.length);''')
 
 checker = root / ("SharedModules/appupdatechecker2/src/main/java/"
                   "com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java")
