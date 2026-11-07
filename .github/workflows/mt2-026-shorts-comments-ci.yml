@@ -7,7 +7,7 @@ on:
     paths:
       - 'mt2-player-lab/**'
       - 'tools/build-marstube-production.sh'
-      - '.github/workflows/mt2-026-tv-ui-ci.yml'
+      - '.github/workflows/mt2-026-shorts-comments-ci.yml'
       - 'updates/stable.json'
   workflow_dispatch:
 
@@ -73,7 +73,7 @@ jobs:
           done
           grep -Fq 'applicationId "de.equiummc.marstube2"' newtube-reference/smarttubetv/build.gradle
           grep -Fq 'versionCode 12026' newtube-reference/smarttubetv/build.gradle
-          grep -Fq 'versionName "0.0.25"' newtube-reference/smarttubetv/build.gradle
+          grep -Fq 'versionName "0.0.26"' newtube-reference/smarttubetv/build.gradle
           grep -Fq 'highestCode' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
           grep -Fq 'manifest chosen code=' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
           grep -Fq 'manual check tap installed=' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java
