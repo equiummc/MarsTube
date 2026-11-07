@@ -135,6 +135,15 @@ public final class MarsTvRail extends LinearLayout {
         });
         button.setOnClickListener(v -> {
             android.util.Log.i("MarsTubeTV", "rail destination=" + destination);
+            if (destination == 0) {
+                // One short matte-blue confirmation; it never delays navigation.
+                button.setBackground(MarsTvNavigationTheme.homeActivatedBackground(
+                        getResources().getDisplayMetrics().density));
+                button.postDelayed(() -> {
+                    if (button.isAttachedToWindow())
+                        button.setBackground(focusBackground(button.hasFocus()));
+                }, 120L);
+            }
             navigate(destination);
         });
     }
