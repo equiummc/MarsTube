@@ -1,13 +1,12 @@
 {
-  "versionName": "0.0.23",
-  "versionCode": 12023,
+  "versionName": "0.0.24",
+  "versionCode": 12024,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "TV-Einstellungen neu geordnet: Video, Darstellung, Fernbedienung und Streaming ohne doppelte Optionen",
-    "Zurück führt in Einstellungs-Untermenüs wieder eine Ebene höher; erneutes Öffnen von Einstellungen erzeugt kein zweites Fenster",
-    "Versionsnummer mit Updateprüfung zusammengeführt; Updatequellen und Signaturprüfung von 0.0.22 unverändert",
-    "Einfarbiges Mars-M aus der früheren Mars-TV-Gestaltung für App-Symbol, Navigation und Player übernommen",
-    "Kommentare werden auf Android TV nicht mehr ungefragt im Hintergrund vorab geladen",
-    "Media3-Player, Paketkennung und dauerhaftes Updateverfahren bleiben erhalten"
+    "Ein einheitliches, schmales TV-Menü für Startseite, Shorts, Player und Einstellungen",
+    "Das einfarbige M-Logo ist der auswählbare Startseiten-Knopf; getrenntes Haus-Symbol und Versionszahlen im Menü entfallen",
+    "Fernbedienung: Menüpunkte oben/unten umlaufend; keine unsichtbaren Shorts-Sondereinträge",
+    "Fokus-Beschriftungen erscheinen rechts neben dem Menü, ohne das Layout zu verschieben",
+    "Bisherige Player-Zurück-Taste, Media3, Update-Quellen, App-ID und Signatur bleiben erhalten"
   ]
 }
