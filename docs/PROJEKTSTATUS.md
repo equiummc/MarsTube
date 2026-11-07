@@ -1,5 +1,19 @@
 # MarsTube – laufender Projektstatus und Agentenübergabe
 
+## Aktualisierung 07.11.2026 – MT2-024, TV-Menü (isolierter Entwicklungsbranch)
+
+- Freigegebene letzte produktive App: MarsTube **0.0.23**; das hier beschriebene **0.0.24 ist noch nicht veröffentlicht**.
+- Branch: feature/mt2-024-unified-navigation-20261107.
+- Vollständiger Code-Audit und Abnahmecheckliste: docs/MT2-024-TV-NAVIGATION-AUDIT.md.
+- Versionierter Entwicklungsstand: gemeinsame Hauptmenüfolge mit anwählbarem M/Startseite, umlaufende Hoch-/Runter-Navigation, einheitliche schmale Leiste, kurzes Flyout-Label; separater Shorts-Auto-Menüpunkt entfällt aus der globalen Leiste, bleibt in Shorts selbst erhalten.
+- Angelegt: mt2-player-lab/MarsTvNavigationModel.java, MarsTvRail024.java, MarsTvRailLabel.java, MarsTvNavigationModelTest.java, patch_024_unified_navigation.py.
+- Eingehängt: tools/build-marstube-production.sh und .github/workflows/mt2-024-navigation-ci.yml.
+- Unverändert: de.equiummc.marstube2, Media3, SABR, Paket-Signatur, Updatequellen, das funktionierende BACK-Verhalten des Players.
+- **OFFEN:** vollständigen Android-Build und JUnit-Nachweis erbringen, Fokus-/Flyout-Funktionen auf Fire TV und Thomson prüfen, danach erst Merge/Release. Die lokal installierten OpenCode-Skills mars-unslop-* wurden hier nicht direkt ausgeführt.
+- Historische darunterliegende Abschnitte betreffen den alten 0.0.10-Arbeitsstand und stellen **nicht** die aktuelle Freigabe dar.
+
+---
+
 **Stand:** 04.11.2026 · **Letzter dokumentierter Scope:** MarsTube 0.0.10 / Media3 SABR-Labor
 
 > Dieses Dokument muss nach jeder abgeschlossenen OpenCode-/Codex-Arbeitsphase fortgeschrieben werden. **Keine Prozentangaben ohne nachvollziehbare Messgrundlage.** Offene Prüfpunkte bleiben offen.
