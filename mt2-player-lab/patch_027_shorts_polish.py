@@ -225,7 +225,7 @@ assert "YouTubeServiceManager.instance().getContentService()" in (
         tv / "playback/MarsTvShortsSearchPanel.java").read_text(encoding="utf-8")
 assert 'applicationId "de.equiummc.marstube2"' in (
         root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
-assert 'versionCode 12028' in (root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
+assert 'versionCode 12029' in (root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
 assert (root / "smarttubetv/src/stmobile/res/drawable/mars_m_flat.xml").read_bytes() == (
         src / "assets/drawable/mars_m_flat.xml").read_bytes()
 print("MT2-027: preview crops, blue creators, slim progress, search sidebar, voice and repeat policy.")
