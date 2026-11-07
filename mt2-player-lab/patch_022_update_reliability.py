@@ -84,10 +84,9 @@ once(checker, '''            for (Uri url : urls) {
                         jo = candidate;
                         highestCode = candidateCode;
                     }
-                    // A genuinely newer version can be offered immediately.
-                    // If this source says "up to date", always cross-check
-                    // the independent mirror before telling the user so.
-                    if (candidateCode > mCurrentAppVersion) break;
+                    // Always read both trusted sources. A first feed may be
+                    // newer than installed but STILL stale versus the mirror.
+                    // Selecting the highest valid code prevents 21 shadowing 23.
                 } catch (JSONException e) {
                     mLastException = e;
                     android.util.Log.e(TAG, "invalid manifest from " + url.getHost(), e);
