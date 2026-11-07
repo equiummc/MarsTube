@@ -55,14 +55,16 @@ public final class MarsTvRailLabel {
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) label.getLayoutParams();
         int top = target[1] - parent[1] + (anchor.getHeight() - lp.height) / 2;
         lp.topMargin = Math.max(0, Math.min(top, Math.max(0, host.getHeight() - lp.height)));
-        label.setLayoutParams(lp);
+        // GPU-only position update. Do not request a full layout on each D-pad step.
+        label.setTranslationY(top);
         label.setText(title);
         // Only the initial appearance fades; repeated D-pad steps update instantly.
         if (label.getVisibility() != View.VISIBLE) {
             label.animate().cancel();
             label.setAlpha(0f);
+            label.setTranslationX(-dp((Activity) label.getContext(), 6));
             label.setVisibility(View.VISIBLE);
-            label.animate().alpha(1f).setDuration(125L).start();
+            label.animate().alpha(1f).translationX(0f).setDuration(125L).start();
         }
     }
 
