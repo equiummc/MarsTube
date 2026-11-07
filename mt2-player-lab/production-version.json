@@ -1,14 +1,15 @@
 {
-  "versionName": "0.0.26",
-  "versionCode": 12026,
+  "versionName": "0.0.27",
+  "versionCode": 12027,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Alle Hauptmenü-Symbole geometrisch in ihren unverändert positionierten Fokusrahmen zentriert",
-    "Shorts-Vorschau links: kleinere Schrift, bis zu vier Titelzeilen; mittiges 9:16-Video unverändert",
-    "Shorts: kleine runde Aktionssymbole rechts, sichtbare verfügbare Like-/Dislike-Zahlen",
-    "Shorts: Kommentare rechts auf Anforderung öffnen; vorhandene Antwort-Threads und Like-Funktion nutzen",
-    "Shorts: Schaltflächen für Kanal, Playlist, Untertitel, Geschwindigkeit, Suche, Teilen und Kontextmenü für Kein Interesse",
-    "Shorts: Umschalten zwischen nächstem Video und Wiederholung des aktuellen Shorts",
-    "Media3-Player, Zurück-Navigation, App-Paketkennung, Signatur und Update-Kanal bleiben unverändert"
+    "Shorts: Vorschaukarten bis auf den linken Rand ausgedehnt, Nummerierung und Vorschau-Texte entfernt",
+    "Shorts: 9:16-Cover korrekt bildfuellend mit dezenten Ecken; Titel und Creator klarer dargestellt",
+    "Shorts: Creator-Namen blau, Titel bis vier Zeilen und Fortschrittsleiste beidseitig eingerueckt",
+    "Shorts: Weiter/Wiederholung an erster Stelle, Teilen entfernt; Ablehnen zuletzt",
+    "Shorts: Suche bleibt in rechter Seitenleiste mit fernbedienbarer Texteingabe und Sprachsuche",
+    "Shorts: zwei sofort sichtbare Ergebnis-Karten, weitere Ergebnisse per Scrollen",
+    "Shorts: Media3-Repeat-Modus folgt Weiter/Wiederholen und wird beim Verlassen wiederhergestellt",
+    "Dauerhafte App-Kennung, Originalsignatur, TV-Navigation, Shorts-Kommentare und Update-Feed bleiben unveraendert"
   ]
 }
