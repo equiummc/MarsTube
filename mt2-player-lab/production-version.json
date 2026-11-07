@@ -1,14 +1,14 @@
 {
-  "versionName": "0.0.25",
-  "versionCode": 12025,
+  "versionName": "0.0.26",
+  "versionCode": 12026,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Ein einheitlicher, mittig schwebender TV-Navigationsbereich mit sieben identischen Hauptzielen",
-    "Das unveränderte historische weiße Mars-M sitzt in der Menümitte und wird bei Fokus hellblau",
-    "Neue proportionierte Outline-Symbole; korrigierte Position des rechts eingeblendeten Menütitels",
-    "Shorts: genau zwei abgerundete Vorschauen links, ein einziger mittiger 9:16-Media3-Player mit Abstand zum Rand",
-    "Shorts: schmale rechte Aktionsleiste mit Uhrzeit, Like/Dislike, Zeit und Fortschritt – ohne Kommentare oder Teilen",
-    "Automatischer Shorts-Wechsel jetzt in den Darstellungseinstellungen einstellbar",
-    "Versions-/Updateprüfung, dauerhaft signierte App-ID und die Player-Zurück-Funktion bleiben erhalten"
+    "Alle Hauptmenü-Symbole geometrisch in ihren unverändert positionierten Fokusrahmen zentriert",
+    "Shorts-Vorschau links: kleinere Schrift, bis zu vier Titelzeilen; mittiges 9:16-Video unverändert",
+    "Shorts: kleine runde Aktionssymbole rechts, sichtbare verfügbare Like-/Dislike-Zahlen",
+    "Shorts: Kommentare rechts auf Anforderung öffnen; vorhandene Antwort-Threads und Like-Funktion nutzen",
+    "Shorts: Schaltflächen für Kanal, Playlist, Untertitel, Geschwindigkeit, Suche, Teilen und Kontextmenü für Kein Interesse",
+    "Shorts: Umschalten zwischen nächstem Video und Wiederholung des aktuellen Shorts",
+    "Media3-Player, Zurück-Navigation, App-Paketkennung, Signatur und Update-Kanal bleiben unverändert"
   ]
 }
