@@ -59,5 +59,5 @@ assert "progressLp.leftMargin = videoLeft + dp(12)" in stage
 assert "onShare" not in stage
 assert "applicationId \"de.equiummc.marstube2\"" in (
         root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
-assert "versionCode 12028" in (root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
+assert "versionCode 12029" in (root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
 print("MT2-028: television Shorts loading still now FIT_CENTER, original 16:9 ratio intact.")
