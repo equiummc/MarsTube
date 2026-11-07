@@ -25,8 +25,8 @@ def once(path, old, new):
     path.write_text(code.replace(old, new, 1), encoding="utf-8")
 
 for name, destination in (
-        ("MarsTvSettingsPages.java", tv / "settings/MarsTvSettingsPages.java"),
-        ("MarsTvRail.java", tv / "common/MarsTvRail.java")):
+        ("MarsTvSettingsPages023.java", tv / "settings/MarsTvSettingsPages.java"),
+        ("MarsTvRail023.java", tv / "common/MarsTvRail.java")):
     source = here / name
     if not source.is_file() or not destination.is_file():
         raise SystemExit(f"MT2-023 TV overlay missing: {name}")
@@ -34,6 +34,13 @@ for name, destination in (
     if "MarsTube" not in new_code:
         raise SystemExit("MT2-023 TV overlay identity missing")
     destination.write_text(new_code, encoding="utf-8")
+
+# Earlier MT2-016 converts the hard-coded rail version to BuildConfig.
+# The 023 source is intentionally staged from the pre-016 version so older
+# fail-closed overlay tests still work. Restore the dynamic version here.
+once(tv / "common/MarsTvRail.java",
+    'version.setText("0.0.15");',
+    'version.setText(com.liskovsoft.smartyoutubetv2.tv.BuildConfig.VERSION_NAME);')
 
 settings = tv / "settings/MobileSettingsActivity.java"
 once(settings,
