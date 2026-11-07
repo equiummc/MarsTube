@@ -194,6 +194,69 @@ once(shell,
                     actions.next();
                 }""")
 
+# Reuse the phone comments backend, with correct nested BACK semantics on TV.
+panel = tv / "playback/CommentsPanel.java"
+once(panel, """    void close() {
+        dismissSortMenu(false);""",
+"""    void marsTvBack() {
+        // Sort menu -> replies -> comments -> close, in the original order.
+        onBack(null);
+    }
+
+    void close() {
+        dismissSortMenu(false);""")
+
+# Only the TV side pane moves on the X axis. Phone bottom sheets are unchanged.
+layout = tv / "playback/CommentsPanelLayout.java"
+once(layout, "    private boolean mOpen;",
+     "    private boolean mOpen;\n    private int mMarsTvSideWidth;")
+once(layout, """    public View getSheet() {
+        return mSheet;
+    }""",
+"""    public View getSheet() {
+        return mSheet;
+    }
+
+    /** Positive width opts into a remote-only, right-hand sliding comments panel. */
+    public void setMarsTvSideWidth(int px) {
+        mMarsTvSideWidth = Math.max(0, px);
+        mSheet.setTranslationY(0f);
+        if (!mOpen) mSheet.setTranslationX(mMarsTvSideWidth);
+    }""")
+once(layout, """    private float sheetRange() {
+        int height = getHeight();""",
+"""    private float sheetRange() {
+        if (mMarsTvSideWidth > 0) return mMarsTvSideWidth;
+        int height = getHeight();""")
+once(layout, """    private float offset() {
+        return mSheet.getTranslationY();
+    }""",
+"""    private float offset() {
+        return mMarsTvSideWidth > 0 ? mSheet.getTranslationX() : mSheet.getTranslationY();
+    }""")
+once(layout, """    private void setOffset(float y) {
+        mSheet.setTranslationY(y);
+        float range = sheetRange();""",
+"""    private void setOffset(float y) {
+        if (mMarsTvSideWidth > 0) {
+            mSheet.setTranslationY(0f);
+            mSheet.setTranslationX(y);
+        } else {
+            mSheet.setTranslationY(y);
+        }
+        float range = sheetRange();""")
+once(layout, """                mSheet.setTranslationY(y);
+            } else {
+                setOffset(y);""",
+"""                if (mMarsTvSideWidth > 0) mSheet.setTranslationX(y);
+                else mSheet.setTranslationY(y);
+            } else {
+                setOffset(y);""")
+once(layout, """                mSheet.setTranslationY(sheetRange());
+                if (!mOpen) {""",
+"""                setOffset(sheetRange());
+                if (!mOpen) {""")
+
 playback = tv / "playback/MobilePlaybackActivity.java"
 once(playback,
 """                    @Override public void quality() {
@@ -214,7 +277,7 @@ once(playback,
                     }
                     @Override public boolean closeComments() {
                         if (mCommentsPanel == null || !mCommentsPanel.isOpen()) return false;
-                        mCommentsPanel.close();
+                        mCommentsPanel.marsTvBack();
                         return true;
                     }
                     @Override public void channel() { openCurrentChannel(); }
@@ -257,6 +320,9 @@ once(playback,
                             android.view.Gravity.RIGHT | android.view.Gravity.CENTER_VERTICAL);
             lp.rightMargin = (int) (10f * getResources().getDisplayMetrics().density);
             mVideoArea.addView(pane, lp);
+            if (pane instanceof CommentsPanelLayout) {
+                ((CommentsPanelLayout) pane).setMarsTvSideWidth(sideWidth);
+            }
             pane.setElevation(12f * getResources().getDisplayMetrics().density);
             pane.bringToFront();
         }
