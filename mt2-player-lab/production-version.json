@@ -1,14 +1,13 @@
 {
-  "versionName": "0.0.29",
-  "versionCode": 12029,
+  "versionName": "0.0.30",
+  "versionCode": 12030,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Shorts: drei gleich hohe Bereiche fuer Vorschauen, Hauptvideo und die rechte Kommentar-/Suchspalte",
-    "Shorts: schlanke weisse Icons ohne runde Hintergruende, Weiter-Pfeil oder Wiederholungszeichen je nach Modus",
-    "Shorts: Dislike entfernt und Bildschirmlaufzeit unter der Fortschrittsleiste als vergangen und gesamt",
-    "Shorts: tuerkisfarbener Fokusrahmen auch am Hauptvideo und direkte Fernbedienungsnavigation aus Kommentaren",
-    "Shorts: Kommentare mit kleinerer Schrift und transparentem Hintergrund, bleiben beim Video-Wechsel sichtbar",
-    "Shorts: Suche mit einfarbigem Hintergrund, ohne versehentliche Fire-TV-Alexa-Systemsuche",
-    "Signatur, Paketkennung, TV-Zuruecktaste, Media3-Player und offizieller Stable-Updater bleiben unveraendert"
+    "Shorts: Fire-TV-Bildschirmtastatur öffnet direkt am Suchfeld, ohne zur Amazon-Suche zu wechseln",
+    "Shorts: vorhandener Mikrofonknopf öffnet auf Fire TV die Tastatur statt einen systemweiten Alexa-Suchdialog",
+    "Shorts: eigener opt-in Android-Suchtexteingang für bereits erkannte Suchbegriffe nur bei geöffneter Shorts-Wiedergabe",
+    "Shorts: erkannter Text wird im appinternen Suchfeld angezeigt und dort nach echten Shorts gesucht",
+    "Keine Bridge-App, kein Aktivierungswort, keine Mikrofonberechtigung oder Veränderung der YouTube-App",
+    "Kompakte 0.0.29-Shorts-Ansicht, Kommentare, Zurueck-Taste, Signatur und Media3 bleiben erhalten"
   ]
 }
