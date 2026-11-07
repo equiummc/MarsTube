@@ -1,11 +1,12 @@
 {
-  "versionName": "0.0.22",
-  "versionCode": 12022,
+  "versionName": "0.0.23",
+  "versionCode": 12023,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Updater: Prüft die aktuelle Versionsdatei über zwei voneinander unabhängige GitHub-Adressen und verwendet die neueste gültige Version",
-    "Updater: Bleibt bei Netzwerk- oder JSON-Fehlern nicht fälschlich bei einer älteren Versionsinformation stehen",
-    "Updater: Manuelle Updateprüfung und Server-Version werden eindeutig protokolliert",
-    "App-ID, Entwickler-Signatur, Installationsbestätigung und Media3-Player unverändert"
+    "TV-Einstellungen neu geordnet: Video, Darstellung, Fernbedienung und Streaming ohne doppelte Optionen",
+    "Zurück führt in Einstellungs-Untermenüs wieder eine Ebene höher; erneutes Öffnen von Einstellungen erzeugt kein zweites Fenster",
+    "Versionsnummer mit Updateprüfung zusammengeführt; Updatequellen und Signaturprüfung von 0.0.22 unverändert",
+    "Kommentare werden auf Android TV nicht mehr ungefragt im Hintergrund vorab geladen",
+    "Media3-Player, Paketkennung und dauerhaftes Updateverfahren bleiben erhalten"
   ]
 }
