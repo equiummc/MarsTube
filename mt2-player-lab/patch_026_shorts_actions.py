@@ -337,15 +337,11 @@ once(playback,
     }
 
     private void onCommentsEntryClicked() {""")
-once(playback,
-"""    private void prefetchComments() {
-        if (mCommentsPanel == null || mIsInPip || mIsStopped || isFinishing()) {""",
-"""    private void prefetchComments() {
-        // Shorts on television: zero comment-list requests before explicit OK.
-        if (mMarsTvShell != null
-                && com.newtube.mobile.ui.common.MarsShortsSession.isActiveFor(getVideo()))
-            return;
-        if (mCommentsPanel == null || mIsInPip || mIsStopped || isFinishing()) {""")
+# MT2-023 already disables all television comment prefetching, including Shorts.
+# Preserve its stronger safeguard; do not add a second conflicting one.
+if "if (com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(this)) return;" not in playback.read_text(encoding="utf-8"):
+    raise SystemExit("MT2-026: TV comment lazy-loading guard missing")
+
 
 # Preserve the app identity, one Media3 surface, old update feeds and original logo.
 assert 'applicationId "de.equiummc.marstube2"' in (
