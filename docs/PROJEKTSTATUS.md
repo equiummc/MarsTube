@@ -10,7 +10,8 @@
 - Eingehängt: tools/build-marstube-production.sh und .github/workflows/mt2-024-navigation-ci.yml.
 - Unverändert: de.equiummc.marstube2, Media3, SABR, Paket-Signatur, Updatequellen, das funktionierende BACK-Verhalten des Players.
 - Build-Ursache für die alte Versionsanzeige geklärt: MT2-021 kopiert die Player-Shell **nach** der dynamischen Versionsersetzung aus MT2-016 zurück, wodurch v0.0.15 wieder sichtbar wird. MT2-024 entfernt dieses Label mit einem nachgelagerten Patch und einer expliziten Guard-Prüfung.
-- **OFFEN:** vollständigen Android-Build und JUnit-Nachweis erbringen, Fokus-/Flyout-Funktionen auf Fire TV und Thomson prüfen, danach erst Merge/Release. Die lokal installierten OpenCode-Skills mars-unslop-* wurden hier nicht direkt ausgeführt.
+- **BESTÄTIGT:** CI-Run [42369214983](https://github.com/equiummc/MarsTube/actions/runs/42369214983) erfolgreich abgeschlossen: gepinnter Patch-Durchlauf 001–024, Java-/JUnit-Tests, vollständiger Stmobile-Debug-APK-Build und Ressourcenprüfungen grün. Ein Debug-Build ist **keine** signierte Produktionsfreigabe.
+- **OFFEN:** Fokus-/Flyout-Funktionen auf Fire TV und Thomson prüfen, danach erst Merge/Release. Die lokal installierten OpenCode-Skills mars-unslop-* wurden hier nicht direkt ausgeführt.
 - Historische darunterliegende Abschnitte betreffen den alten 0.0.10-Arbeitsstand und stellen **nicht** die aktuelle Freigabe dar.
 
 ---
