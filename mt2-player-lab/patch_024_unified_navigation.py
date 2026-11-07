@@ -45,6 +45,19 @@ once(theme, "public static final int ITEM_HEIGHT_DP = 38;",
 once(theme, "case 0: return R.drawable.mars_tv_ic_nav_home;",
      "case 0: return R.drawable.mars_m_flat;")
 
+# Press feedback is a single matte-blue moment, not an input-blocking animation.
+once(theme, "    public static int iconFor(int destination) {",
+     """    public static GradientDrawable homeActivatedBackground(float density) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(0xFF236A9B);
+        drawable.setCornerRadius(Math.max(1, 10f * density));
+        drawable.setStroke(Math.max(2, Math.round(2f * density)), 0xFF75C4F1);
+        return drawable;
+    }
+
+    public static int iconFor(int destination) {""")
+
+
 shell = tv / "playback/MarsTvShell.java"
 once(shell, """        ImageView logo = new ImageView(activity);
         logo.setImageResource(R.drawable.mars_m_flat);
@@ -113,6 +126,22 @@ once(shell,
                     railHint, railButtons.get(railPosition),
                     railDestinations.get(railPosition).label);
         }""")
+once(shell,
+     """        int destination = railDestinations.get(railPosition).destination;""",
+     """        int destination = railDestinations.get(railPosition).destination;
+        if (destination == 0) {
+            // The M confirms activation immediately; route without waiting.
+            TextView home = railButtons.get(railPosition);
+            home.setBackground(com.newtube.mobile.ui.common.MarsTvNavigationTheme
+                    .homeActivatedBackground(activity.getResources().getDisplayMetrics().density));
+            home.postDelayed(() -> {
+                if (!released) home.setBackground(
+                        com.newtube.mobile.ui.common.MarsTvNavigationTheme.itemBackground(
+                                focus == Focus.RAIL && railPosition == 0,
+                                activity.getResources().getDisplayMetrics().density));
+            }, 120L);
+        }""")
+
 # Input and focus are unchanged except wraparound; player BACK state machine retained.
 assert "openRail();\n        render();\n        return true;" in shell.read_text(encoding="utf-8")
 assert "MarsTvNavigationModel.playerCount(shortsMode)" in shell.read_text(encoding="utf-8")
@@ -125,6 +154,7 @@ assert "MarsTvNavigationModel.wrap(index, -1" in rail
 assert 'addAction("Start", 0)' not in rail
 assert "marsTvGoToSettingsRoot()" in rail
 assert "SETTINGS_WIDTH_DP = WIDTH_DP" in theme.read_text(encoding="utf-8")
+assert "homeActivatedBackground" in theme.read_text(encoding="utf-8")
 assert 'applicationId "de.equiummc.marstube2"' in (
     root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
 assert "highestCode" in (root / "SharedModules/appupdatechecker2/src/main/java/"
