@@ -156,13 +156,7 @@ public final class MarsTvRail extends LinearLayout {
             activity.startActivity(new Intent(activity,
                     com.newtube.mobile.ui.search.MobileSearchActivity.class));
         } else if (destination == 5) {
-            // Already in Settings: return to the existing root fragment; never stack a second Activity.
-            if (activity instanceof com.newtube.mobile.ui.settings.MobileSettingsActivity) {
-                ((com.newtube.mobile.ui.settings.MobileSettingsActivity) activity).marsTvGoToSettingsRoot();
-                focusSettingsContent();
-            } else {
-                activity.startActivity(com.newtube.mobile.ui.settings.MobileSettingsActivity.intent(activity, null));
-            }
+            activity.startActivity(com.newtube.mobile.ui.settings.MobileSettingsActivity.intent(activity, null));
         } else if (activity instanceof com.newtube.mobile.ui.browse.MobileBrowseActivity) {
             ((com.newtube.mobile.ui.browse.MobileBrowseActivity) activity).marsTvRoute(destination);
         } else {
@@ -232,10 +226,6 @@ public final class MarsTvRail extends LinearLayout {
         View root = activity.findViewById(com.liskovsoft.smartyoutubetv2.tv.R.id.settings_list);
         if (!(root instanceof androidx.recyclerview.widget.RecyclerView)) return;
         androidx.recyclerview.widget.RecyclerView list = (androidx.recyclerview.widget.RecyclerView) root;
-        // Returning from the rail must not jump back to the first visible row.
-        View last = previousFocus.get();
-        if (last != null && last.isAttachedToWindow() && last.isShown()
-                && belongsTo(last, list) && last.requestFocus()) return;
         list.post(new Runnable() {
             int retries;
             @Override public void run() {
@@ -250,16 +240,6 @@ public final class MarsTvRail extends LinearLayout {
                 if (++retries < 12) list.postDelayed(this, 75L);
             }
         });
-    }
-
-    private static boolean belongsTo(View candidate, ViewGroup parent) {
-        View current = candidate;
-        while (current != null) {
-            if (current == parent) return true;
-            android.view.ViewParent p = current.getParent();
-            current = p instanceof View ? (View) p : null;
-        }
-        return false;
     }
 
     private void returnToContent() {
@@ -288,9 +268,8 @@ public final class MarsTvRail extends LinearLayout {
         if (rail == null) return false;
         rail.syncMiniAction();
         int code = event.getKeyCode();
-        // On Settings, BACK belongs to the Fragment back stack, not to the rail.
-        // MENU still opens the rail from any focus position.
-        if (code == KeyEvent.KEYCODE_BACK && rail.expandedSettings) return false;
+        // BACK and MENU always target the rail, even after scrolling 20+ tiles.
+        // This must run before testing whether the current focus is a rail item.
         if (code == KeyEvent.KEYCODE_BACK || code == KeyEvent.KEYCODE_MENU) {
             if (event.getAction() == KeyEvent.ACTION_DOWN) focus(activity);
             return true;
