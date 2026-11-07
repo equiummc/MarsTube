@@ -138,10 +138,16 @@ once(shell,
             return false;
         }""")
 # 025 restored the proper progress seek; preserve LEFT/RIGHT on the slim bar.
-once(shell, "shortsReactionPosition = (shortsReactionPosition + 1) % 2;",
-     "shortsReactionPosition = Math.max(0, shortsReactionPosition - 1);")
-once(shell, "shortsReactionPosition = (shortsReactionPosition + 1) % 2;",
-     "shortsReactionPosition = Math.min(shortsStage.reactionCount() - 1, shortsReactionPosition + 1);")
+# Two identical original expressions: first belongs to UP, second to DOWN.
+original = "shortsReactionPosition = (shortsReactionPosition + 1) % 2;"
+source = shell.read_text(encoding="utf-8")
+if source.count(original) != 2:
+    raise SystemExit("MT2-026 expected exactly two original Shorts reaction navigation anchors")
+source = source.replace(original,
+    "shortsReactionPosition = Math.max(0, shortsReactionPosition - 1);", 1)
+source = source.replace(original,
+    "shortsReactionPosition = Math.min(shortsStage.reactionCount() - 1, shortsReactionPosition + 1);", 1)
+shell.write_text(source, encoding="utf-8")
 once(shell, """                        shortsReactionPosition = 1;
                     } else actions.previous();""",
 """                        shortsReactionPosition = shortsStage.reactionCount() - 1;
