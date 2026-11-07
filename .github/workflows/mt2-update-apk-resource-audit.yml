@@ -21,16 +21,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          export PATH="$ANDROID_HOME/cmdline-tools/16.0/bin:$PATH"
-          yes | "$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager" --licenses >/dev/null || true
-          "$ANDROID_HOME/cmdline-tools/16.0/bin/sdkmanager" 'build-tools;35.0.0' >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq aapt > /tmp/apt-aapt.log
           for version in 0.0.20 0.0.21; do
             curl -fsSL --retry 2 --max-time 120 \
               "https://github.com/equiummc/MarsTube/releases/download/v$version/MarsTube-$version.apk" \
               -o "/tmp/MarsTube-$version.apk"
             echo "::group::release $version, actual compiled resource strings"
-            "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump resources --values "/tmp/MarsTube-$version.apk" >/tmp/mt2-resources.txt
+            aapt dump --values resources "/tmp/MarsTube-$version.apk" >/tmp/mt2-resources.txt
             grep -E -i 'github.com/.*/(releases/latest/download|newtube.json|marstube-tv.json)|update_urls' \
               /tmp/mt2-resources.txt | tail -80 || true
             echo "Check compiled MarsTube release feed:"
