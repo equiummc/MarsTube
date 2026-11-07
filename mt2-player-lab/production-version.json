@@ -1,13 +1,14 @@
 {
-  "versionName": "0.0.28",
-  "versionCode": 12028,
+  "versionName": "0.0.29",
+  "versionCode": 12029,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Shorts: Lade-Vorschaubilder behalten ab dem ersten Moment ihr Originalseitenverhältnis; keine kurzzeitig langgezogenen Gesichter mehr",
-    "Shorts: ursprüngliche Bildgeometrie bis zum ersten neuen Media3-Videoframe ohne zusaetzlichen Decoder",
-    "Shorts-Vorschau links: groessere 9:16-Vorschaubilder, Creator blau, keine Nummerierung oder VORSCHAU-Texte",
-    "Shorts-Aktionen: Weiter/Wiederholen oben, Teilen entfernt, Kommentare und In-Player-Suche rechts",
-    "Fortschrittsleiste kuerzer als der mittlere 9:16-Player und seitlich eingerueckt",
-    "Bestehendes MarsTube-Paket, Originalsignatur, Media3/SABR, Back-Taste und TV-Updater unveraendert"
+    "Shorts: drei gleich hohe Bereiche fuer Vorschauen, Hauptvideo und die rechte Kommentar-/Suchspalte",
+    "Shorts: schlanke weisse Icons ohne runde Hintergruende, Weiter-Pfeil oder Wiederholungszeichen je nach Modus",
+    "Shorts: Dislike entfernt und Bildschirmlaufzeit unter der Fortschrittsleiste als vergangen und gesamt",
+    "Shorts: tuerkisfarbener Fokusrahmen auch am Hauptvideo und direkte Fernbedienungsnavigation aus Kommentaren",
+    "Shorts: Kommentare mit kleinerer Schrift und transparentem Hintergrund, bleiben beim Video-Wechsel sichtbar",
+    "Shorts: Suche mit einfarbigem Hintergrund, ohne versehentliche Fire-TV-Alexa-Systemsuche",
+    "Signatur, Paketkennung, TV-Zuruecktaste, Media3-Player und offizieller Stable-Updater bleiben unveraendert"
   ]
 }
