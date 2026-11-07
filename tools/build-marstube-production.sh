@@ -41,7 +41,7 @@ for patch in \
   patch_021_shorts_home_pause.py patch_022_update_reliability.py \
   patch_023_tv_settings.py patch_024_unified_navigation.py \
   patch_025_tv_ui.py patch_026_shorts_actions.py \
-  patch_027_shorts_polish.py patch_028_shorts_undistorted_still.py; do
+  patch_027_shorts_polish.py patch_028_shorts_undistorted_still.py patch_029_shorts_compact.py; do
   python3 "mt2-player-lab/$patch" "$root"
 done
 grep -Fq 'applicationId "de.equiummc.marstube2"' "$root/smarttubetv/build.gradle"
