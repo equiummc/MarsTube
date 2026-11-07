@@ -169,7 +169,7 @@ $protoLinux="'com.google.protobuf:protoc:3.22.3:linux-x86_64@exe'"
 $protoWindows="'com.google.protobuf:protoc:3.22.3:windows-x86_64@exe'"
 $protoText=[IO.File]::ReadAllText($protoGradle)
 if ($protoText.Contains($protoLinux)) {
-    if ($protoText.Split(@($protoLinux),[StringSplitOptions]::None).Length -ne 2) {
+    if ($protoText.IndexOf($protoLinux) -ne $protoText.LastIndexOf($protoLinux)) {
         throw 'Mehrdeutige protoc-Konfiguration; keine Aenderung.'
     }
     $protoText=$protoText.Replace($protoLinux,$protoWindows)
