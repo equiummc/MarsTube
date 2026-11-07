@@ -3,7 +3,7 @@ name: MT2-027 Shorts search, player EOS and aspect ratio CI (no publication)
 on:
   push:
     branches:
-      - feature/mt2-027-shorts-actions-comments-20271107
+      - feature/mt2-027-shorts-layout-search-eos-20261107
     paths:
       - 'mt2-player-lab/**'
       - 'tools/build-marstube-production.sh'
@@ -74,7 +74,7 @@ jobs:
           done
           grep -Fq 'applicationId "de.equiummc.marstube2"' newtube-reference/smarttubetv/build.gradle
           grep -Fq 'versionCode 12027' newtube-reference/smarttubetv/build.gradle
-          grep -Fq 'versionName "0.0.26"' newtube-reference/smarttubetv/build.gradle
+          grep -Fq 'versionName "0.0.27"' newtube-reference/smarttubetv/build.gradle
           grep -Fq 'highestCode' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
           grep -Fq 'manifest chosen code=' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
           grep -Fq 'manual check tap installed=' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java
