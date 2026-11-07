@@ -115,7 +115,8 @@ once(shell, """            railButtons.get(i).setTextColor(selected ? CYAN : WHI
 prefix = "        if (actions.isShortsPlayback() && focus != Focus.RAIL && !infoOpen) {"
 data = shell.read_text(encoding="utf-8")
 start = data.find(prefix)
-end = data.find("        switch (key) {", start + len(prefix))
+inner = data.find("            switch (key) {", start + len(prefix))
+end = data.find("        switch (key) {", inner + len("            switch (key) {"))
 if start < 0 or end < 0 or data[start:end].count("KEYCODE_DPAD_UP") != 1:
     raise SystemExit("MT2-025: cannot isolate Shorts input branch")
 shorts_control = """        if (actions.isShortsPlayback() && focus != Focus.RAIL && !infoOpen) {
