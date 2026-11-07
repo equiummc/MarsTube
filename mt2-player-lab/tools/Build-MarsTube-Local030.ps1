@@ -160,6 +160,24 @@ if (-not (Test-Path -LiteralPath $marker)) {
         throw 'Vorhandene Build-Quellen stammen aus einer anderen Version.'
     }
 }
+# The upstream SABR Gradle module pins Linux protoc; Windows must use the same
+# compiler version with the Windows x86_64 artifact classifier. This changes
+# ONLY the generated build workspace; upstream and active Git files are intact.
+$protoGradle=Join-Path $Work 'sabr-media3\build.gradle'
+Must $protoGradle
+$protoLinux="'com.google.protobuf:protoc:3.22.3:linux-x86_64@exe'"
+$protoWindows="'com.google.protobuf:protoc:3.22.3:windows-x86_64@exe'"
+$protoText=[IO.File]::ReadAllText($protoGradle)
+if ($protoText.Contains($protoLinux)) {
+    if ($protoText.Split(@($protoLinux),[StringSplitOptions]::None).Length -ne 2) {
+        throw 'Mehrdeutige protoc-Konfiguration; keine Aenderung.'
+    }
+    $protoText=$protoText.Replace($protoLinux,$protoWindows)
+    [IO.File]::WriteAllText($protoGradle,$protoText,[Text.UTF8Encoding]::new($false))
+    Write-Host 'SABR: protoc 3.22.3 auf Windows x86_64 eingestellt.'
+} elseif (-not $protoText.Contains($protoWindows)) {
+    throw 'Unerwartete protoc-Konfiguration; Build vorsorglich abgebrochen.'
+}
 $props=Join-Path $Work 'keystore.properties'
 if (Test-Path -LiteralPath $props) { throw "Vorhandene Geheimnisdatei wird nicht ueberschrieben: $props" }
 try {
