@@ -42,10 +42,10 @@ once(shell,
         default boolean closeSearch() { return false; }
         default void channel() { }""")
 once(shell,
-"""                 actions::speed, actions::search, actions::share,
-                 actions::noInterest);""",
-"""                 actions::speed, actions::search,
-                 actions::noInterest);""")
+"""                actions::speed, actions::search, actions::share,
+                actions::noInterest);""",
+"""                actions::speed, actions::search,
+                actions::noInterest);""")
 once(shell,
 """    public boolean commentsOpen() { return actions.commentsOpen(); }
 
