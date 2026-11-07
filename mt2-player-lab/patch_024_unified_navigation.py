@@ -52,7 +52,7 @@ once(shell, """        ImageView logo = new ImageView(activity);
         logo.setContentDescription("MarsTube");
         rail.addView(logo, new LinearLayout.LayoutParams(dp(38), dp(40)));
         TextView version = text(11, MUTED);
-        version.setText(com.liskovsoft.smartyoutubetv2.tv.BuildConfig.VERSION_NAME);
+        version.setText("0.0.15");
         version.setGravity(Gravity.CENTER);
         rail.addView(version, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(16)));""",
@@ -117,6 +117,9 @@ once(shell,
 assert "openRail();\n        render();\n        return true;" in shell.read_text(encoding="utf-8")
 assert "MarsTvNavigationModel.playerCount(shortsMode)" in shell.read_text(encoding="utf-8")
 assert "MarsTvRailLabel.show" in shell.read_text(encoding="utf-8")
+# MT2-021 re-copied a stale player source after MT2-016's dynamic version fix.
+# Do not allow any historical version to survive in the final playback rail.
+assert 'version.setText("0.0.15")' not in shell.read_text(encoding="utf-8")
 rail = (tv / "common/MarsTvRail.java").read_text(encoding="utf-8")
 assert "MarsTvNavigationModel.wrap(index, -1" in rail
 assert 'addAction("Start", 0)' not in rail
