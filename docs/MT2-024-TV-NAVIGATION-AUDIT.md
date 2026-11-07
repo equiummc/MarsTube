@@ -57,7 +57,7 @@ Ein **nur bei aktivem Miniplayer** sichtbarer Schnellzugang Laufendes Video blei
 - [ ] Rechts aus der Rail stellt den korrekten Inhaltsfokus wieder her.
 - [ ] Auf dem Bildschirm steht keine alte Versionskennung 0.0.15.
 - [ ] Lange Menütitel, geringe Auflösung und schnelle Tastendrücke erzeugen kein Flackern oder Fokusverlust.
-- [ ] Android-Build + JUnit, unveränderte Release-Signatur- und Update-Prüfungen grün.
+- [x] Android-Debug-Build + JUnit + CI-Prüfungen der bestehenden Update-Routen grün: [Run 42369214983](https://github.com/equiummc/MarsTube/actions/runs/42369214983). Produktive APK-Signatur und Installation wurden in diesem Branch nicht getestet; das ist keine Releasefreigabe.
 - [ ] Praktischer Fire-TV-Test, danach schwacher Thomson-TV.
 
 ## Dateien im Feature-Branch
