@@ -148,7 +148,8 @@ shorts_control = """        if (actions.isShortsPlayback() && focus != Focus.RAI
                     render();
                     return true;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
-                    if (focus == Focus.SHORTS_PREVIEWS) openRail();
+                    if (focus == Focus.SHORTS_PROGRESS) moveSeekPreview(-1);
+                    else if (focus == Focus.SHORTS_PREVIEWS) openRail();
                     else if (focus == Focus.VIDEO) focus = Focus.SHORTS_PREVIEWS;
                     else focus = Focus.VIDEO;
                     render();
@@ -160,10 +161,7 @@ shorts_control = """        if (actions.isShortsPlayback() && focus != Focus.RAI
                         shortsReactionPosition = 0;
                     } else if (focus == Focus.SHORTS_REACTIONS)
                         focus = Focus.SHORTS_PROGRESS;
-                    else if (focus == Focus.SHORTS_PROGRESS) {
-                        focus = Focus.SHORTS_REACTIONS;
-                        shortsReactionPosition = 0;
-                    }
+                    else if (focus == Focus.SHORTS_PROGRESS) moveSeekPreview(1);
                     render();
                     return true;
                 default:
@@ -236,6 +234,8 @@ assert "highestCode" in (
 assert "MarsTvNavigationModel.HOME_INDEX" in shell.read_text(encoding="utf-8")
 assert "new MarsTvShortsStage" in shell.read_text(encoding="utf-8")
 assert "return handleBack();" in shell.read_text(encoding="utf-8")
+assert "if (focus == Focus.SHORTS_PROGRESS) moveSeekPreview(-1);" in shell.read_text(encoding="utf-8")
+assert "else if (focus == Focus.SHORTS_PROGRESS) moveSeekPreview(1);" in shell.read_text(encoding="utf-8")
 assert "mPlayerView.setClipToOutline(true)" in playback.read_text(encoding="utf-8")
 assert "getSharedPreferences(\"mars_tv_shorts\"" in (
     tv / "settings/MarsTvSettingsPages.java").read_text(encoding="utf-8")
