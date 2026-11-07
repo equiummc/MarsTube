@@ -1,0 +1,71 @@
+name: MT2 - einmaliger verschluesselter Signaturtransfer auf Windows
+
+on:
+  push:
+    branches:
+      - feature/mt2-030-inapp-search-input-20261107
+    paths:
+      - 'mt2-player-lab/signing/transfer-recipient.cer.b64'
+
+permissions:
+  contents: read
+
+jobs:
+  seal-release-key:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    env:
+      MARS_SIGNING_KEYSTORE_B64: ${{ secrets.MARS_SIGNING_KEYSTORE_B64 }}
+      MARS_SIGNING_STORE_PASS: ${{ secrets.MARS_SIGNING_STORE_PASS }}
+      MARS_SIGNING_KEY_PASS: ${{ secrets.MARS_SIGNING_KEY_PASS }}
+      MARS_SIGNING_KEY_ALIAS: ${{ secrets.MARS_SIGNING_KEY_ALIAS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release-Zugangsdaten nur im Arbeitsspeicher mit Nutzer-Zertifikat verschluesseln
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($key in @('MARS_SIGNING_KEYSTORE_B64','MARS_SIGNING_STORE_PASS',
+                             'MARS_SIGNING_KEY_PASS','MARS_SIGNING_KEY_ALIAS')) {
+            if ([string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($key))) {
+              throw "Signatur-Secret fehlt: $key"
+            }
+          }
+          $source = 'mt2-player-lab/signing/transfer-recipient.cer.b64'
+          $encoded = (Get-Content -Raw -LiteralPath $source).Trim()
+          if ($encoded -notmatch '^[A-Za-z0-9+/]+={0,2}$' -or $encoded.Length -gt 16000) {
+            throw 'Ungueltiges oeffentliches Zertifikat.'
+          }
+          $certPath = Join-Path $env:RUNNER_TEMP 'mars-transfer-public.cer'
+          [IO.File]::WriteAllBytes($certPath,[Convert]::FromBase64String($encoded))
+          $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath)
+          if ($cert.HasPrivateKey) { throw 'Nur oeffentliche Zertifikate zulaessig.' }
+          $eku = @($cert.EnhancedKeyUsageList | ForEach-Object { $_.ObjectId })
+          if ($eku -notcontains '1.3.6.1.4.1.311.80.1') {
+            throw 'Kein Dokumentverschluesselungs-Zertifikat.'
+          }
+          $payload = [ordered]@{
+            format = 'MarsTube-Signing-Transfer-V1'
+            packageName = 'de.equiummc.marstube2'
+            keyStoreBase64 = $env:MARS_SIGNING_KEYSTORE_B64
+            storePassword = $env:MARS_SIGNING_STORE_PASS
+            keyPassword = $env:MARS_SIGNING_KEY_PASS
+            keyAlias = $env:MARS_SIGNING_KEY_ALIAS
+          } | ConvertTo-Json -Compress
+          $artifactDir = Join-Path $env:RUNNER_TEMP 'mt2-sealed-output'
+          New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
+          $sealedPath = Join-Path $artifactDir 'mars-signing-credentials.cms'
+          Protect-CmsMessage -To $certPath -Content $payload -OutFile $sealedPath -ErrorAction Stop
+          $payload = $null
+          if (!(Test-Path -LiteralPath $sealedPath) -or
+              (Get-Item -LiteralPath $sealedPath).Length -lt 300) {
+            throw 'Verschluesseltes Paket fehlt.'
+          }
+          Write-Output 'PASS: nur verschluesseltes CMS-Dokument erstellt.'
+      - name: Nur die verschluesselten Daten als privates Artefakt speichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarsTube-Signaturtransfer-NUR-VERSCHLUESSELT
+          path: ${{ runner.temp }}/mt2-sealed-output/mars-signing-credentials.cms
+          if-no-files-found: error
+          retention-days: 7
