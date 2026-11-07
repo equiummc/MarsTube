@@ -50,7 +50,8 @@ grep -Fq 'Bei Ladeproblemen Qualität reduzieren' "$root/smarttubetv/src/stmobil
 grep -Fq 'no-system-pip' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java"
 grep -Fq 'SHORTS_PREVIEWS' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java"
 test -s "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsStage.java"
-grep -Fq 'android:icon="@drawable/mars_m_logo"' "$root/smarttubetv/src/stmobile/AndroidManifest.xml"
+grep -Fq 'android:icon="@drawable/mars_m_flat"' "$root/smarttubetv/src/stmobile/AndroidManifest.xml"
+test -s "$root/smarttubetv/src/stmobile/res/drawable/mars_m_flat.xml"
 grep -Fq 'releases/latest/download/marstube-tv.json' "$root/common/src/main/res/values/update_urls.xml"
 grep -Fq 'raw.githubusercontent.com/equiummc/MarsTube/mars/production-2/updates/stable.json' "$root/common/src/main/res/values/update_urls.xml"
 if grep -Fq 'aleixrodriala/newtube' "$root/common/src/main/res/values/update_urls.xml"; then echo '::error::Falscher Updater'; exit 1; fi
