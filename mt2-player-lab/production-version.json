@@ -1,15 +1,13 @@
 {
-  "versionName": "0.0.27",
-  "versionCode": 12027,
+  "versionName": "0.0.28",
+  "versionCode": 12028,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Shorts: Vorschaukarten bis auf den linken Rand ausgedehnt, Nummerierung und Vorschau-Texte entfernt",
-    "Shorts: 9:16-Cover korrekt bildfuellend mit dezenten Ecken; Titel und Creator klarer dargestellt",
-    "Shorts: Creator-Namen blau, Titel bis vier Zeilen und Fortschrittsleiste beidseitig eingerueckt",
-    "Shorts: Weiter/Wiederholung an erster Stelle, Teilen entfernt; Ablehnen zuletzt",
-    "Shorts: Suche bleibt in rechter Seitenleiste mit fernbedienbarer Texteingabe und Sprachsuche",
-    "Shorts: zwei sofort sichtbare Ergebnis-Karten, weitere Ergebnisse per Scrollen",
-    "Shorts: Media3-Repeat-Modus folgt Weiter/Wiederholen und wird beim Verlassen wiederhergestellt",
-    "Dauerhafte App-Kennung, Originalsignatur, TV-Navigation, Shorts-Kommentare und Update-Feed bleiben unveraendert"
+    "Shorts: Lade-Vorschaubilder behalten ab dem ersten Moment ihr Originalseitenverhältnis; keine kurzzeitig langgezogenen Gesichter mehr",
+    "Shorts: ursprüngliche Bildgeometrie bis zum ersten neuen Media3-Videoframe ohne zusaetzlichen Decoder",
+    "Shorts-Vorschau links: groessere 9:16-Vorschaubilder, Creator blau, keine Nummerierung oder VORSCHAU-Texte",
+    "Shorts-Aktionen: Weiter/Wiederholen oben, Teilen entfernt, Kommentare und In-Player-Suche rechts",
+    "Fortschrittsleiste kuerzer als der mittlere 9:16-Player und seitlich eingerueckt",
+    "Bestehendes MarsTube-Paket, Originalsignatur, Media3/SABR, Back-Taste und TV-Updater unveraendert"
   ]
 }
