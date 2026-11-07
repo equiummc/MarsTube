@@ -1,17 +1,23 @@
 {
   "package": {
     "downloadUrlList": [
-      "https://github.com/equiummc/MarsTube/releases/download/v0.0.21/MarsTube-0.0.21.apk"
+      "https://github.com/equiummc/MarsTube/releases/download/v0.0.22/MarsTube-0.0.22.apk"
     ],
-    "downloadSize": 69538343
+    "downloadSize": 69539079
   },
-  "0.0.21": {
-    "versionCode": 12021,
+  "0.0.22": {
+    "versionCode": 12022,
     "changelog": [
-      "MarsTube 0.0.21: TV Shorts playback and navigation improvements."
+      "Updater: Prüft die aktuelle Versionsdatei über zwei voneinander unabhängige GitHub-Adressen und verwendet die neueste gültige Version",
+      "Updater: Bleibt bei Netzwerk- oder JSON-Fehlern nicht fälschlich bei einer älteren Versionsinformation stehen",
+      "Updater: Manuelle Updateprüfung und Server-Version werden eindeutig protokolliert",
+      "App-ID, Entwickler-Signatur, Installationsbestätigung und Media3-Player unverändert"
     ],
     "changelog_de": [
-      "TV: Beim Wechsel zu anderen Hauptseiten wird der Player pausiert; Shorts zeigen zwei Vorschauen und erhalten kürzere Spulschritte."
+      "Updater: Prüft die aktuelle Versionsdatei über zwei voneinander unabhängige GitHub-Adressen und verwendet die neueste gültige Version",
+      "Updater: Bleibt bei Netzwerk- oder JSON-Fehlern nicht fälschlich bei einer älteren Versionsinformation stehen",
+      "Updater: Manuelle Updateprüfung und Server-Version werden eindeutig protokolliert",
+      "App-ID, Entwickler-Signatur, Installationsbestätigung und Media3-Player unverändert"
     ]
   }
 }
