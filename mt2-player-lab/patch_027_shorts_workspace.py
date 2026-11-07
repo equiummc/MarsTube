@@ -120,7 +120,12 @@ once(shell,
 
 once(shell,
     """    private void updateInfo() {""",
-    """    public boolean isShortsPlayback() {
+    """    /** The host Activity must defer D-pad input to the in-place search overlay. */
+    public boolean searchOpen() {
+        return actions.searchOpen();
+    }
+
+    public boolean isShortsPlayback() {
         return !released && !pip && actions.isShortsPlayback();
     }
 
