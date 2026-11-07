@@ -72,6 +72,6 @@ Ein **nur bei aktivem Miniplayer** sichtbarer Schnellzugang Laufendes Video blei
 
 ## Offene Risiken
 
-Quellcodeprüfung ersetzt keinen Gerätetest. Insbesondere müssen wir das Flyout beim ersten Öffnen, alte Activity-Fokusreferenzen, dynamische Miniplayer-Einträge, Barrierefreiheit und echte Speicher-/Frameratewerte untersuchen. Der 0.0.15-Befund aus Quelltexten beweist nicht, welche APK tatsächlich auf dem Fire TV läuft.
+Quellcodeprüfung ersetzt keinen Gerätetest. Insbesondere müssen wir das Flyout beim ersten Öffnen, alte Activity-Fokusreferenzen, dynamische Miniplayer-Einträge, Barrierefreiheit und echte Speicher-/Frameratewerte untersuchen. Der Fehler ist konkret auf die Patch-Reihenfolge zurückzuführen: MT2-016 ersetzt die Player-Version durch BuildConfig, danach überschreibt MT2-021 die komplette MarsTvShell.java wieder mit dem statischen Stand 0.0.15. MT2-023 ändert nur das Logo. MT2-024 entfernt deshalb das statische Versionslabel am Ende der gesamten Patchkette und prüft dessen Abwesenheit. Welche APK bereits am Fire TV läuft, bleibt separat anhand eines Gerätetests zu bestätigen.
 
 **Release-Gate:** Nicht als 0.0.24 veröffentlichen, bevor vollständiger Build, Unit-Tests und reale Fokus-/BACK-/Shorts-Geräteprüfung vorliegen.
