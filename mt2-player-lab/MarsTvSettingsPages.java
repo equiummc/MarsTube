@@ -9,8 +9,6 @@ import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
 import com.liskovsoft.sharedutils.helpers.AppInfoHelpers;
 import com.liskovsoft.smartyoutubetv2.common.misc.DiagnosticLog;
 import com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager;
-import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerData;
-import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerTweaksData;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.newtube.mobile.player.MarsTvPlayerPrefs;
@@ -43,7 +41,6 @@ public final class MarsTvSettingsPages {
     public static final String TV_STREAMING = "tv_streaming";
     public static final String TV_PROFILE = "tv_profile";
     public static final String TV_INFO = "tv_info";
-    public static final String TV_CONTENT_TOOLS = "tv_content_tools";
 
     private MarsTvSettingsPages() {
     }
@@ -64,11 +61,7 @@ public final class MarsTvSettingsPages {
             case TV_STREAMING:
                 return streaming(context);
             case TV_PROFILE:
-                return appearance(context);
-            case TV_CONTENT_TOOLS:
-                return contentTools(context);
-            case SettingsPages.ADVANCED:
-                return advanced(context);
+                return profile(context);
             case TV_INFO:
                 return info(context);
             default:
@@ -91,29 +84,43 @@ public final class MarsTvSettingsPages {
                         : context.getString(R.string.mobile_settings_account_signed_out),
                 page -> AccountsSheet.show(page.requireActivity(), page::rebuild)));
 
-        rows.add(SettingsRow.header("Wiedergabe"));
+        // Update status is a first-level TV setting, not buried after advanced options.
+        rows.add(SettingsRow.header("Updates & Info"));
+        rows.add(SettingsRow.action("Auf Updates prüfen",
+                "MarsTube-Versionen prüfen und auf dem Fernseher installieren.",
+                page -> com.newtube.mobile.ui.update.MobileUpdateActivity
+                        .startCheck(page.requireContext())));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_about, "Info",
+                versionLine(context), TV_INFO));
+
+        rows.add(SettingsRow.header("Wiedergabe & Darstellung"));
         rows.add(SettingsRow.page(R.drawable.ic_settings_playback, "Video & Wiedergabe",
                 videoSummary(context), TV_VIDEO));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_feeds, "Darstellung",
+                appearanceSummary(context), TV_APPEARANCE));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_general, "Bedienung / Fernbedienung",
+                "D-Pad, OK kurz/gehalten, BACK und Miniplayer", TV_REMOTE));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_captions, "Untertitel",
+                subtitleSummary(context), TV_SUBTITLES));
         rows.add(SettingsRow.page(R.drawable.ic_settings_quality, "Streaming & Netzwerk",
                 streamingSummary(context), TV_STREAMING));
-        rows.add(SettingsRow.header("MarsTube-Oberfläche"));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_feeds, "Darstellung",
-                "Startseite, Shorts, Profil, Verlauf und Abos", TV_APPEARANCE));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_general, "Bedienung & Fernbedienung",
-                "Tasten, Playersteuerung und Miniplayer", TV_REMOTE));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_account, "Profil & Konto",
+                "Konto, Raster für Profil, Verlauf und Abos", TV_PROFILE));
+
+        rows.add(SettingsRow.header("Weitere Einstellungen"));
         rows.add(SettingsRow.page(R.drawable.ic_settings_sponsorblock,
-                "SponsorBlock & DeArrow", "Videosegmente, Vorschaubilder und Titel",
-                TV_CONTENT_TOOLS));
-        rows.add(SettingsRow.header("System"));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_backup, "Sichern & Wiederherstellen",
+                context.getString(R.string.content_block_provider), null,
+                SettingsPages.SPONSORBLOCK).summary(() -> PlayerPages.sponsorBlockSummary(context)));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_dearrow,
+                context.getString(R.string.dearrow_provider), null,
+                SettingsPages.DEARROW).summary(() -> PlayerPages.deArrowSummary(context)));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_backup,
+                context.getString(R.string.mobile_settings_backup),
                 context.getString(R.string.mobile_settings_backup_summary), SettingsPages.BACKUP));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_advanced, "Erweitert",
-                "Netzwerk, Kompatibilität und zusätzliche Funktionen", SettingsPages.ADVANCED));
-        rows.add(SettingsRow.action(R.drawable.ic_settings_about,
-                versionLine(context), () -> "Auf Updates prüfen",
-                page -> com.newtube.mobile.ui.update.MobileUpdateActivity.startCheck(page.requireContext())));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_about, "Informationen & Diagnose",
-                "GitHub, Protokoll und Open-Source-Lizenzen", TV_INFO));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_advanced,
+                context.getString(R.string.mobile_settings_advanced),
+                context.getString(R.string.mobile_settings_advanced_summary), SettingsPages.ADVANCED));
+
 
         return new SettingsPages.Page("Einstellungen", rows);
     }
@@ -180,30 +187,6 @@ public final class MarsTvSettingsPages {
                 new String[]{"Qualität zuerst", "Schnellstart"},
                 new int[]{MarsTvPlayerPrefs.START_QUALITY_FIRST, MarsTvPlayerPrefs.START_FAST}));
 
-        PlayerTweaksData tweaks = PlayerTweaksData.instance(context);
-        rows.add(SettingsRow.header("Qualität & Kompatibilität"));
-        rows.add(SettingsRow.toggle("Bei Ladeproblemen Qualität reduzieren",
-                "Nach einer längeren Pufferpause eine niedrigere Qualitätsstufe versuchen.",
-                () -> !tweaks.isNetworkErrorFixingDisabled(),
-                on -> tweaks.setNetworkErrorFixingDisabled(!on)));
-        rows.add(SettingsRow.toggle("Formate mit höherer Bitrate anfragen",
-                "Zusätzliche hochwertige Streams verwenden, falls der Dienst sie anbietet.",
-                tweaks::isHighBitrateFormatsEnabled, tweaks::setHighBitrateFormatsEnabled));
-        rows.add(SettingsRow.header("Livestreams"));
-        rows.add(SettingsRow.toggle("Näher an der Live-Position starten",
-                "Mit kleinerem Live-Puffer; auf schwachen Verbindungen kann es öfter nachladen.",
-                tweaks::isBufferOnStreamsDisabled, tweaks::setBufferOnStreamsDisabled));
-        rows.add(SettingsRow.toggle("HLS für Livestreams bevorzugen",
-                "Kompatibilitätsoption, falls die normale Live-Wiedergabe nicht funktioniert.",
-                tweaks::isHlsStreamsForced, tweaks::setHlsStreamsForced));
-        rows.add(SettingsRow.header("Untertitel"));
-        rows.add(intChoice(context, "Untertitel beim Videostart",
-                "Die CC-Taste im Player bleibt für jedes Video verfügbar.",
-                () -> MarsTvPlayerPrefs.getSubtitlePolicy(context),
-                value -> MarsTvPlayerPrefs.setSubtitlePolicy(context, value),
-                new String[]{"Aus", "Nur erzwungene", "Reguläre Untertitel"},
-                new int[]{MarsTvPlayerPrefs.SUBTITLES_OFF, MarsTvPlayerPrefs.SUBTITLES_FORCED_ONLY,
-                        MarsTvPlayerPrefs.SUBTITLES_REGULAR}));
         return new SettingsPages.Page("Video & Wiedergabe", rows);
     }
 
@@ -232,23 +215,6 @@ public final class MarsTvSettingsPages {
         rows.add(SettingsRow.note("Shorts zeigen vier 9:16-Karten pro Reihe, "
                 + "soweit sie vollständig in den sichtbaren Bereich passen."));
 
-        rows.add(SettingsRow.header("Profil, Verlauf & Abos"));
-        rows.add(SettingsRow.toggle("Profil als Raster",
-                "Konten und Profilbereiche als Kacheln statt Liste.",
-                () -> MarsTvPlayerPrefs.isProfileGrid(context),
-                value -> MarsTvPlayerPrefs.setProfileGrid(context, value)));
-        rows.add(SettingsRow.toggle("Verlauf als 3×3-Raster",
-                "Drei Spalten auf TV; auf kleinen Geräten bleibt es beim vorhandenen Raster.",
-                () -> MarsTvPlayerPrefs.isHistoryGrid(context),
-                value -> MarsTvPlayerPrefs.setHistoryGrid(context, value)));
-        rows.add(SettingsRow.toggle("Abos als Raster",
-                "Abos in derselben Kartenform wie Startseite und Verlauf.",
-                () -> MarsTvPlayerPrefs.isSubscriptionsGrid(context),
-                value -> MarsTvPlayerPrefs.setSubscriptionsGrid(context, value)));
-        rows.add(SettingsRow.toggle("Ein Video pro Kanal in Abos",
-                "Kanalfilter: zeigt pro Kanal nur das neueste Video, damit Abos übersichtlich bleiben.",
-                () -> MarsTvPlayerPrefs.isSubscriptionsChannelFilter(context),
-                value -> MarsTvPlayerPrefs.setSubscriptionsChannelFilter(context, value)));
         return new SettingsPages.Page("Darstellung", rows);
     }
 
@@ -295,7 +261,7 @@ public final class MarsTvSettingsPages {
     private static SettingsPages.Page streaming(Context context) {
         List<SettingsRow> rows = new ArrayList<>();
         rows.add(SettingsRow.header("Wiedergabequelle"));
-        rows.add(SettingsRow.toggle("SABR bevorzugen (experimentell)",
+        rows.add(SettingsRow.toggle("SABR bevorzugen",
                 "Wirkt ab dem nächsten Video. SABR ist kein automatisches Datensparen: "
                         + "es kann Startzeit kosten und wird nur bei tatsächlichem Fehler "
                         + "auf DASH zurückgesetzt.",
@@ -308,41 +274,46 @@ public final class MarsTvSettingsPages {
         return new SettingsPages.Page("Streaming & Netzwerk", rows);
     }
 
-    private static SettingsPages.Page contentTools(Context context) {
+    private static SettingsPages.Page profile(Context context) {
         List<SettingsRow> rows = new ArrayList<>();
-        rows.add(SettingsRow.page(R.drawable.ic_settings_sponsorblock, "SponsorBlock",
-                "Markierte Videosegmente automatisch überspringen", SettingsPages.SPONSORBLOCK));
-        rows.add(SettingsRow.page(R.drawable.ic_settings_dearrow, "DeArrow",
-                "Alternative Titel und Vorschaubilder", SettingsPages.DEARROW));
-        return new SettingsPages.Page("SponsorBlock & DeArrow", rows);
-    }
+        Account account = MediaServiceManager.instance().getSelectedAccount();
+        boolean signedIn = account != null && !account.isEmpty();
+        rows.add(SettingsRow.action(R.drawable.ic_settings_account,
+                signedIn && account.getName() != null ? account.getName()
+                        : context.getString(R.string.mobile_settings_account),
+                () -> signedIn ? (account.getEmail() != null ? account.getEmail()
+                        : context.getString(R.string.mobile_settings_account_switch))
+                        : context.getString(R.string.mobile_settings_account_signed_out),
+                page -> AccountsSheet.show(page.requireActivity(), page::rebuild)));
 
-    /** Technical legacy options without a second copy of video/streaming prefs. */
-    private static SettingsPages.Page advanced(Context context) {
-        SettingsPages.Page legacy = SettingsPages.buildPhone(context, SettingsPages.ADVANCED);
-        List<SettingsRow> rows = new ArrayList<>();
-        String videoHeader = context.getString(R.string.mobile_settings_streaming);
-        String liveHeader = context.getString(R.string.mobile_settings_live);
-        boolean hiddenSection = false;
-        for (SettingsRow row : legacy.rows) {
-            if (row.kind == SettingsRow.KIND_HEADER) {
-                String title = String.valueOf(row.title);
-                hiddenSection = videoHeader.equals(title) || liveHeader.equals(title);
-            }
-            if (!hiddenSection) rows.add(row);
-        }
-        rows.add(SettingsRow.header("Kompatibilität"));
-        PlayerData player = PlayerData.instance(context);
-        rows.add(SettingsRow.toggle("Ältere Einzeldatei-Streams",
-                "Nur bei Abspielproblemen: meist 360p ohne automatische Qualitätswechsel.",
-                player::isLegacyCodecsForced, player::setLegacyCodecsForced));
-        return new SettingsPages.Page("Erweitert", rows);
+        rows.add(SettingsRow.header("Raster"));
+        rows.add(SettingsRow.toggle("Profil als Raster",
+                "Konten und Profilbereiche als Kacheln statt Liste.",
+                () -> MarsTvPlayerPrefs.isProfileGrid(context),
+                value -> MarsTvPlayerPrefs.setProfileGrid(context, value)));
+        rows.add(SettingsRow.toggle("Verlauf als 3×3-Raster",
+                "Drei Spalten auf TV; auf kleinen Geräten bleibt es beim vorhandenen Raster.",
+                () -> MarsTvPlayerPrefs.isHistoryGrid(context),
+                value -> MarsTvPlayerPrefs.setHistoryGrid(context, value)));
+        rows.add(SettingsRow.toggle("Abos als Raster",
+                "Abos in derselben Kartenform wie Startseite und Verlauf.",
+                () -> MarsTvPlayerPrefs.isSubscriptionsGrid(context),
+                value -> MarsTvPlayerPrefs.setSubscriptionsGrid(context, value)));
+        rows.add(SettingsRow.toggle("Ein Video pro Kanal in Abos",
+                "Kanalfilter: zeigt pro Kanal nur das neueste Video, damit Abos übersichtlich bleiben.",
+                () -> MarsTvPlayerPrefs.isSubscriptionsChannelFilter(context),
+                value -> MarsTvPlayerPrefs.setSubscriptionsChannelFilter(context, value)));
+        return new SettingsPages.Page("Profil & Konto", rows);
     }
 
     private static SettingsPages.Page info(Context context) {
         List<SettingsRow> rows = new ArrayList<>();
-        rows.add(SettingsRow.note(versionLine(context)
-                + " · Updates direkt in der Einstellungsübersicht prüfen."));
+        rows.add(SettingsRow.action(context.getString(R.string.mobile_settings_version),
+                versionLine(context), page -> { }));
+        rows.add(SettingsRow.action("Auf Updates prüfen",
+                "MarsTube-Versionen vom eigenen GitHub-Release; Installation nach Bestätigung.",
+                page -> com.newtube.mobile.ui.update.MobileUpdateActivity
+                        .startCheck(page.requireContext())));
         rows.add(SettingsRow.divider());
         rows.add(SettingsRow.action(context.getString(R.string.diagnostic_log_send),
                 context.getString(R.string.diagnostic_log_send_desc),
