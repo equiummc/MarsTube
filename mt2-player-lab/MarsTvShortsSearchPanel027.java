@@ -28,6 +28,8 @@ import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.VideoGroup;
 import com.liskovsoft.youtubeapi.service.YouTubeServiceManager;
+import com.newtube.mobile.ui.common.MarsShortsSession;
+import com.newtube.mobile.ui.common.ShortsFilter;
 import io.reactivex.rxjava3.disposables.Disposable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,6 +59,7 @@ public final class MarsTvShortsSearchPanel {
     private final LinearLayout results;
     private final ScrollView scroll;
     private final Set<String> shownIds = new HashSet<>();
+    private final List<Video> searchShorts = new ArrayList<>();
     private final Runnable debounced = this::search;
     private Disposable currentSearch;
     private int generation;
@@ -162,6 +165,7 @@ public final class MarsTvShortsSearchPanel {
         if (currentSearch != null) currentSearch.dispose();
         currentSearch = null;
         shownIds.clear();
+        searchShorts.clear();
         results.removeAllViews();
     }
 
@@ -175,6 +179,7 @@ public final class MarsTvShortsSearchPanel {
         int ticket = ++generation;
         if (currentSearch != null) currentSearch.dispose();
         shownIds.clear();
+        searchShorts.clear();
         results.removeAllViews();
         scroll.scrollTo(0, 0);
         info.setText("Suche läuft …");
@@ -188,17 +193,21 @@ public final class MarsTvShortsSearchPanel {
                         for (Video video : vg.getVideos()) {
                             if (video == null || !video.hasVideo()
                                     || TextUtils.isEmpty(video.videoId)
+                                    || !ShortsFilter.isShort(video)
                                     || !shownIds.add(video.videoId)) continue;
-                            if (shownIds.size() <= MAX_RESULTS) addResult(video);
+                            if (searchShorts.size() < MAX_RESULTS) {
+                                searchShorts.add(video);
+                                addResult(video);
+                            }
                         }
                     }
-                    info.setText(shownIds.isEmpty() ? "Keine Ergebnisse" : "Ergebnisse · Hoch/Runter scrollen");
+                    info.setText(searchShorts.isEmpty() ? "Keine Shorts gefunden" : "Shorts · Hoch/Runter scrollen");
                 }), error -> activity.runOnUiThread(() -> {
                     if (ticket == generation && isOpen())
                         info.setText("Suche fehlgeschlagen. Erneut versuchen.");
                 }), () -> activity.runOnUiThread(() -> {
                     if (ticket == generation && isOpen() && shownIds.isEmpty())
-                        info.setText("Keine Videos gefunden");
+                        info.setText("Keine Shorts gefunden");
                 }));
     }
 
@@ -222,7 +231,11 @@ public final class MarsTvShortsSearchPanel {
             if (hasFocus) scroll.post(() -> scroll.smoothScrollTo(0, card.getTop()));
         });
         card.setOnClickListener(v -> {
+            // Search selection stays in the current Shorts player and seeds
+            // its two left preview cards from this search result snapshot.
+            List<Video> queue = new ArrayList<>(searchShorts);
             close();
+            MarsShortsSession.begin(queue, video);
             onChoose.accept(video);
         });
         ImageView thumbnail = new ImageView(activity);
