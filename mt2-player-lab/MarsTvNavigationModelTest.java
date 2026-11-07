@@ -4,11 +4,13 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class MarsTvNavigationModelTest {
-    @Test public void homeIsFirstAndReplacesHouseButton() {
+    @Test public void homeIsCentralAndUsesUnchangedMVector() {
         MarsTvNavigationModel.Entry[] entries = MarsTvNavigationModel.main();
         assertEquals(7, entries.length);
-        assertEquals(0, entries[0].destination);
-        assertEquals("Startseite", entries[0].label);
+        assertEquals(1, entries[0].destination);
+        assertEquals(3, MarsTvNavigationModel.HOME_INDEX);
+        assertEquals(0, entries[MarsTvNavigationModel.HOME_INDEX].destination);
+        assertEquals("Startseite", entries[MarsTvNavigationModel.HOME_INDEX].label);
         assertEquals(5, entries[6].destination);
     }
     @Test public void wrappingWorksInBothDirections() {
@@ -26,6 +28,6 @@ public class MarsTvNavigationModelTest {
     @Test public void modelEntriesCannotBeReorderedExternally() {
         MarsTvNavigationModel.Entry[] entries = MarsTvNavigationModel.main();
         entries[0] = entries[3];
-        assertEquals(0, MarsTvNavigationModel.main()[0].destination);
+        assertEquals(1, MarsTvNavigationModel.main()[0].destination);
     }
 }
