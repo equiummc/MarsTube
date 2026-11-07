@@ -1,0 +1,12 @@
+{
+  "versionName": "0.0.31",
+  "versionCode": 12031,
+  "packageName": "de.equiummc.marstube2",
+  "changelog_de": [
+    "Shorts-Übersicht: drei kompakte 9:16-Vorschaubilder in derselben Bildbreite wie neben dem Shorts-Player",
+    "Zwei Titelzeilen und eine blaue Creator-Zeile direkt unter jedem Vorschau-Bild",
+    "Türkiser Fernbedienungs-Fokus umfasst die Vorschau statt einer übergroßen Rasterzelle",
+    "Andere Video-Karten behalten ihre bisherigen Abmessungen; Shorts-Player, Media3 und Zurück-Taste unverändert",
+    "APK-Größenanalyse für den lokalen Build; R8-Optimierung nur als gesonderte Testvariante, nicht ungeprüft aktiviert"
+  ]
+}
