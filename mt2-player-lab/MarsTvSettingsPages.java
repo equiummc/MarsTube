@@ -208,6 +208,23 @@ public final class MarsTvSettingsPages {
         rows.add(SettingsRow.note("Shorts zeigen vier 9:16-Karten pro Reihe, "
                 + "soweit sie vollständig in den sichtbaren Bereich passen."));
 
+        rows.add(SettingsRow.header("Profil, Verlauf & Abos"));
+        rows.add(SettingsRow.toggle("Profil als Raster",
+                "Konten und Profilbereiche als Kacheln statt Liste.",
+                () -> MarsTvPlayerPrefs.isProfileGrid(context),
+                value -> MarsTvPlayerPrefs.setProfileGrid(context, value)));
+        rows.add(SettingsRow.toggle("Verlauf als 3×3-Raster",
+                "Drei Spalten auf TV; auf kleinen Geräten bleibt es beim vorhandenen Raster.",
+                () -> MarsTvPlayerPrefs.isHistoryGrid(context),
+                value -> MarsTvPlayerPrefs.setHistoryGrid(context, value)));
+        rows.add(SettingsRow.toggle("Abos als Raster",
+                "Abos in derselben Kartenform wie Startseite und Verlauf.",
+                () -> MarsTvPlayerPrefs.isSubscriptionsGrid(context),
+                value -> MarsTvPlayerPrefs.setSubscriptionsGrid(context, value)));
+        rows.add(SettingsRow.toggle("Ein Video pro Kanal in Abos",
+                "Kanalfilter: zeigt pro Kanal nur das neueste Video, damit Abos übersichtlich bleiben.",
+                () -> MarsTvPlayerPrefs.isSubscriptionsChannelFilter(context),
+                value -> MarsTvPlayerPrefs.setSubscriptionsChannelFilter(context, value)));
         return new SettingsPages.Page("Darstellung", rows);
     }
 
@@ -254,7 +271,7 @@ public final class MarsTvSettingsPages {
     private static SettingsPages.Page streaming(Context context) {
         List<SettingsRow> rows = new ArrayList<>();
         rows.add(SettingsRow.header("Wiedergabequelle"));
-        rows.add(SettingsRow.toggle("SABR bevorzugen",
+        rows.add(SettingsRow.toggle("SABR bevorzugen (experimentell)",
                 "Wirkt ab dem nächsten Video. SABR ist kein automatisches Datensparen: "
                         + "es kann Startzeit kosten und wird nur bei tatsächlichem Fehler "
                         + "auf DASH zurückgesetzt.",
@@ -267,46 +284,41 @@ public final class MarsTvSettingsPages {
         return new SettingsPages.Page("Streaming & Netzwerk", rows);
     }
 
-    private static SettingsPages.Page profile(Context context) {
+    private static SettingsPages.Page contentTools(Context context) {
         List<SettingsRow> rows = new ArrayList<>();
-        Account account = MediaServiceManager.instance().getSelectedAccount();
-        boolean signedIn = account != null && !account.isEmpty();
-        rows.add(SettingsRow.action(R.drawable.ic_settings_account,
-                signedIn && account.getName() != null ? account.getName()
-                        : context.getString(R.string.mobile_settings_account),
-                () -> signedIn ? (account.getEmail() != null ? account.getEmail()
-                        : context.getString(R.string.mobile_settings_account_switch))
-                        : context.getString(R.string.mobile_settings_account_signed_out),
-                page -> AccountsSheet.show(page.requireActivity(), page::rebuild)));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_sponsorblock, "SponsorBlock",
+                "Markierte Videosegmente automatisch überspringen", SettingsPages.SPONSORBLOCK));
+        rows.add(SettingsRow.page(R.drawable.ic_settings_dearrow, "DeArrow",
+                "Alternative Titel und Vorschaubilder", SettingsPages.DEARROW));
+        return new SettingsPages.Page("SponsorBlock & DeArrow", rows);
+    }
 
-        rows.add(SettingsRow.header("Raster"));
-        rows.add(SettingsRow.toggle("Profil als Raster",
-                "Konten und Profilbereiche als Kacheln statt Liste.",
-                () -> MarsTvPlayerPrefs.isProfileGrid(context),
-                value -> MarsTvPlayerPrefs.setProfileGrid(context, value)));
-        rows.add(SettingsRow.toggle("Verlauf als 3×3-Raster",
-                "Drei Spalten auf TV; auf kleinen Geräten bleibt es beim vorhandenen Raster.",
-                () -> MarsTvPlayerPrefs.isHistoryGrid(context),
-                value -> MarsTvPlayerPrefs.setHistoryGrid(context, value)));
-        rows.add(SettingsRow.toggle("Abos als Raster",
-                "Abos in derselben Kartenform wie Startseite und Verlauf.",
-                () -> MarsTvPlayerPrefs.isSubscriptionsGrid(context),
-                value -> MarsTvPlayerPrefs.setSubscriptionsGrid(context, value)));
-        rows.add(SettingsRow.toggle("Ein Video pro Kanal in Abos",
-                "Kanalfilter: zeigt pro Kanal nur das neueste Video, damit Abos übersichtlich bleiben.",
-                () -> MarsTvPlayerPrefs.isSubscriptionsChannelFilter(context),
-                value -> MarsTvPlayerPrefs.setSubscriptionsChannelFilter(context, value)));
-        return new SettingsPages.Page("Profil & Konto", rows);
+    /** Technical legacy options without a second copy of video/streaming prefs. */
+    private static SettingsPages.Page advanced(Context context) {
+        SettingsPages.Page legacy = SettingsPages.buildPhone(context, SettingsPages.ADVANCED);
+        List<SettingsRow> rows = new ArrayList<>();
+        String videoHeader = context.getString(R.string.mobile_settings_streaming);
+        String liveHeader = context.getString(R.string.mobile_settings_live);
+        boolean hiddenSection = false;
+        for (SettingsRow row : legacy.rows) {
+            if (row.kind == SettingsRow.KIND_HEADER) {
+                String title = String.valueOf(row.title);
+                hiddenSection = videoHeader.equals(title) || liveHeader.equals(title);
+            }
+            if (!hiddenSection) rows.add(row);
+        }
+        rows.add(SettingsRow.header("Kompatibilität"));
+        PlayerData player = PlayerData.instance(context);
+        rows.add(SettingsRow.toggle("Ältere Einzeldatei-Streams",
+                "Nur bei Abspielproblemen: meist 360p ohne automatische Qualitätswechsel.",
+                player::isLegacyCodecsForced, player::setLegacyCodecsForced));
+        return new SettingsPages.Page("Erweitert", rows);
     }
 
     private static SettingsPages.Page info(Context context) {
         List<SettingsRow> rows = new ArrayList<>();
-        rows.add(SettingsRow.action(context.getString(R.string.mobile_settings_version),
-                versionLine(context), page -> { }));
-        rows.add(SettingsRow.action("Auf Updates prüfen",
-                "MarsTube-Versionen vom eigenen GitHub-Release; Installation nach Bestätigung.",
-                page -> com.newtube.mobile.ui.update.MobileUpdateActivity
-                        .startCheck(page.requireContext())));
+        rows.add(SettingsRow.note(versionLine(context)
+                + " · Updates direkt in der Einstellungsübersicht prüfen."));
         rows.add(SettingsRow.divider());
         rows.add(SettingsRow.action(context.getString(R.string.diagnostic_log_send),
                 context.getString(R.string.diagnostic_log_send_desc),
