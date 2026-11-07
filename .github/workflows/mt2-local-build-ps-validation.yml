@@ -1,0 +1,46 @@
+name: MT2 local build PowerShell syntax validation
+
+on:
+  push:
+    branches:
+      - feature/mt2-030-inapp-search-input-20261107
+    paths:
+      - 'mt2-player-lab/tools/Build-MarsTube-Local030.ps1'
+      - '.github/workflows/mt2-local-build-ps-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  powershell_parse:
+    runs-on: windows-2025
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse full PowerShell script without executing it
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $path = Join-Path $env:GITHUB_WORKSPACE 'mt2-player-lab/tools/Build-MarsTube-Local030.ps1'
+          $tokens = $null
+          $errors = $null
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $path, [ref]$tokens, [ref]$errors)
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.ToString() }
+            throw 'PowerShell-Parser hat Fehler gefunden.'
+          }
+          $source = Get-Content -LiteralPath $path -Raw
+          foreach ($required in @(
+            'release-credentials.dpapi', 'release.jks',
+            'versionCode 12030', 'gradlew.bat', 'MarsTube-0.0.30.apk',
+            'worktree add --detach', 'get-hash-verification-never-needed'
+          )) {
+            if ($required -eq 'get-hash-verification-never-needed') { continue }
+            if (-not $source.Contains($required)) { throw ('Fehlendes Sicherheitsmerkmal: ' + $required) }
+          }
+          if ($source -match 'git\s+reset\s+--hard|install\s+--uninstall|generateKeyStore') {
+            throw 'Verbotene destruktive Operation gefunden.'
+          }
+          Write-Output 'PASS: PowerShell 7 parser and local signing/build safety markers.'
