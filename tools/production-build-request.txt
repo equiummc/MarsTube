@@ -1,1 +1,4 @@
-MarsTube release 0.0.16 (permanente Signatur) - a8e61808-5bc5-4d92-a533-221afcb3fe09
+MarsTube release 0.0.23 – Produktionsbuild und signierte Veröffentlichung angefordert (2026-11-07)
+Paketkennung: de.equiummc.marstube2
+VersionCode: 12023
+Release ausschließlich nach bestandenem Build und Signaturprüfung.
