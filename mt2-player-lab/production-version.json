@@ -1,13 +1,11 @@
 {
-  "versionName": "0.0.21",
-  "versionCode": 12021,
+  "versionName": "0.0.22",
+  "versionCode": 12022,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "TV: Beim Wechsel vom Player auf Start, Suche oder andere Hauptseiten pausiert das laufende Video; Zurück-Taste und Hauptmenü bleiben unverändert",
-    "Shorts: Zwei statt drei größere Hochkant-Vorschauen mit weniger Bildbeschnitt",
-    "Shorts: Schmalere Mittelspalte; zusätzliche gut erreichbare Tasten für jeweils fünf Sekunden zurück und vor",
-    "Shorts: Fünf Sekunden pro kurzem Spulschritt statt zehn; langes Drücken beschleunigt weiterhin",
-    "Shorts: 9:16-Videofenster rechts bleibt technisch unverändert und bis zum rechten Bildschirmrand",
-    "Update-Logik von 0.0.20, App-ID, Signaturschutz und bestehender Release-Kanal bleiben erhalten"
+    "Updater: Prüft die aktuelle Versionsdatei über zwei voneinander unabhängige GitHub-Adressen und verwendet die neueste gültige Version",
+    "Updater: Bleibt bei Netzwerk- oder JSON-Fehlern nicht fälschlich bei einer älteren Versionsinformation stehen",
+    "Updater: Manuelle Updateprüfung und Server-Version werden eindeutig protokolliert",
+    "App-ID, Entwickler-Signatur, Installationsbestätigung und Media3-Player unverändert"
   ]
 }
