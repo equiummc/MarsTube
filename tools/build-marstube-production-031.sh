@@ -97,7 +97,7 @@ done
 python3 - <<'PY'
 import json, hashlib
 from pathlib import Path
-meta=json.loads(Path('mt2-player-lab/production-version.json').read_text(encoding='utf-8'))
+meta=json.loads(Path('mt2-player-lab/production-version-031.json').read_text(encoding='utf-8'))
 name=meta['versionName']; code=int(meta['versionCode']); app=meta['packageName']
 assert app == 'de.equiummc.marstube2' and code>=12016
 badge=Path('dist/badging.txt').read_text()
