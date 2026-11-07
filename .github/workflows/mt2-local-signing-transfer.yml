@@ -40,7 +40,10 @@ jobs:
           [IO.File]::WriteAllBytes($certPath,[Convert]::FromBase64String($encoded))
           $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath)
           if ($cert.HasPrivateKey) { throw 'Nur oeffentliche Zertifikate zulaessig.' }
-          $eku = @($cert.EnhancedKeyUsageList | ForEach-Object { $_.ObjectId })
+          $eku = @($cert.Extensions |
+            Where-Object { $_ -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension] } |
+            ForEach-Object { $_.EnhancedKeyUsages } |
+            ForEach-Object { $_.Value })
           if ($eku -notcontains '1.3.6.1.4.1.311.80.1') {
             throw 'Kein Dokumentverschluesselungs-Zertifikat.'
           }
