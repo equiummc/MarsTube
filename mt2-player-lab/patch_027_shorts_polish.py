@@ -131,6 +131,17 @@ once(shell,
             if (exo.getRepeatMode() != desiredRepeat) exo.setRepeatMode(desiredRepeat);
         }
         shortsStage.show(shorts && !pip, exo, seekPreviewMs);""")
+once(shell,
+"""    public void release() {
+        released = true;""",
+"""    public void release() {
+        if (shortsRepeatPlayer != null && shortsPreviousRepeat >= 0) {
+            shortsRepeatPlayer.setRepeatMode(shortsPreviousRepeat);
+        }
+        shortsRepeatPlayer = null;
+        shortsPreviousRepeat = -1;
+        released = true;""")
+
 # Re-arm if the user toggled from Repeat to Next at the end, and preserve the
 # existing single dispatch per ended item in MT2-026.
 once(shell,
@@ -196,6 +207,11 @@ once(playback,
 """        if (mMarsTvShell != null && (mMarsTvShell.commentsOpen()
                 || mMarsTvShell.searchOpen()))
             return super.dispatchKeyEvent(event);""")
+once(playback,
+"""        if (mMarsTvShell != null) { mMarsTvShell.release(); mMarsTvShell = null; }""",
+"""        if (mMarsShortsSearch != null) { mMarsShortsSearch.close(); mMarsShortsSearch = null; }
+        if (mMarsTvShell != null) { mMarsTvShell.release(); mMarsTvShell = null; }""")
+
 # All comments should continue using the original lazy-loading backend.
 assert "if (com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(this)) return;" in playback.read_text(encoding="utf-8")
 
