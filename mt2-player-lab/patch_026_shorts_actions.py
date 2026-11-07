@@ -361,7 +361,7 @@ if "if (com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(this)) return;"
 # Preserve the app identity, one Media3 surface, old update feeds and original logo.
 assert 'applicationId "de.equiummc.marstube2"' in (
         root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
-assert 'versionCode 12026' in (root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
+assert 'versionCode 12027' in (root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
 assert 'return handleBack();' in shell.read_text(encoding="utf-8")
 assert 'if (focus == Focus.SHORTS_PROGRESS) moveSeekPreview(-1);' in shell.read_text(encoding="utf-8")
 assert 'mPlayerView.setClipToOutline(true)' in playback.read_text(encoding="utf-8")

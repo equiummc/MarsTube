@@ -1,3 +1,17 @@
+## 07.11.2026 – MT2-027: Shorts-Vorschau, Suche und Wiedergabeende (Entwicklung)
+
+- **Branch:** `feature/mt2-027-shorts-layout-search-eos-20261107` (ab 0.0.26); Version `0.0.27 / 12027`; Paketkennung `de.equiummc.marstube2` unverändert.
+- **Ziel:** zwei weiter nach außen reichende 9:16-Vorschauen ohne „23 · VORSCHAU“-Nummern, größerer Textbereich mit cyanblauem Creatornamen, kleine Bildrundungen, Fortschrittsbalken innerhalb der Hauptfensterbreite.
+- **Bedienleiste:** Automatisch weiter / Wiederholen an erster Stelle, Teilen entfällt. Andere Funktionen und bestätigte Zurück-Navigation bleiben.
+- **Suche:** neues rechtes In-Shorts-Panel über den bestehenden SearchPresenter und ContentService: Texteingabe, zwei sichtbare Treffer und scrollbare weitere; Android RecognizerIntent optional. Suche startet erst nach Eingabe/OK; bestehende Media3-Wiedergabe läuft während der Suche weiter.
+- **EOS:** kein ausschließlich sekündliches Polling mehr; Android Media3 `STATE_READY` armieren und `STATE_ENDED` exakt einmal behandeln; automatische Auswahl ausschließlich im aktiven Shorts-Feed; Wiederholen springt zum Beginn.
+- **Videostart:** bei Videoformatwechsel den bestehenden PlayerView in FIT/9:16 neu einpassen. Aufnahmen anderer Seitenverhältnisse werden nicht gestreckt.
+- **Code:** `mt2-player-lab/MarsTvShortsStage027.java`, `MarsTvShortsSearchPanel027.java`, `patch_027_shorts_workspace.py`; neu in `tools/build-marstube-production.sh` und separater `mt2-027-shorts-workspace-ci.yml`.
+- **Tests:** CI und reale Fire-TV-/Thomson-Abnahme zunächst ausstehend; kein fertiger Installationsnachweis. Insbesondere Stimmeingabe hängt von einer Android-Spracherkennungs-App ab.
+- **Sicherheit:** kein automatisches APK-Installieren, keine Neu-Signierung, keine neuen Android-Berechtigungen, kein zweiter Player.
+
+---
+
 # MarsTube – laufender Projektstatus und Agentenübergabe
 
 ## 07.11.2026 – MT2-025, echtes TV-UI mit Original-M
