@@ -1,0 +1,17 @@
+{
+  "package": {
+    "downloadUrlList": [
+      "https://github.com/equiummc/MarsTube/releases/download/v0.0.21/MarsTube-0.0.21.apk"
+    ],
+    "downloadSize": 69538343
+  },
+  "0.0.21": {
+    "versionCode": 12021,
+    "changelog": [
+      "MarsTube 0.0.21: TV Shorts playback and navigation improvements."
+    ],
+    "changelog_de": [
+      "TV: Beim Wechsel zu anderen Hauptseiten wird der Player pausiert; Shorts zeigen zwei Vorschauen und erhalten kürzere Spulschritte."
+    ]
+  }
+}

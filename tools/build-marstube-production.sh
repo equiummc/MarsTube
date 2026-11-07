@@ -38,7 +38,7 @@ for patch in \
   patch_015_universal_back.py patch_016_production.py \
   patch_017_shorts_stage.py patch_018_tv_ux.py \
   patch_019_shorts_three_column.py patch_020_update_freshness.py \
-  patch_021_shorts_home_pause.py; do
+  patch_021_shorts_home_pause.py patch_022_update_reliability.py; do
   python3 "mt2-player-lab/$patch" "$root"
 done
 grep -Fq 'applicationId "de.equiummc.marstube2"' "$root/smarttubetv/build.gradle"
@@ -48,6 +48,7 @@ grep -Fq 'SHORTS_PREVIEWS' "$root/smarttubetv/src/stmobile/java/com/newtube/mobi
 test -s "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsStage.java"
 grep -Fq 'android:icon="@drawable/mars_m_logo"' "$root/smarttubetv/src/stmobile/AndroidManifest.xml"
 grep -Fq 'releases/latest/download/marstube-tv.json' "$root/common/src/main/res/values/update_urls.xml"
+grep -Fq 'raw.githubusercontent.com/equiummc/MarsTube/mars/production-2/updates/stable.json' "$root/common/src/main/res/values/update_urls.xml"
 if grep -Fq 'aleixrodriala/newtube' "$root/common/src/main/res/values/update_urls.xml"; then echo '::error::Falscher Updater'; exit 1; fi
 umask 077
 mkdir -p "$RUNNER_TEMP/mars-signing"

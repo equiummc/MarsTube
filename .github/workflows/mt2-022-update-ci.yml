@@ -1,0 +1,121 @@
+name: MT2-022 updater two-origin CI (no publication)
+
+on:
+  push:
+    branches:
+      - fix/mt2-022-update-reliability-20261107
+    paths:
+      - 'mt2-player-lab/**'
+      - 'tools/build-marstube-production.sh'
+      - '.github/workflows/mt2-022-update-ci.yml'
+      - 'updates/stable.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_test:
+    name: Full pinned NewTube patch chain + Java tests + APK resource inspection
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Fetch exact pinned source and submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir newtube-reference
+          git -C newtube-reference init
+          git -C newtube-reference remote add origin https://github.com/aleixrodriala/newtube.git
+          git -C newtube-reference fetch --depth 1 origin 6f96a1b42bb9272935360d7e5aec34d35f2753f0
+          git -C newtube-reference checkout --detach FETCH_HEAD
+          git -C newtube-reference submodule update --init --recursive --depth 1
+          test "$(git -C newtube-reference rev-parse HEAD)" = '6f96a1b42bb9272935360d7e5aec34d35f2753f0'
+      - name: Android 37 toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --channel=3 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;21.0.6113669'
+          test -f "$ANDROID_HOME/platforms/android-37.0/android.jar"
+          if [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
+            ln -s "$ANDROID_HOME/platforms/android-37.0" "$ANDROID_HOME/platforms/android-37"
+          fi
+          sed -i "s@'../SharedModules'@'./SharedModules'@g;s@'../MediaServiceCore'@'./MediaServiceCore'@g" newtube-reference/settings.gradle
+      - name: Apply exact production patch sequence 001-022, validate updater route
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile mt2-player-lab/patch_022_update_reliability.py
+          for patch in \
+            patch_tv_input.py patch_sabr_recovery.py patch_lab_identity.py \
+            patch_tv_shell.py patch_005_navigation.py patch_005_localize.py \
+            patch_005_mobile_de.py patch_006_unified.py patch_006_isolated_firetv.py \
+            patch_007_tv_quality.py patch_007_translate_common.py patch_008_tv_player.py \
+            patch_009_tv_shorts_ui.py patch_010_player_settings_ui.py \
+            patch_011_firetv_navigation.py patch_012_tv_updates.py \
+            patch_013_tv_focus_ui.py patch_014_tv_shorts_mode.py \
+            patch_015_universal_back.py patch_016_production.py \
+            patch_017_shorts_stage.py patch_018_tv_ux.py \
+            patch_019_shorts_three_column.py patch_020_update_freshness.py \
+            patch_021_shorts_home_pause.py patch_022_update_reliability.py; do
+            python3 "mt2-player-lab/$patch" newtube-reference
+          done
+          grep -Fq 'applicationId "de.equiummc.marstube2"' newtube-reference/smarttubetv/build.gradle
+          grep -Fq 'versionCode 12022' newtube-reference/smarttubetv/build.gradle
+          grep -Fq 'versionName "0.0.22"' newtube-reference/smarttubetv/build.gradle
+          grep -Fq 'highestCode' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
+          grep -Fq 'manifest chosen code=' newtube-reference/SharedModules/appupdatechecker2/src/main/java/com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java
+          grep -Fq 'manual check tap installed=' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java
+          grep -Fq 'MarsUpdateApkGuard.isCompatible' newtube-reference/smarttubetv/src/stmobile/java/com/newtube/mobile/update/AppUpdates.java
+          test "$(grep -Fc '<item>https://' newtube-reference/common/src/main/res/values/update_urls.xml)" -eq 2
+          grep -Fq 'raw.githubusercontent.com/equiummc/MarsTube/mars/production-2/updates/stable.json' newtube-reference/common/src/main/res/values/update_urls.xml
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          cur=json.loads(Path('mt2-player-lab/production-version.json').read_text())
+          stable=json.loads(Path('updates/stable.json').read_text())
+          assert cur['versionCode']==12022
+          assert stable['0.0.21']['versionCode']==12021
+          assert stable['package']['downloadUrlList'][0].endswith('MarsTube-0.0.21.apk')
+          print('PASS: trusted independent mirror starts at last published version.')
+          PY
+      - name: JUnit + build complete debug APK
+        shell: bash
+        run: |
+          chmod +x newtube-reference/gradlew
+          (cd newtube-reference && ./gradlew --no-daemon --max-workers=1 \
+            -Dorg.gradle.jvmargs=-Xmx4096m \
+            :appupdatechecker2:testDebugUnitTest \
+            :smarttubetv:testStmobileDebugUnitTest \
+            :smarttubetv:assembleStmobileDebug --stacktrace)
+      - name: Ensure actual APK contains only both trusted manifest sources
+        run: |
+          set -euo pipefail
+          apk=$(find newtube-reference/smarttubetv/build/outputs/apk -name '*universal*.apk' -type f | head -1)
+          if [ -z "$apk" ]; then apk=$(find newtube-reference/smarttubetv/build/outputs/apk -name '*.apk' -type f | head -1); fi
+          test -n "$apk"
+          "$ANDROID_HOME/build-tools/37.0.0/aapt" dump --values resources "$apk" > /tmp/mt2-022-resources.txt
+          grep -Fq 'github.com/equiummc/MarsTube/releases/latest/download/marstube-tv.json' /tmp/mt2-022-resources.txt
+          grep -Fq 'raw.githubusercontent.com/equiummc/MarsTube/mars/production-2/updates/stable.json' /tmp/mt2-022-resources.txt
+          if grep -Eq 'aleixrodriala/newtube/releases/(latest|download)' /tmp/mt2-022-resources.txt; then
+            echo 'Unexpected upstream NewTube manifest in TV APK'
+            exit 1
+          fi
+          echo 'PASS: real debug APK contains exactly the two approved release origins.'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: mt2-022-failed-build-reports
+          path: |
+            newtube-reference/smarttubetv/build/reports/tests/**
+            newtube-reference/SharedModules/appupdatechecker2/build/reports/tests/**
+          if-no-files-found: ignore
