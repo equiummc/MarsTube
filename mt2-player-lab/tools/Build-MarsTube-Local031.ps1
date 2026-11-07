@@ -221,3 +221,10 @@ if ($now -ne $activeBranch) { throw 'Git-Branch hat sich unerwartet geaendert.' 
 Write-Host "ERFOLG: $target" -ForegroundColor Green
 Write-Host 'Paket de.equiummc.marstube2, Version 0.0.31, unveraenderte Release-Signatur.'
 Write-Host 'Keine App wurde deinstalliert. Der bestehende Projekt-Branch blieb unveraendert.'
+$audit=Join-Path $Overlay 'mt2-player-lab\tools\Audit-MarsTube-Apk.py'
+if (Test-Path -LiteralPath $audit) {
+    Write-Host ''
+    Write-Host 'APK-Groessenbericht – 0.0.30 gegen 0.0.31:'
+    & $python $audit (Join-Path $ApkFolder 'MarsTube-0.0.30.apk') $target
+    Checked 'APK-Groessenbericht erstellen'
+}
