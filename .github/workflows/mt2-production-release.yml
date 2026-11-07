@@ -110,3 +110,42 @@ jobs:
           assert {'MarsTube-'+m['versionName']+'.apk','marstube-tv.json','SHA256SUMS'}<=set(a['assets'])
           print('MarsTube stable release bereitgestellt.')
           PY
+
+      - name: Unabhängigen stabilen Versions-Feed nach erfolgreichem Release aktualisieren
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, json, os, urllib.request
+          from pathlib import Path
+          path = "updates/stable.json"
+          repo = os.environ["GH_REPO"]
+          token = os.environ["GH_TOKEN"]
+          url = "https://api.github.com/repos/" + repo + "/contents/" + path
+          headers = {
+              "Authorization": "Bearer " + token,
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "MarsTube-Release-Manifest-Sync"
+          }
+          def send(method, target, payload=None):
+              body = None if payload is None else json.dumps(payload).encode("utf-8")
+              request = urllib.request.Request(target, data=body, headers=headers, method=method)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+          existing = send("GET", url + "?ref=mars/production-2")
+          manifest = Path("dist/marstube-tv.json").read_bytes()
+          updated = send("PUT", url, {
+              "message": "Publish independent MarsTube stable manifest for latest signed release",
+              "branch": "mars/production-2",
+              "sha": existing["sha"],
+              "content": base64.b64encode(manifest).decode("ascii")
+          })
+          latest = send("GET", url + "?ref=mars/production-2")
+          stored = base64.b64decode(latest["content"].replace("\n", ""))
+          assert stored == manifest, "Mirror changed unexpectedly after publish"
+          print("Trusted raw mirror synced and confirmed; commit", updated["commit"]["sha"])
+          PY
