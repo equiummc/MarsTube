@@ -98,11 +98,12 @@ if ($null -ne $current) {
         $_ -match '^package:de\.equiummc\.' -and $_ -notmatch '^package:de\.equiummc\.marstube2$'
     })
     if ($other.Count -gt 0) {
-        Write-Host 'Andere MarsTube-Varianten vorhanden:'
+        Write-Host 'Aeltere MarsTube-Varianten mit anderen Paketkennungen gefunden:'
         $other | ForEach-Object { Write-Host $_ }
-        throw 'Aus Sicherheitsgruenden keine zweite App installiert. Vorhandene Variante bleibt unveraendert.'
+        Write-Host 'Diese Alt-Apps sind unabhaengig vom Produktionspaket.'
+        Write-Host 'Sie werden NICHT geloescht oder ueberschrieben.'
     }
-    Write-Host 'Regulaeres MarsTube-Paket noch nicht installiert. Installiere die offizielle 0.0.20.'
+    Write-Host 'Das Produktionspaket de.equiummc.marstube2 fehlt. Installiere die offizielle 0.0.20.'
 }
 
 $apk = Join-Path $env:TEMP 'MarsTube-0.0.20.apk'
