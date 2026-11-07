@@ -1,0 +1,42 @@
+name: MarsTube 0.0.22 Fire TV installer PS7 syntax check
+on:
+  push:
+    branches:
+      - fix/mt2-022-update-reliability-20261107
+    paths:
+      - 'tools/Install-MarsTube-022-FireTV.ps1'
+      - '.github/workflows/mt2-022-firetv-installer-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PowerShell 7 AST and guards without connecting to a device
+        shell: pwsh
+        run: |
+          $path = 'tools/Install-MarsTube-022-FireTV.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            $path, [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | Format-List | Out-String | Write-Error
+            throw 'PowerShell syntax invalid'
+          }
+          $source = Get-Content -LiteralPath $path -Raw
+          foreach ($required in @('de.equiummc.marstube2', 'Get-ConnectedFireTv',
+              'Amazon', 'SHA256SUMS', 'Get-FileHash', 'install -r',
+              'versionCode=12022', "0.0.22", 'Keine App deinstallieren')) {
+            if (-not $source.Contains($required)) { throw "Missing invariant $required" }
+          }
+          $forbidden = @('install -d', 'uninstall -k', 'pm clear', 'logcat -c', 'force-stop')
+          foreach ($word in $forbidden) {
+            if ($source -match "(?m)^\s*&\s*\`$adb.*$word") {
+              throw "Unexpected mutation command: $word"
+            }
+          }
+          Write-Host 'PASS: PS7 script syntactically valid, targeted FireTV, checked APK and in-place install.'
