@@ -17,11 +17,11 @@ public class MarsTvNavigationModelTest {
         assertEquals(2, MarsTvNavigationModel.wrap(1, 8, 7));
         assertEquals(0, MarsTvNavigationModel.wrap(0, -1, 0));
     }
-    @Test public void shortsExtraOnlyExistsDuringShorts() {
+    @Test public void shortsAndNormalVideoHaveIdenticalMainNavigation() {
         assertEquals(7, MarsTvNavigationModel.playerCount(false));
-        assertEquals(8, MarsTvNavigationModel.playerCount(true));
+        assertEquals(7, MarsTvNavigationModel.playerCount(true));
         assertEquals(0, MarsTvNavigationModel.wrap(6, 1, MarsTvNavigationModel.playerCount(false)));
-        assertEquals(7, MarsTvNavigationModel.wrap(0, -1, MarsTvNavigationModel.playerCount(true)));
+        assertEquals(6, MarsTvNavigationModel.wrap(0, -1, MarsTvNavigationModel.playerCount(true)));
     }
     @Test public void modelEntriesCannotBeReorderedExternally() {
         MarsTvNavigationModel.Entry[] entries = MarsTvNavigationModel.main();
