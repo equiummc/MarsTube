@@ -270,10 +270,9 @@ public final class MarsTvSettingsPages {
         rows.add(SettingsRow.note("Shorts: zwei Vorschauen links, Like/Dislike rechts. "
                 + "Links/Rechts wechseln zwischen Vorschau, Video und Reaktionen; "
                 + "auf dem Fortschrittsbalken kann gespult werden."));
-        rows.add(SettingsRow.note("Shorts haben eine eigene Fernbedienungsmaske: "
-                + "Hoch/Runter = vorheriger/nächster Short, Links/Rechts = 10 Sekunden spulen, "
-                + "OK kurz = Pause/Weiter, OK gehalten = vorübergehend 2×. MENU öffnet "
-                + "die Navigation; die normalen Videokarten werden ausgeblendet."));
+        rows.add(SettingsRow.note("In der Videoansicht wechseln Hoch/Runter zum "
+                + "vorherigen/nächsten Short. MENU/BACK öffnet die Hauptnavigation, "
+                + "OK steuert die Wiedergabe; die Vorschauauswahl erfolgt per OK."));
         rows.add(SettingsRow.toggle("Miniplayer",
                 "Nur anzeigen, wenn eine Wiedergabe aktiv ist; bei ausgeschaltetem Player "
                         + "gibt es keinen leeren Menüpunkt.",
