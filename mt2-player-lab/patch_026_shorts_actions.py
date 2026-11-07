@@ -107,6 +107,11 @@ once(shell,
                 actions::comments, actions::channel, actions::captions,
                 actions::speed, actions::search, actions::share,
                 actions::noInterest);""")
+once(shell, "    public void hideUi() {",
+     "    /** Let the activity dispatch D-pad keys into the focused comments list. */\n"
+     "    public boolean commentsOpen() { return actions.commentsOpen(); }\n\n"
+     "    public void hideUi() {")
+
 once(shell, """        cancelHold();
         cancelSeekHold();
         openRail();
@@ -337,6 +342,16 @@ once(playback,
     }
 
     private void onCommentsEntryClicked() {""")
+# Prevent legacy MT2-002 fallback from seeking/changing volume while the
+# right-side comments RecyclerView owns D-pad focus.
+once(playback,
+"""        if (mMarsTvShell != null && mMarsTvShell.handle(event)) return true;
+        if (marsTvPlaybackKey(event)) return true;""",
+"""        if (mMarsTvShell != null && mMarsTvShell.handle(event)) return true;
+        if (mMarsTvShell != null && mMarsTvShell.commentsOpen())
+            return super.dispatchKeyEvent(event);
+        if (marsTvPlaybackKey(event)) return true;""")
+
 # MT2-023 already disables all television comment prefetching, including Shorts.
 # Preserve its stronger safeguard; do not add a second conflicting one.
 if "if (com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(this)) return;" not in playback.read_text(encoding="utf-8"):
