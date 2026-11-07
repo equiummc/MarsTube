@@ -119,7 +119,7 @@ if (-not (Test-Path -LiteralPath $marker)) {
     if (Test-Path -LiteralPath $Work) { throw 'Build-Quellordner ist unvollstaendig. Keine Dateien werden geloescht.' }
     New-Item -ItemType Directory -Path $Work | Out-Null
     Write-Host 'Erstelle den getrennten MarsTube-0.0.30-Quellstand.'
-    & robocopy.exe $Upstream $Work /E /XD .git .gradle build /NFL /NDL /NJH /NJS /NP | Out-Null
+    & robocopy.exe $Upstream $Work /E /XD .gradle build /NFL /NDL /NJH /NJS /NP | Out-Null
     if ($LASTEXITCODE -ge 8) { throw "Quellcode-Kopie fehlgeschlagen: $LASTEXITCODE" }
     $settings=Join-Path $Work 'settings.gradle'
     $original=[IO.File]::ReadAllText($settings)
