@@ -71,8 +71,7 @@ once(shell, """        addRailItem("Start", 0);
                 : com.newtube.mobile.ui.common.MarsTvNavigationModel.main()) {
             addRailItem(entry.label, entry.destination);
         }
-        // The eighth action is contextual and NEVER focused outside Shorts.
-        addRailItem("Shorts Automatisch", -18);""")
+        // Shorts auto-advance remains in Shorts controls, not the global rail.""")
 
 once(shell, """        railHint = text(12, WHITE);
         railHint.setGravity(Gravity.CENTER_VERTICAL);
@@ -127,4 +126,4 @@ assert 'applicationId "de.equiummc.marstube2"' in (
     root / "smarttubetv/build.gradle").read_text(encoding="utf-8")
 assert "highestCode" in (root / "SharedModules/appupdatechecker2/src/main/java/"
                         "com/liskovsoft/appupdatechecker2/core/AppVersionChecker.java").read_text(encoding="utf-8")
-print("MT2-024: TV/Shorts/player single canonical rail, wrap, home M and flyout labels.")
+print("MT2-024: identical 7-entry TV/Shorts/player rail, wrap, home M and flyout labels.")
