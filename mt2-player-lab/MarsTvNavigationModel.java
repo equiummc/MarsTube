@@ -37,8 +37,8 @@ public final class MarsTvNavigationModel {
         return Math.floorMod(current + step, count);
     }
 
-    /** Player has one contextual extra option only when Shorts are playing. */
+    /** The player and Shorts must expose the same navigation as every TV screen. */
     public static int playerCount(boolean shorts) {
-        return MAIN.length + (shorts ? 1 : 0);
+        return MAIN.length;
     }
 }
