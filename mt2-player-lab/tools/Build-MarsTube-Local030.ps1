@@ -179,27 +179,7 @@ if ($protoText.Contains($protoLinux)) {
     throw 'Unerwartete protoc-Konfiguration; Build vorsorglich abgebrochen.'
 }
 $props=Join-Path $Work 'keystore.properties'
-if (Test-Path -LiteralPath $props) {
-    # After a previous interrupted build, only our own four-line temporary
-    # signing file may be removed. Never overwrite a user-created file.
-    $stale=Get-Item -LiteralPath $props -Force
-    if (($stale.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
-        throw 'Signierdatei ist ein Link; automatische Bereinigung verweigert.'
-    }
-    $lines=@(Get-Content -LiteralPath $props)
-    $names=@($lines | ForEach-Object {
-        if ($_ -match '^([^=]+)=') { $Matches[1] } else { '' }
-    })
-    $expectedPath='storeFile='+($Jks.Replace('\','/'))
-    if ($lines.Count -ne 4 -or
-        $lines[0] -cne $expectedPath -or
-        ($names -join ',') -cne 'storeFile,storePassword,keyAlias,keyPassword') {
-        throw "Unbekannte keystore.properties bleibt geschuetzt: $props"
-    }
-    Remove-Item -LiteralPath $props -Force -ErrorAction Stop
-    if (Test-Path -LiteralPath $props) { throw 'Temporäre Signierdatei konnte nicht bereinigt werden.' }
-    Write-Host 'Vorige temporaere Signierdatei sicher erkannt und bereinigt.'
-}
+if (Test-Path -LiteralPath $props) { throw "Vorhandene Geheimnisdatei wird nicht ueberschrieben: $props" }
 try {
     $cipher=[IO.File]::ReadAllText($Dpapi).Trim()
     $secret=ConvertTo-SecureString -String $cipher
