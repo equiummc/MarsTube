@@ -30,6 +30,8 @@ sources = {
     "MarsShortsSession036.java": tv/"common/MarsShortsSession.java",
     "MarsShortsDiscovery036.java": tv/"common/MarsShortsDiscovery.java",
     "MarsTvInterest036.java": tv/"common/MarsTvInterest036.java",
+    "MarsTvCurtainPolicy036.java": tv/"common/MarsTvCurtainPolicy036.java",
+    "MarsTvCurtainPolicy036Test.java": root/"smarttubetv/src/test/java/com/newtube/mobile/ui/common/MarsTvCurtainPolicy036Test.java",
     "MarsShortsSessionTest036.java": root/"smarttubetv/src/test/java/com/newtube/mobile/ui/common/MarsShortsSessionTest.java",
 }
 for source, dest in sources.items():
@@ -163,12 +165,10 @@ once(playback,
                 || mVideoStill.getWidth() <= 0 || mVideoStill.getHeight() <= 0
                 || mIsInPip) return false;
         android.graphics.drawable.Drawable photo = mVideoStill.getDrawable();
-        if (photo.getIntrinsicWidth() <= 0 || photo.getIntrinsicHeight() <= 0
-                || photo.getIntrinsicWidth() <= photo.getIntrinsicHeight() * 1.15f)
-            return false; // Already a portrait preview: fastest direct reveal.
         VideoSize size = mPlayer.getVideoSize();
-        if (size.width <= 0 || size.height <= 0
-                || (float) size.width / size.height > 0.88f) return false;
+        if (!com.newtube.mobile.ui.common.MarsTvCurtainPolicy036.shouldReveal(
+                photo.getIntrinsicWidth(), photo.getIntrinsicHeight(),
+                size.width, size.height, true)) return false;
         FrameLayout host = (FrameLayout) mVideoStill.getParent();
         int half = (mVideoStill.getWidth() + 1) / 2;
         marsTvCancelCurtain036();
