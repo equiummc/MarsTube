@@ -215,6 +215,7 @@ one(shell,
             for (Video video : allowed) {''')
 one(shell,
     '''    public void hideUi() {
+        if (playerPanels.isOpen()) playerPanels.close();
         cancelHold();''',
     '''    /** Remove a rejected card immediately; no decoder/player restart. */
     public void rejectRecommendation(String videoId) {
