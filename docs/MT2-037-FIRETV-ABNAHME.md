@@ -9,6 +9,7 @@
 ## Konto- und Profilwechsel
 - Der Profilbereich der Mediathek öffnet auf Android TV einen fokussierbaren
   Dialog statt eines Touch-Bottom-Sheets.
+- Derselbe Dialog ist unter **Einstellungen → Erweitert → Konten → YouTube-Profil wechseln** erreichbar.
 - Listet echte Identitäten aus `MediaServiceManager.loadAccounts()`, mit
   Profilbild, Kontoname, Mail, aktiver Markierung.
 - Wechsel per `AccountSelectionPresenter.selectAccount(account)` an den
