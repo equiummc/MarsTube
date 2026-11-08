@@ -102,15 +102,12 @@ if (-not (Test-Path -LiteralPath $marker)) {
     $gradleData=[IO.File]::ReadAllText($gradleFile)
     $oldFilter="abiFilters 'armeabi-v7a', 'arm64-v8a'"
     $newFilter="abiFilters 'armeabi-v7a'"
-    $oldSplit="include 'armeabi-v7a', 'arm64-v8a', 'x86'"
-    $newSplit="include 'armeabi-v7a'"
     if ($gradleData.IndexOf($oldFilter) -lt 0 -or
         $gradleData.IndexOf($oldFilter) -ne $gradleData.LastIndexOf($oldFilter) -or
-        $gradleData.IndexOf($oldSplit) -lt 0 -or
-        $gradleData.IndexOf($oldSplit) -ne $gradleData.LastIndexOf($oldSplit)) {
+        -not $gradleData.Contains('enable = false // single sideloadable universal APK, no ABI splits')) {
         throw 'Unerwartete ABI-Konfiguration; keine riskante Aenderung.'
     }
-    $gradleData=$gradleData.Replace($oldFilter,$newFilter).Replace($oldSplit,$newSplit)
+    $gradleData=$gradleData.Replace($oldFilter,$newFilter)
     [IO.File]::WriteAllText($gradleFile,$gradleData,[Text.UTF8Encoding]::new($false))
     if (-not $gradleData.Contains('applicationId "de.equiummc.marstube2"') -or
         -not $gradleData.Contains('versionCode 12031') -or
