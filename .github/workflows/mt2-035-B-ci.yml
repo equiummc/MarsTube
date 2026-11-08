@@ -1,0 +1,80 @@
+name: MT2-035 B TV Overview CI
+
+on:
+  push:
+    branches:
+      - feature/mt2-035-overview-b-20261108
+    paths:
+      - 'mt2-player-lab/patch_033_navigation_autonext.py'
+      - 'mt2-player-lab/patch_033_player_panels.py'
+      - 'mt2-player-lab/patch_033_floating_overlay.py'
+      - 'mt2-player-lab/MarsTvPlayerPanels033.java'
+      - 'mt2-player-lab/MarsTvPlayerPanels034.java'
+      - 'mt2-player-lab/patch_034_A_player_menu.py'
+      - 'tools/build-marstube-production-035-B.sh'
+      - 'mt2-player-lab/production-version-035.json'
+      - 'tools/build-marstube-production-035-B.sh'
+      - '.github/workflows/mt2-035-B-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: mt2-035-B-overview
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  signed_release_test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      MARS_SIGNING_KEYSTORE_B64: ${{ secrets.MARS_SIGNING_KEYSTORE_B64 }}
+      MARS_SIGNING_STORE_PASS: ${{ secrets.MARS_SIGNING_STORE_PASS }}
+      MARS_SIGNING_KEY_PASS: ${{ secrets.MARS_SIGNING_KEY_PASS }}
+      MARS_SIGNING_KEY_ALIAS: ${{ secrets.MARS_SIGNING_KEY_ALIAS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Compile, run Shorts/SABR tests and sign 0.0.35 with original key
+        run: |
+          set -euo pipefail
+          python3 -m py_compile mt2-player-lab/patch_033_navigation_autonext.py mt2-player-lab/patch_033_player_panels.py mt2-player-lab/patch_033_floating_overlay.py mt2-player-lab/patch_034_A_player_menu.py mt2-player-lab/patch_035_B_overviews.py
+      - 'mt2-player-lab/patch_035_B_overviews.py'
+      - 'mt2-player-lab/MarsTvBrowseB035.java'
+          bash tools/build-marstube-production-035-B.sh
+      - name: Check package identity, version, original signing and file size
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum -c SHA256SUMS)
+          test -s dist/MarsTube-0.0.35.apk
+          grep -Fq "name='de.equiummc.marstube2'" dist/badging.txt
+          grep -Fq "versionCode='12035'" dist/badging.txt
+          grep -Fq "versionName='0.0.35'" dist/badging.txt
+          grep -Fq 'certificate SHA-256 digest:' dist/signature.txt
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          apk=Path("dist/MarsTube-0.0.35.apk")
+          with zipfile.ZipFile(apk) as z:
+              libs = [(i.filename,i.compress_size) for i in z.infolist() if i.filename.startswith("lib/")]
+              assert any("/armeabi-v7a/" in n for n,_ in libs), "Missing ARM32"
+              assert any("/arm64-v8a/" in n for n,_ in libs), "Missing ARM64"
+              print("SIGNED APK size MiB:",round(apk.stat().st_size/1024/1024,2))
+              print("Native libs MiB:",round(sum(size for _,size in libs)/1024/1024,2))
+          PY
+      - name: Keep test-only signed package for traceability (never publish a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarsTube-0.0.35-B-ci-only
+          path: |
+            dist/MarsTube-0.0.35.apk
+            dist/SHA256SUMS
+          retention-days: 14
+          if-no-files-found: error
