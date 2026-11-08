@@ -1,0 +1,25 @@
+{
+  "versionName": "0.0.35",
+  "versionCode": 12035,
+  "packageName": "de.equiummc.marstube2",
+  "phase": "A+B – Player und TV-Übersichtsseiten",
+  "scope_de": [
+    "B: Kleinere Videokacheln auf TV-Startseite mit mehr Abstand, bestehende Videofunktionen bleiben",
+    "B: Sechs schmalere Shorts-Kacheln im 3×2-TV-Raster, ursprüngliche Seitenverhältnisse erhalten",
+    "B: Uhrzeit und lokales deutsches Datum oben rechts in TV-Browse-Ansichten und beim Shorts-Menü",
+    "B: Abo-Seite mit linker Auswahl der aus dem Feed geladenen Kanäle und Videovorschauen rechts",
+    "B: Mediathek mit Verlauf, Später ansehen, Playlists und Musik als Schnellzugriffe",
+    "A: YouTube-artige rechte Player-Menüs und echte Qualitäts-, Audio-, Untertitel- und Tempoauswahl",
+    "A: Vorhandener Media3-Player, Buttons, Kommentare, Merken und Kanalbenachrichtigungen"
+  ],
+  "acceptance": "Nur Test-Build, keine Installation oder Veröffentlichung vor kumulierter C-Abnahme",
+  "changelog_de": [
+    "B: Kleinere Videokacheln auf TV-Startseite mit mehr Abstand, bestehende Videofunktionen bleiben",
+    "B: Sechs schmalere Shorts-Kacheln im 3×2-TV-Raster, ursprüngliche Seitenverhältnisse erhalten",
+    "B: Uhrzeit und lokales deutsches Datum oben rechts in TV-Browse-Ansichten und beim Shorts-Menü",
+    "B: Abo-Seite mit linker Auswahl der aus dem Feed geladenen Kanäle und Videovorschauen rechts",
+    "B: Mediathek mit Verlauf, Später ansehen, Playlists und Musik als Schnellzugriffe",
+    "A: YouTube-artige rechte Player-Menüs und echte Qualitäts-, Audio-, Untertitel- und Tempoauswahl",
+    "A: Vorhandener Media3-Player, Buttons, Kommentare, Merken und Kanalbenachrichtigungen"
+  ]
+}
