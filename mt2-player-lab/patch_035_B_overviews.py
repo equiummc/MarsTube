@@ -189,23 +189,22 @@ one(browse,
         if (mMarsTvB035 != null) mMarsTvB035.insertLibraryTiles(mYouRows);
 
         List<BrowseSection> navSections = selectNavSections();""")
+# Retain the user-selected Home tiles (4/6/9) and History setting, but
+# enforce a compact two-pane Abos grid and the requested 3-wide Shorts overview.
 one(browse,
-    """    private int computeSpanCount() {
-        return com.newtube.mobile.ui.common.MobileGrid.computeSpanCount(this);
-    }""",
-    """    private int computeSpanCount() {
-        if (com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(this)) {
-            int widthDp = getResources().getConfiguration().screenWidthDp;
-            if (mCurrentSectionId == MediaGroup.TYPE_SHORTS) return 3;
-            if (mCurrentSectionId == MediaGroup.TYPE_SUBSCRIPTIONS) return widthDp >= 1100 ? 3 : 2;
-            // Four compact landscape cards on wide TV; three on narrow sets.
-            return widthDp >= 900 ? 4 : 3;
-        }
-        return com.newtube.mobile.ui.common.MobileGrid.computeSpanCount(this);
-    }""")
+    "                return com.newtube.mobile.player.MarsTvPlayerPrefs.shortsSpanCount(this);",
+    "                return 3;")
 one(browse,
-    "        updateGridSpanCount(com.newtube.mobile.ui.common.MobileGrid.computeSpanCount(newConfig));",
-    "        updateGridSpanCount(computeSpanCount());\n"
+    """            if (mCurrentSectionId == MediaGroup.TYPE_SUBSCRIPTIONS
+                    && com.newtube.mobile.player.MarsTvPlayerPrefs.isSubscriptionsGrid(this)) {
+                return 3;
+            }""",
+    """            if (mCurrentSectionId == MediaGroup.TYPE_SUBSCRIPTIONS) {
+                return 2;
+            }""")
+one(browse,
+    "        updateGridSpanCount(computeSpanCount(newConfig));",
+    "        updateGridSpanCount(computeSpanCount(newConfig));\n"
     "        if (mMarsTvB035 != null) mMarsTvB035.onSection(mCurrentSectionId);")
 one(browse,
     """        updateAccountRow();
@@ -238,6 +237,10 @@ one(browse,
 one(cards,
     "            boolean shorts = video != null && video.isShorts;",
     """            boolean shorts = video != null && video.isShorts;
+            // The outer home/shorts card is narrower within its grid cell.
+            // Focus stays on the original click target; phones are untouched.
+            int cardInset = Math.round((shorts ? 5f : 8f) * dm.density);
+            itemView.setPaddingRelative(cardInset, dp10 / 3, cardInset, dp10 / 2);
             if (shorts) {
                 // Fit two portrait rows in the TV overview, never stretch the source.
                 int maxPerRow = Math.max(dp80, (dm.heightPixels
