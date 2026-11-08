@@ -196,7 +196,7 @@ if ($cert -notmatch 'certificate SHA-256 digest:\s*([a-fA-F0-9]+)') {
 }
 # Inspect the actual signed APK. A stray 64-bit native library makes the
 # variant unsuitable for an ARM32-only television; do not publish it.
-Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.ZipFile
 $zip=[IO.Compression.ZipFile]::OpenRead($built)
 try {
     $abis=@($zip.Entries | Where-Object {$_.FullName -match '^lib/[^/]+/[^/]+\.so$'} |
