@@ -54,6 +54,7 @@ public final class MarsTvBrowseB035 {
     private String channelSignature = "";
     private int currentSection = -1;
     private boolean running;
+    private boolean libraryVisible;
     private final Runnable updateTime = new Runnable() {
         @Override public void run() {
             if (!running) return;
@@ -201,7 +202,7 @@ public final class MarsTvBrowseB035 {
             channels.clear();
         }
         boolean subs = section == MediaGroup.TYPE_SUBSCRIPTIONS;
-        leftPane.setVisibility(subs ? View.VISIBLE : View.GONE);
+        leftPane.setVisibility(subs && !libraryVisible ? View.VISIBLE : View.GONE);
         ConstraintLayout.LayoutParams lp =
                 (ConstraintLayout.LayoutParams) swipe.getLayoutParams();
         int margin = subs ? dp(com.newtube.mobile.ui.common.MarsTvNavigationTheme.WIDTH_DP
@@ -213,6 +214,12 @@ public final class MarsTvBrowseB035 {
         grid.setPaddingRelative(baseStartPad + dp(subs ? 11 : 20),
                 baseTopPad + dp(8), baseEndPad + dp(15), baseBottomPad);
         if (!subs) channelButtons.clear();
+    }
+
+    public void setLibraryVisible(boolean visible) {
+        libraryVisible = visible;
+        leftPane.setVisibility(!visible && currentSection == MediaGroup.TYPE_SUBSCRIPTIONS
+                ? View.VISIBLE : View.GONE);
     }
 
     public void onVideos(List<Video> videos) {
@@ -356,8 +363,6 @@ public final class MarsTvBrowseB035 {
         tile.setFocusable(true);
         tile.setClickable(true);
         tile.setBackground(background(accent, 0xAA4FB7E6, dp(14)));
-        tile.setOnFocusChangeListener((v, focus) -> tile.setBackground(background(
-                focus ? 0xFFDCF6FF : accent, focus ? BLUE : 0xAA4FB7E6, dp(14))));
         tile.setOnFocusChangeListener((v, focus) -> {
             tile.setTextColor(focus ? 0xFF063252 : WHITE);
             tile.setBackground(background(focus ? 0xFFDCF6FF : accent,
