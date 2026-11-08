@@ -12,5 +12,14 @@
     "Schmaler blauer Fortschrittsbereich und zurückhaltender blauer Verlauf übernommen",
     "Glockeneinstellung bis bestätigter Schnittstelle über Kanalseite; Später ansehen über Playlist-Picker"
   ],
-  "acceptance": "Nur Fire TV Cube, erst nach CI und manueller Prüfung; keine automatische Veröffentlichung"
+  "acceptance": "Nur Fire TV Cube, erst nach CI und manueller Prüfung; keine automatische Veröffentlichung",
+  "changelog_de": [
+    "Rechte Kanal-, Merken-, Kommentar- und Einstellungsmenüs mit echter Hierarchie und Zurück-Taste",
+    "Video spielt mit unverändertem Media3-PlayerView verkleinert links weiter",
+    "Native Auswahl von Qualität, Audiotrack, Untertiteln und Tempo innerhalb der rechten Menüführung",
+    "Schwebende Player-Aktionen ohne überflüssige 10-Sekunden-Tasten links/rechts von Play",
+    "Rechter Kommentarbereich wiederverwendet bestehende CommentsPanel-Implementierung",
+    "Schmaler blauer Fortschrittsbereich und zurückhaltender blauer Verlauf übernommen",
+    "Glockeneinstellung bis bestätigter Schnittstelle über Kanalseite; Später ansehen über Playlist-Picker"
+  ]
 }
