@@ -26,6 +26,24 @@ existing M logo. No brown filter or solid full-height blue background.
 - [ ] Confirm if a supported authenticated service API can submit official
   recommendation-feedback action; video rating (dislike) is not equivalent.
 
+## 033 – integrated player submenu progress (current test patch)
+- [x] Native right-side panels for Kanal, Kommentare, Merken, Einstellungen,
+  and Mehr, with D-pad up/down/OK, left-to-close and BACK-to-close.
+- [x] Same existing PlayerView docked as a left preview; no new decoder,
+  second player, or off-screen Surface.
+- [x] Actual subscriber toggle wired through existing onSubscribeTapped() and
+  getButtonState(R.id.action_subscribe); requires account support.
+- [x] Native audio-track picker only offered if alternate audio tracks exist.
+- [x] Quality, captions, playback speed, playlist save and comments are routed
+  through the existing Activity handlers, not fake local settings.
+- [ ] Channel notification-bell state/action: channel page remains authoritative;
+  this first-stage panel explicitly routes there instead of claiming a
+  direct notification change.
+- [ ] Unified comments pane resize/focus check on actual Fire TV.
+- [ ] Ensure all new panes survive 20+ video/Shorts transitions without stutter,
+  dropped focus or unexpected Media3 teardown.
+- [ ] Only mark ready for installation after successful signed 033 CI checks.
+
 ## Priority B – player & loading
 - [ ] Profile portrait thumbnail availability and effective displayed image URL,
   `mVideoStill`, `getCardImageUrl()`, ImageView scale type and frame bounds.
