@@ -133,7 +133,7 @@ public final class MarsShortsDiscovery {
                 request = YouTubeServiceManager.instance().getContentService()
                         .getShortsObserve();
             }
-            disposable = request.subscribe(
+            disposable = request.take(1).subscribe(
                     group -> main.post(() -> receive(requestedEpoch, group)),
                     error -> main.post(() -> finish(requestedEpoch, false)),
                     () -> main.post(() -> finish(requestedEpoch, true)));
