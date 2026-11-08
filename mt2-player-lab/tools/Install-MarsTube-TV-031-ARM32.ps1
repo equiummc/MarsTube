@@ -228,7 +228,7 @@ foreach ($kind in $testOrder) {
         $report.Add("$kind | Installation meldet Erfolg, Versionscheck unklar")
         continue
     }
-    Write-Host "$kind: MarsTube 0.0.31 installiert." -ForegroundColor Green
+    Write-Host ("{0}: MarsTube 0.0.31 installiert." -f $kind) -ForegroundColor Green
     Write-Host 'Teste jetzt mit der Fernbedienung: App starten, ein normales Video, ein Short, ZURUECK-Taste.'
     [void](Read-Host 'Nach dem kurzen Test Enter druecken, um den RAM erneut auszulesen')
     $ramAfter=Get-MemoryKB $info.Serial
