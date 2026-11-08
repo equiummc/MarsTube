@@ -113,8 +113,168 @@ if (-not (Test-Path -LiteralPath $apk)) {
     $shaFile=Join-Path $zipDir 'SHA256SUMS'
     if (-not (Test-Path -LiteralPath $shaFile)) {throw 'SHA256SUMS im Artefakt fehlt.'}
     $line=@(Get-Content -LiteralPath $shaFile | Where-Object {$_ -match '\s+MarsTube-0\.0\.31-ARM32\.apk$'})
-    if ($line.Count -ne 1 -or $line[0] -notmatch '^([a-fA-F0-9]{64})\s+') {throw 'ARM32-SHA256 fehlt oder ist nicht eindeutig.'}
-    $expected=$Matches[1]
+    if ($line.Count -ne 1) {throw 'ARM32-SHA256 fehlt oder ist nicht eindeutig.'}
+    if ($line[0] -match '^([a-fA-F0-9]{64})\s+MarsTube-0\.0\.31-ARM32\.apk
+    if ((Get-FileHash -LiteralPath $stageApk -Algorithm SHA256).Hash -ne $expected) {throw 'ARM32-Datei stimmt nicht mit SHA256SUMS ueberein.'}
+    Copy-Item -LiteralPath $stageApk -Destination $apk -ErrorAction Stop
+}
+# The signature fingerprint was extracted from the trusted signed universal APK.
+$badge=((& $aapt dump badging $apk 2>&1) | Out-String)
+Assert-Exit 'Paket-/Versionspruefung'
+if ($badge -notmatch "package: name='de\.equiummc\.marstube2' versionCode='12031' versionName='0\.0\.31'") {
+    throw 'Falsches Paket oder falsche Version.'
+}
+$certOutput=((& $signer verify --print-certs $apk 2>&1) | Out-String)
+Assert-Exit 'Signaturpruefung'
+if ($certOutput -match 'certificate SHA-256 digest:\s*([a-fA-F0-9]{64})') {
+    $actualCert=$Matches[1].ToLowerInvariant()
+} else {throw 'Release-Zertifikat konnte nicht gelesen werden.'}
+if ($actualCert -ne $Cert) {
+    throw 'Release-Zertifikat stimmt nicht mit MarsTube Original ueberein.'
+}
+& $align -c -P 16 4 $apk 1>$null
+Assert-Exit 'Native-Alignment-Pruefung'
+Add-Type -AssemblyName System.IO.Compression.ZipFile
+$z=[IO.Compression.ZipFile]::OpenRead($apk)
+try {
+    $libs=@($z.Entries | Where-Object {$_.FullName -match '^lib/[^/]+/.+\.so$'} |
+        ForEach-Object {($_.FullName -split '/')[1]} | Sort-Object -Unique)
+    if ($libs.Count -ne 1 -or $libs[0] -ne 'armeabi-v7a') {
+        throw "Falsche APK-Architekturen: $($libs -join ',')"
+    }
+} finally {$z.Dispose()}
+Write-Host ("ARM32-APK geprueft: {0:N2} MB" -f ((Get-Item -LiteralPath $apk).Length/1MB)) -ForegroundColor Green
+$report=[collections.generic.list[string]]::new()
+$report.Add('MarsTube 0.0.31 TV-Pruefung am '+(Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))
+$report.Add('APK: '+$FileName)
+$report.Add('APK SHA256: '+(Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash)
+$devices=@(Get-Devices)
+Write-Host 'Aktuell verbundene Geräte:'
+foreach ($d in $devices) {Write-Host ("  {0} | {1} | {2} | {3}" -f $d.Model,$d.Manufacturer,$d.ABI,$d.Serial)}
+if ($devices.Count -eq 0) {Write-Host 'Noch kein autorisiertes ADB-Geraet gefunden.'}
+$testOrder=@('Sony','Fire TV','Thomson')
+foreach ($kind in $testOrder) {
+    Write-Host ''
+    Write-Host "=== $kind ===" -ForegroundColor Cyan
+    $match=@($devices | Where-Object {Target-Matches $kind $_})
+    $info=$null
+    if ($match.Count -eq 1) {
+        $info=$match[0]
+    } elseif ($match.Count -gt 1) {
+        Write-Warning "Mehrere passende $kind-Geraete. Bitte IP/Seriennummer manuell eingeben."
+    }
+    if ($null -eq $info) {
+        $hint=if ($kind -eq 'Fire TV') {' (Enter = 192.168.41.24:5555 versuchen)'} else {' (Enter = ueberspringen)'}
+        $address=(Read-Host "$kind-IP[:Port] oder Seriennummer$hint").Trim()
+        if (-not $address -and $kind -eq 'Fire TV') {$address='192.168.41.24:5555'}
+        if (-not $address) {
+            $report.Add("$kind | uebersprungen – keine Verbindung")
+            continue
+        }
+        if ($address -match '^\d{1,3}(\.\d{1,3}){3}$') {$address+=':5555'}
+        $serial=$address
+        if ($address -match '^\d{1,3}(\.\d{1,3}){3}:\d+$') {
+            Write-Host "ADB verbinde $address ..."
+            $connect=((& $adb connect $address 2>&1) | Out-String)
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "ADB-Verbindung fehlgeschlagen: $connect"
+                $report.Add("$kind | ADB-Verbindung fehlgeschlagen")
+                continue
+            }
+        }
+        try {$info=Get-DeviceStrings $serial}
+        catch {
+            Write-Warning "Geraet nicht erreichbar oder ADB nicht autorisiert: $_"
+            $report.Add("$kind | ADB nicht autorisiert / nicht erreichbar")
+            continue
+        }
+        if (-not (Target-Matches $kind $info)) {
+            Write-Warning "Geräteidentitaet passt nicht sicher zu '$kind': $($info.Model) / $($info.Manufacturer). Keine Installation."
+            $report.Add("$kind | Gerateidentitaet ungeprueft")
+            continue
+        }
+    }
+    Write-Host "Gerät: $($info.Model), Android-SDK $($info.SDK), ABI $($info.ABI)"
+    if (($info.ABI -split ',') -notcontains 'armeabi-v7a') {
+        Write-Warning 'Kein ARM32-Geraet. Installation unterbleibt.'
+        $report.Add("$kind | falsche Architektur: $($info.ABI)")
+        continue
+    }
+    $current=Get-InstalledVersion $info.Serial
+    if ($null -ne $current -and $current -gt $Version) {
+        Write-Warning "Aktuell installierte Version ist neuer (versionCode $current). Kein Downgrade."
+        $report.Add("$kind | neueres App-Build vorhanden: $current")
+        continue
+    }
+    $ramBefore=Get-MemoryKB $info.Serial
+    Write-Host "Freier/verfuegbarer RAM laut Android vor Installation: $(Format-Memory $ramBefore)"
+    if ($kind -eq 'Thomson' -and $null -ne $ramBefore -and $ramBefore -lt 153600) {
+        Write-Warning 'Thomson meldet weniger als 150 MB verfuegbaren RAM. Installation vorsichtshalber uebersprungen.'
+        $report.Add("$kind | wegen RAM-Druck uebersprungen: $(Format-Memory $ramBefore)")
+        continue
+    }
+    $answer=(Read-Host "$kind jetzt als Update/Erstinstallation einspielen? (J = ja, sonst ueberspringen)").Trim()
+    if ($answer -notmatch '^(j|ja)$') {
+        $report.Add("$kind | vom Nutzer uebersprungen")
+        continue
+    }
+    Write-Host "Installiere ARM32 ohne Deinstallation ..."
+    $result=((& $adb -s $info.Serial install -r $apk 2>&1) | Out-String)
+    if ($LASTEXITCODE -ne 0 -or $result -notmatch 'Success') {
+        Write-Warning "Installation fehlgeschlagen; keine Daten geloescht: $result"
+        $report.Add("$kind | Installation fehlgeschlagen: $result")
+        continue
+    }
+    $installed=Get-InstalledVersion $info.Serial
+    if ($installed -ne $Version) {
+        Write-Warning "Die installierte Versionsnummer konnte nicht bestaetigt werden ($installed)."
+        $report.Add("$kind | Installation meldet Erfolg, Versionscheck unklar")
+        continue
+    }
+    Write-Host ("{0}: MarsTube 0.0.31 installiert." -f $kind) -ForegroundColor Green
+    Write-Host 'Teste jetzt mit der Fernbedienung: App starten, ein normales Video, ein Short, ZURUECK-Taste.'
+    $stopped=$false
+    if ($kind -eq 'Thomson') {
+        Write-Host 'RAM-Schutztest Thomson: Nach dem Start 12 kurze RAM-Abfragen per ADB.'
+        Write-Host 'Unter 150 MB MemAvailable wird NUR MarsTube vorsorglich beendet, nicht der Fernseher.'
+        [void](Read-Host 'Jetzt MarsTube/Video auf dem Thomson starten, dann Enter fuer die RAM-Ueberwachung')
+        for ($sample=1; $sample -le 12; $sample++) {
+            $available=Get-MemoryKB $info.Serial
+            if ($null -eq $available) {
+                Write-Warning 'Thomson-RAM kann nicht mehr ausgelesen werden. Monitoring abgebrochen.'
+                $report.Add('Thomson | RAM-Ueberwachung: ADB-Messung fehlgeschlagen')
+                break
+            }
+            Write-Host ("Thomson RAM #{0}: {1}" -f $sample,(Format-Memory $available))
+            if ($available -lt 153600) {
+                Write-Warning 'Kritischer Speicherdruck erkannt: MarsTube wird vorsorglich beendet.'
+                & $adb -s $info.Serial shell am force-stop $Pkg
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Warning 'Das automatische Stoppen von MarsTube konnte nicht bestaetigt werden.'
+                }
+                $stopped=$true
+                $report.Add('Thomson | RAM-Schutz ausgeloest: MemAvailable unter 150 MB, App-Stopp versucht')
+                break
+            }
+            if ($sample -lt 12) {Start-Sleep -Seconds 5}
+        }
+    } else {
+        [void](Read-Host 'Nach dem kurzen Test Enter druecken, um den RAM erneut auszulesen')
+    }
+    $ramAfter=Get-MemoryKB $info.Serial
+    Write-Host "Android MemAvailable nach dem Test: $(Format-Memory $ramAfter)"
+    $report.Add("$kind | installiert 0.0.31 ARM32 | ABI $($info.ABI) | RAM vorher: $(Format-Memory $ramBefore) | RAM nachher: $(Format-Memory $ramAfter) | Schutzstopp $stopped")
+    if ($kind -eq 'Thomson' -and $null -ne $ramAfter -and $ramAfter -lt 153600) {
+        Write-Warning 'Thomson hat nach dem Test weniger als 150 MB verfuegbaren RAM. Bitte keinen weiteren Belastungstest starten.'
+    }
+}
+$reportPath=Join-Path $ReportFolder ('MT2-031-TV-Architektur-Test-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.txt')
+$report | Set-Content -LiteralPath $reportPath -Encoding utf8
+Write-Host ''
+Write-Host "Fertig. Bericht: $reportPath" -ForegroundColor Green
+) {
+        $expected=$Matches[1]
+    } else {throw 'ARM32-SHA256 ist ungueltig.'}
     if ((Get-FileHash -LiteralPath $stageApk -Algorithm SHA256).Hash -ne $expected) {throw 'ARM32-Datei stimmt nicht mit SHA256SUMS ueberein.'}
     Copy-Item -LiteralPath $stageApk -Destination $apk -ErrorAction Stop
 }
