@@ -30,6 +30,11 @@ if not session.is_file() or not discovery.is_file():
     raise SystemExit("MT2-032: missing versioned discovery or session")
 (tv / "common/MarsShortsSession.java").write_bytes(session.read_bytes())
 (tv / "common/MarsShortsDiscovery.java").write_bytes(discovery.read_bytes())
+tests = here / "MarsShortsSessionTest032.java"
+test_dest = root / "smarttubetv/src/test/java/com/newtube/mobile/ui/common/MarsShortsSessionTest.java"
+if not tests.is_file() or not test_dest.is_file():
+    raise SystemExit("MT2-032: missing session unit tests")
+test_dest.write_bytes(tests.read_bytes())
 
 # No automatic click when the Shorts overview is entered OR when BACK returns.
 # The old one-shot behavior also fired on a focused first card, confusing focus
