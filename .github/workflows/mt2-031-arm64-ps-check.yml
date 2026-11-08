@@ -1,0 +1,46 @@
+name: MT2-031 ARM64 local PowerShell build syntax check
+
+on:
+  push:
+    branches:
+      - feature/mt2-031-compact-shorts-apk-audit-20261108
+    paths:
+      - 'mt2-player-lab/tools/Build-MarsTube-Local031-ARM64.ps1'
+      - '.github/workflows/mt2-031-arm64-ps-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse_powershell:
+    runs-on: windows-2025
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse without executing the local installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $file = Join-Path $env:GITHUB_WORKSPACE 'mt2-player-lab/tools/Build-MarsTube-Local031-ARM64.ps1'
+          $tokens = $null
+          $errors = $null
+          $ast = [Management.Automation.Language.Parser]::ParseFile($file, [ref]$tokens, [ref]$errors)
+          if ($errors.Count) {
+              foreach ($err in $errors) { Write-Host $err.ToString() }
+              throw ('PowerShell parser errors: ' + $errors.Count)
+          }
+          $content = Get-Content -LiteralPath $file -Raw
+          foreach ($required in @(
+              'source-031', 'source-031-arm64', 'abiFilters',
+              'release-credentials.dpapi', 'MarsTube-0.0.31-ARM64.apk',
+              'versionCode 12031', 'ZipFile', 'arm64-v8a'
+          )) {
+              if (-not $content.Contains($required)) {
+                  throw ('Missing guard: ' + $required)
+              }
+          }
+          if ($content.Contains('reset --hard') -or $content.Contains(' uninstall ')) {
+              throw 'Destructive action detected.'
+          }
+          Write-Output 'PASS: MT2-031 ARM64 Windows PowerShell 7 script syntax; no execution.'
