@@ -22,7 +22,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $file = Join-Path $env:GITHUB_WORKSPACE 'mt2-player-lab/tools/Build-MarsTube-Local031.ps1'
+          $file = Join-Path $env:GITHUB_WORKSPACE 'mt2-player-lab/tools/Build-MarsTube-Local031-ARM32.ps1'
           $tokens = $null
           $errors = $null
           $ast = [Management.Automation.Language.Parser]::ParseFile($file, [ref]$tokens, [ref]$errors)
