@@ -1,0 +1,12 @@
+{
+  "versionName": "0.0.32",
+  "versionCode": 12032,
+  "packageName": "de.equiummc.marstube2",
+  "changelog_de": [
+    "Shorts-Übersicht öffnet nicht mehr ungewollt den ersten Short: Fokus statt automatischem Klick",
+    "Shorts Discovery fordert automatisch weitere Seiten an, wenn sich die aktive Liste dem Ende nähert",
+    "Bis zu 1.000 abgespielte Shorts werden nur als lokale IDs vorgemerkt, damit neue Einträge bevorzugt werden",
+    "Weiter lädt bei leerem Listenende neue Shorts nach; Wiederholen bleibt beim aktuellen Video",
+    "Maximal 180 Video-Metadaten im Arbeitsspeicher, kein zweiter Decoder und keine Stream-Vorladung"
+  ]
+}
