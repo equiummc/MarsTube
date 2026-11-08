@@ -1,0 +1,42 @@
+name: MT2-031 Sony Fire Thomson installer PS7 safety
+
+on:
+  push:
+    branches: [feature/mt2-031-compact-shorts-apk-audit-20261108]
+    paths:
+      - 'mt2-player-lab/tools/Install-MarsTube-TV-031-ARM32.ps1'
+      - '.github/workflows/mt2-031-tv-install-ps-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ps7_parser_and_safety:
+    runs-on: windows-2025
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell 7 syntax and safe-install policy (no devices modified)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $p = Join-Path $env:GITHUB_WORKSPACE 'mt2-player-lab/tools/Install-MarsTube-TV-031-ARM32.ps1'
+          $tokens=$null
+          $errors=$null
+          [void][Management.Automation.Language.Parser]::ParseFile($p,[ref]$tokens,[ref]$errors)
+          foreach($e in $errors){Write-Host $e.ToString()}
+          if($errors.Count -gt 0){throw ('PowerShell syntax errors: '+$errors.Count)}
+          $s=Get-Content -LiteralPath $p -Raw
+          foreach($required in @(
+             'MarsTube-0.0.31-ARM32.apk', 'f80f712f9dbbd16c692e5d5eaff7598db73a660c82911bfd3ff0d0215c8f84e9',
+             'armeabi-v7a', 'Sony', 'Thomson', 'Fire TV', 'install -r',
+             'Get-MemoryKB', 'Get-InstalledVersion', 'SHA256SUMS', 'apksigner.bat', 'zipalign.exe',
+             'Read-Host', 'verfuegbaren RAM', 'Get-FileHash'
+          )){
+             if(-not $s.Contains($required)){throw ('Missing guard: '+$required)}
+          }
+          foreach($forbidden in @('adb uninstall','uninstall --user','pm clear','reset --hard','rm -rf')){
+             if($s.Contains($forbidden)){throw ('Destructive operation found: '+$forbidden)}
+          }
+          Write-Host 'PASS: TV installer syntax; safety checks; no execution.'
