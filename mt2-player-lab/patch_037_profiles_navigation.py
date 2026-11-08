@@ -131,9 +131,10 @@ begin='''            } else if (focus == Focus.SHORTS_REACTIONS) {
                 if (shortsReactionPosition == 0) {'''
 end='''            } else if (focus == Focus.SHORTS_AUTO) {'''
 s=shell.read_text(encoding="utf-8")
-if s.count(begin)!=1 or s.count(end)!=1:
-    raise SystemExit("MT2-037: shorts key-map changed upstream")
+if s.count(begin)!=1:
+    raise SystemExit(f"MT2-037: Shorts key-map anchor changed (count={s.count(begin)})")
 a=s.index(begin)
+# SHORTS_AUTO occurs in several D-pad branches; only the next one matters.
 b=s.index(end,a+len(begin))
 s=s[:a]+'''            } else if (focus == Focus.SHORTS_REACTIONS) {
                 // 0 = reject, 1 = Weiter/Wdh., 2 = Like, 3 = Kommentare.
