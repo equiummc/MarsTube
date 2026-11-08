@@ -11,9 +11,10 @@ on:
       - 'mt2-player-lab/MarsTvPlayerPanels033.java'
       - 'mt2-player-lab/MarsTvPlayerPanels034.java'
       - 'mt2-player-lab/patch_034_A_player_menu.py'
+      - 'mt2-player-lab/patch_035_B_overviews.py'
+      - 'mt2-player-lab/MarsTvBrowseB035.java'
       - 'tools/build-marstube-production-035-B.sh'
       - 'mt2-player-lab/production-version-035.json'
-      - 'tools/build-marstube-production-035-B.sh'
       - '.github/workflows/mt2-035-B-ci.yml'
   workflow_dispatch:
 
@@ -46,8 +47,6 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile mt2-player-lab/patch_033_navigation_autonext.py mt2-player-lab/patch_033_player_panels.py mt2-player-lab/patch_033_floating_overlay.py mt2-player-lab/patch_034_A_player_menu.py mt2-player-lab/patch_035_B_overviews.py
-      - 'mt2-player-lab/patch_035_B_overviews.py'
-      - 'mt2-player-lab/MarsTvBrowseB035.java'
           bash tools/build-marstube-production-035-B.sh
       - name: Check package identity, version, original signing and file size
         run: |
