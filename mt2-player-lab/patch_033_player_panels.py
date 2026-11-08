@@ -292,5 +292,8 @@ content = shell.read_text(encoding="utf-8")
 assert "new MarsTvPlayerPanels033" in content
 assert "actions.positionPanelVideo(dock)" in content
 assert "return handleBack();" in content
-assert "MarsTvShortsSession" not in content or True
+menu_text = menu_src.read_text(encoding="utf-8")
+assert "new ExoPlayer" not in menu_text and "new PlayerView" not in menu_text
+assert "getButtonState(R.id.action_subscribe)" in activity.read_text(encoding="utf-8")
+assert "showAudioTrackSheet()" in activity.read_text(encoding="utf-8")
 print("MT2-033 PANELS: TV right-side menu routes, one PlayerView dock, DPAD/BACK focus restored.")
