@@ -7,10 +7,12 @@
 - Nur Android TV wird angepasst; Handy- und Basis-Media3-Logik bleiben unverändert.
 
 ## Umgesetzt im Quellcode
-- **Startseite:** Auf breitem TV vier kompakte Karten pro Reihe, auf schmaler Hardware drei;
-  kleinerer TV-Text und größere freie Abstände. Keine Änderung des Video-Backends.
+- **Startseite:** Die vorhandene Nutzerwahl für 4/6/9 Kacheln bleibt gültig;
+  kompaktere Innenabstände und kleinerer TV-Text schaffen mehr Freiraum.
+  Keine Änderung des Video-Backends.
 - **Shorts-Übersicht:** Drei 9:16-Karten je Reihe; vertikale Bildhöhe auf zwei
-  sichtbare Zeilen ausgelegt. Keine verzerrten Thumbnails und kein Autoplay durch Fokus.
+  sichtbare Zeilen ausgelegt (6 gleichzeitig als Abnahmeziel). Keine verzerrten
+  Thumbnails und kein Autoplay durch Fokus.
 - **Uhrzeit und Datum:** Oben rechts auf den Browse-Seiten, deutsche lokale Systemzeit;
   Cast- und Suchaktionen bleiben links davon erreichbar. Im Shorts-Player während des
   geöffneten Navigationsmenüs, regulärer Player aus A/033 unverändert.
@@ -26,8 +28,8 @@
 - **Keine** zweite App, kein Datenreset, keine unnötige Video-Vorladung.
 
 ## Verbindliche Fire-TV-Abnahme für B
-1. Auf Startseite vier kleinere Tiles je Reihe bei breitem TV; Fokus alle Spalten
-   mit Pfeiltasten und OK erreichbar, Titel lesbar.
+1. Auf der Startseite je nach gespeicherter Auswahl 4/6/9 leicht verkleinerte
+   Kacheln; Fokus alle Spalten mit Pfeiltasten und OK erreichbar, Titel lesbar.
 2. Startseiten-Uhrzeit + Datum rechts oben, lokale Zeit korrekt, Suche/Cast erreichbar.
 3. Shorts-Übersicht 3 × 2 Hochkant-Kacheln, korrekte 9:16-Proportionen, ohne Autostart
    beim Fokus; Zurück und Auswahl erhalten.
