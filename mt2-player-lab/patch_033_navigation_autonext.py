@@ -11,7 +11,7 @@ root = Path(sys.argv[1])
 tv = root / "smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback"
 shell = tv / "MarsTvShell.java"
 stage = tv / "MarsTvShortsStage.java"
-flyout = tv / "common/MarsTvRailLabel.java"
+flyout = tv.parent / "common/MarsTvRailLabel.java"
 
 def replace_exact(path, before, after):
     source = path.read_text(encoding="utf-8")
