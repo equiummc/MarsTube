@@ -56,8 +56,8 @@ once(nav,
 once(theme,
     '            case 8: return R.drawable.mars_tv_ic_nav_shorts;',
     '            case 8: return R.drawable.mars_tv_ic_nav_shorts;\n'
-    '            case 9: return R.drawable.icon_live;\n'
-    '            case 10: return R.drawable.icon_music;')
+    '            case 9: return com.liskovsoft.smartyoutubetv2.common.R.drawable.icon_live;\n'
+    '            case 10: return com.liskovsoft.smartyoutubetv2.common.R.drawable.icon_music;')
 once(browse,
     '''        int destination = intent.getIntExtra("mars_tv_section", 0);
         intent.removeExtra("mars_tv_section");
