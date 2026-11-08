@@ -11,6 +11,7 @@ root = Path(sys.argv[1])
 tv = root / "smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback"
 shell = tv / "MarsTvShell.java"
 stage = tv / "MarsTvShortsStage.java"
+flyout = tv / "common/MarsTvRailLabel.java"
 
 def replace_exact(path, before, after):
     source = path.read_text(encoding="utf-8")
@@ -65,6 +66,18 @@ replace_exact(stage,
 replace_exact(stage,
     "        controls.addView(clock, new LinearLayout.LayoutParams(-1, dp(27)));",
     "        controls.addView(clock, new LinearLayout.LayoutParams(-1, dp(48)));")
+
+# The historic flyout uses a fixed 180dp width even for short labels.
+# Keep the existing MT2-025 GPU-only positioning fix and fit the text instead.
+replace_exact(flyout,
+    "        label.setTextSize(14f);",
+    "        label.setTextSize(14f);\\n        label.setMaxWidth(dp(activity, 142));".replace("\\n", "\n"))
+replace_exact(flyout,
+    "                dp(activity, 180), dp(activity, 38), Gravity.TOP | Gravity.START);",
+    "                ViewGroup.LayoutParams.WRAP_CONTENT, dp(activity, 38), Gravity.TOP | Gravity.START);")
+replace_exact(flyout,
+    "        FrameLayout host = (FrameLayout) label.getParent();",
+    "        FrameLayout host = (FrameLayout) label.getParent();\\n        if (host.getHeight() <= 0 || anchor.getHeight() <= 0) {\\n            hide(label);\\n            return;\\n        }".replace("\\n", "\n"))
 
 gradle = root / "smarttubetv/build.gradle"
 replace_exact(gradle, "versionCode 12032", "versionCode 12033")
