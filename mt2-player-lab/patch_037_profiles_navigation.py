@@ -47,6 +47,25 @@ once(browse,
             else AccountsSheet.show(this, this::updateAccountRow);
         });""")
 
+# An explicit "switch profile" entry in TV Settings > Advanced > Accounts.
+pages=tv/"settings/PlayerPages.java"
+once(pages,
+    """        rows.add(SettingsRow.header(context.getString(R.string.mobile_settings_accounts)));
+        AppPrefs prefs = AppPrefs.instance(context);""",
+    """        rows.add(SettingsRow.header(context.getString(R.string.mobile_settings_accounts)));
+        if (com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(context)) {
+            rows.add(SettingsRow.action("YouTube-Profil wechseln",
+                    "Gespeicherte Konten und Kanalprofile auswählen",
+                    page -> {
+                        android.app.Activity host = page.getActivity();
+                        if (host != null) {
+                            com.newtube.mobile.ui.browse.MarsTvAccountPicker037.show(host,
+                                    () -> BrowsePresenter.instance(host).refresh(false));
+                        }
+                    }));
+        }
+        AppPrefs prefs = AppPrefs.instance(context);""")
+
 # Live and Music are real BrowsePresenter sections; no dummy UI or second feed.
 once(nav,
     '            new Entry("Shorts", 8),',
