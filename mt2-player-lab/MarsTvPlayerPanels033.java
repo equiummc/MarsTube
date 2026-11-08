@@ -47,6 +47,9 @@ public final class MarsTvPlayerPanels033 {
     private final List<TextView> buttons = new ArrayList<>();
     private int selected;
     private boolean visible;
+    private boolean subscribed;
+    private boolean audioAvailable;
+    private String channelName = "Aktuelles Video";
 
     private static final class Option {
         final String name;
@@ -146,17 +149,24 @@ public final class MarsTvPlayerPanels033 {
         return visible;
     }
 
+    public void setCapabilities(boolean isSubscribed, boolean hasAudioAlternatives) {
+        subscribed = isSubscribed;
+        audioAvailable = hasAudioAlternatives;
+    }
+
     public void open(String kind, @Nullable Video video) {
         options.clear();
         selected = 0;
-        String channel = video == null || TextUtils.isEmpty(video.getAuthor())
-                ? "Aktuelles Video" : video.getAuthor();
+        if (video != null && !TextUtils.isEmpty(video.getAuthor())) {
+            channelName = video.getAuthor();
+        }
         heading.setText(kind);
-        subheading.setText(channel);
+        subheading.setText(channelName);
         switch (kind) {
             case "Kanal":
                 add("Kanal öffnen", "Kanal ansehen und Abo verwalten", "channel");
-                add("Abonnement", "Abo-Status auf der Kanalseite prüfen", "channel");
+                add(subscribed ? "Abonniert · Abo beenden" : "Abonnieren",
+                        "YouTube-Konto erforderlich", "subscribe");
                 add("Benachrichtigungen", "Glocke auf der Kanalseite einstellen", "channel");
                 break;
             case "Kommentare":
@@ -170,6 +180,7 @@ public final class MarsTvPlayerPanels033 {
                 add("Qualität", "Verfügbare echte Videoauflösungen", "quality");
                 add("Untertitel", "Verfügbare Untertitelspuren", "captions");
                 add("Geschwindigkeit", "Abspieltempo einstellen", "speed");
+                if (audioAvailable) add("Audiotrack", "Verfügbare Tonspur wählen", "audio");
                 add("Videoinformationen", "Codec, Auflösung, Bitrate und Puffer", "info");
                 break;
             case "Mehr":
