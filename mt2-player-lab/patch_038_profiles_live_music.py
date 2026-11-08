@@ -45,8 +45,8 @@ for filename in ("mars_nav_live_038.xml","mars_nav_music_038.xml"):
 # All main navigations use MarsTvNavigationModel.main(), including the player's
 # rail. Do not fork UI lists or change the HOME_INDEX or playback back button.
 once(theme,
-'''            case 6: return R.drawable.mars_tv_ic_nav_profile;''',
-'''            case 6: return R.drawable.mars_tv_ic_nav_profile;
+'''            case 6: return R.drawable.mars_nav_profile_025;''',
+'''            case 6: return R.drawable.mars_nav_profile_025;
             case 9: return R.drawable.mars_nav_live_038;
             case 10: return R.drawable.mars_nav_music_038;''')
 
