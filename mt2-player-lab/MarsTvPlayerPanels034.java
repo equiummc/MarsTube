@@ -224,14 +224,14 @@ public final class MarsTvPlayerPanels034 {
                 add(channelName, "Kanal öffnen und Videos ansehen", "channel");
                 add(onAction.subscribed() ? "Abonniert · Abo ändern" : "Abonnieren",
                     "Anmeldung erforderlich", "subscribe");
-                add("Benachrichtigungen", "Glocke auf Kanalseite verwalten", "channel");
+                add("Benachrichtigungen", "Glocke und Benachrichtigungsstufe", "page:Benachrichtigungen");
                 break;
             case "Kommentare":
                 add("Kommentare öffnen", "Rechts neben dem laufenden Video", "comments");
                 break;
             case "Merken":
                 add("Zu Playlist hinzufügen", "Wiedergabeliste auswählen", "save");
-                add("Später ansehen", "Über Wiedergabelisten auswählen", "save");
+                add("Später ansehen", "Direkt in der YouTube-Liste speichern", "watch_later");
                 break;
             case "Einstellungen":
                 add("Videoqualität", "Auflösung dieses Videos", "page:Qualität");
@@ -244,7 +244,8 @@ public final class MarsTvPlayerPanels034 {
             case "Qualität":
             case "Audiotrack":
             case "Untertitel":
-            case "Tempo": {
+            case "Tempo":
+            case "Benachrichtigungen": {
                 java.util.List<String> choices = onAction.choices(kind);
                 for (int i = 0; i < choices.size(); i++) {
                     add(choices.get(i), "", "choose:" + kind + ":" + i);
@@ -308,8 +309,10 @@ public final class MarsTvPlayerPanels034 {
         if (action.equals("subscribe")) return android.R.drawable.btn_star_big_off;
         if (action.equals("comments") || action.equals("page:Kommentare"))
             return android.R.drawable.ic_menu_edit;
-        if (action.equals("save") || action.equals("page:Merken"))
-            return android.R.drawable.ic_menu_save;
+        if (action.equals("save") || action.equals("page:Merken")
+                || action.equals("watch_later")) return android.R.drawable.ic_menu_save;
+        if (action.equals("page:Benachrichtigungen"))
+            return android.R.drawable.ic_popup_reminder;
         if (action.equals("page:Einstellungen") || action.equals("page:Qualität")
                 || action.equals("caption_style"))
             return android.R.drawable.ic_menu_manage;
@@ -353,7 +356,10 @@ public final class MarsTvPlayerPanels034 {
             String target = id.substring(7, at);
             int index = Integer.parseInt(id.substring(at + 1));
             onAction.choose(target, index, videoId);
-            if (visible) showPage(target);
+            if (visible) {
+                if ("Benachrichtigungen".equals(target)) back();
+                else showPage(target);
+            }
             return;
         }
         if (id.equals("subscribe")) {
