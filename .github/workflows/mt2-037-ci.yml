@@ -16,6 +16,7 @@ on:
       - 'mt2-player-lab/patch_036_C_shorts.py'
       - 'mt2-player-lab/patch_037_profiles_navigation.py'
       - 'mt2-player-lab/MarsTvAccountPicker037.java'
+      - 'mt2-player-lab/MarsTvNavigationModelTest037.java'
       - 'mt2-player-lab/MarsTvInterest037.java'
       - 'mt2-player-lab/MarsShortsSession036.java'
       - 'mt2-player-lab/MarsShortsDiscovery036.java'
