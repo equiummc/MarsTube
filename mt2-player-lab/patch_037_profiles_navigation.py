@@ -68,10 +68,15 @@ once(pages,
 
 # Live and Music are real BrowsePresenter sections; no dummy UI or second feed.
 once(nav,
+    '            new Entry("Verlauf", 3),',
+    '            new Entry("Live", 9),\n'
+    '            new Entry("Verlauf", 3),')
+once(nav,
     '            new Entry("Shorts", 8),',
     '            new Entry("Shorts", 8),\n'
-    '            new Entry("Live", 9),\n'
     '            new Entry("Musik", 10),')
+once(nav,'    public static final int HOME_INDEX = 3;',
+    '    public static final int HOME_INDEX = 4;')
 once(theme,
     '            case 8: return R.drawable.mars_nav_shorts_025;',
     '            case 8: return R.drawable.mars_tv_ic_nav_shorts;\n'
@@ -111,6 +116,13 @@ once(browse,
             return;
         }
         if (destination == 4 && com.newtube.mobile.ui.common.MarsDeviceMode.isTelevision(this)) {''')
+
+# The central M-home position remains the exact center of the 9-item rail.
+test_src=here/"MarsTvNavigationModelTest037.java"
+test_dst=root/"smarttubetv/src/test/java/com/newtube/mobile/ui/common/MarsTvNavigationModelTest.java"
+if not test_src.is_file() or not test_dst.is_file():
+    raise SystemExit("MT2-037: missing updated navigation test fixture")
+test_dst.write_bytes(test_src.read_bytes())
 
 # Shorts: reject X is the FIRST action on entering the right rail. Importantly,
 # the SAME ImageView performs both remote-OK and touch clicks, preventing drift.
