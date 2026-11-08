@@ -1,0 +1,12 @@
+{
+  "versionName": "0.0.33",
+  "versionCode": 12033,
+  "packageName": "de.equiummc.marstube2",
+  "changelog_de": [
+    "Shorts: Weiter und Wiederholen steuern nun den tatsächlichen Media3-Wiederholmodus",
+    "Shorts: Bei Videoende fordert Weiter über Discovery neue Einträge nach, auch am Listenende",
+    "Player-Navigation: Zurück oder Rechts aus dem seitlichen Menü stellt den vorherigen Fokusbereich wieder her",
+    "Player: Uhrzeit und lokales deutsches Datum zusätzlich anzeigen",
+    "Technische Zwischenstufe des größeren UI-Updates; Player-Kacheln und Untermenüs noch nicht umgestaltet"
+  ]
+}
