@@ -82,7 +82,7 @@ public final class MarsTvProfiles038 {
         items.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(items);
         host.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-        TextView first = null;
+        View first = null;
         Account selected = null;
         for (Account account : accounts) {
             if (account.isSelected()) selected = account;
@@ -90,7 +90,7 @@ public final class MarsTvProfiles038 {
             if (name == null || name.trim().isEmpty()) name = account.getEmail();
             if (name == null || name.trim().isEmpty()) name = "YouTube-Profil";
             String email = account.getEmail();
-            TextView row = option(activity,items,name,
+            LinearLayout row = option(activity,items,name,
                     account.isSelected() ? "Aktiv" : email,
                     account.isSelected(),() -> {
                         dialog.dismiss();
@@ -108,7 +108,7 @@ public final class MarsTvProfiles038 {
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                         dp(activity,32),dp(activity,32));
                 lp.rightMargin = dp(activity,14);
-                ((LinearLayout)row.getParent()).addView(icon,0,lp);
+                row.addView(icon,0,lp);
                 Glide.with(activity).load(avatar).circleCrop()
                         .placeholder(R.drawable.ic_mobile_account).into(icon);
             }
@@ -148,7 +148,7 @@ public final class MarsTvProfiles038 {
     }
 
     /** Owns one Android-TV focus surface. The row is not a passive mobile label. */
-    private static TextView option(Activity activity,LinearLayout parent,
+    private static LinearLayout option(Activity activity,LinearLayout parent,
                                    String label,String sub,boolean active,Runnable onClick) {
         LinearLayout row = new LinearLayout(activity);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -172,23 +172,6 @@ public final class MarsTvProfiles038 {
         texts.addView(name);
         texts.addView(details);
         row.addView(texts,new LinearLayout.LayoutParams(0,-2,1));
-        TextView focusTarget = new TextView(activity);
-        focusTarget.setText("");
-        focusTarget.setContentDescription(label + (active ? ", aktiv" : ""));
-        focusTarget.setFocusable(true);
-        focusTarget.setClickable(true);
-        focusTarget.setBackground(shape(active ? 0xFF124A70 : 0xFF142F48,
-                active ? BLUE : 0,11,Math.max(1,Math.round(activity.getResources()
-                .getDisplayMetrics().density))));
-        focusTarget.setOnClickListener(v -> onClick.run());
-        focusTarget.setOnFocusChangeListener((v,focused)-> {
-            int d=Math.max(1,Math.round(activity.getResources()
-                    .getDisplayMetrics().density));
-            v.setBackground(shape(focused ? 0xFFBDEBFF
-                    : (active ? 0xFF124A70 : 0xFF142F48),
-                    focused ? BLUE : (active ? BLUE : 0),11,d));
-            name.setTextColor(focused ? BLUE : WHITE);
-        });
         // Use one focusable wrapper rather than a blank overlay behind the row.
         row.setFocusable(true);
         row.setClickable(true);
@@ -206,6 +189,6 @@ public final class MarsTvProfiles038 {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1,dp(activity,61));
         lp.bottomMargin = dp(activity,7);
         parent.addView(row,lp);
-        return name;
+        return row;
     }
 }
