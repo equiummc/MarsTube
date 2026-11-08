@@ -76,7 +76,7 @@ public final class MarsTvInterest037 {
         try {
             if (MediaServiceManager.instance().getSelectedAccount() == null)
                 return "anonymous";
-            String id = MediaServiceManager.instance().getSelectedAccount().getId();
+            String id = String.valueOf(MediaServiceManager.instance().getSelectedAccount().getId());
             String name = MediaServiceManager.instance().getSelectedAccount().getName();
             if (TextUtils.isEmpty(id) && TextUtils.isEmpty(name))
                 return "anonymous";
