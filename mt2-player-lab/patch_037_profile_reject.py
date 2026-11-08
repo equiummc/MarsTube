@@ -251,24 +251,24 @@ if src.count(old) != 1:
 src=src.replace(old,new)
 # The enclosing 'if (shortsReactionPosition == 0)' MUST be removed to avoid
 # two conflicting branch-zero actions. Exact source form checked.
+# Keep the repeat-mode state machine armed when switching the icon at index 1.
 oldprefix='''                if (shortsReactionPosition == 0) {
-                    shortsStage.toggleAutoNext();'''
-if src.count(oldprefix) == 1:
-    # Safest edit retains the if and assigns reject there, then removes the
-    # duplicate else-if zero inserted by the mapping replacement.
-    src=src.replace(oldprefix,'''                if (shortsReactionPosition == 0) {
-                    actions.noInterest();''')
-    src=src.replace('''                } else if (shortsReactionPosition == 0) actions.noInterest();
-                else if (shortsReactionPosition == 1) shortsStage.toggleAutoNext();''',
-                    '''                } else if (shortsReactionPosition == 1) {
-                    shortsStage.toggleAutoNext();''')
-    # Close the new branch before index two; mapping uses else-if from there.
-    src=src.replace('''                    shortsStage.toggleAutoNext();
-                else if (shortsReactionPosition == 2) actions.like();''',
-                    '''                    shortsStage.toggleAutoNext();
-                } else if (shortsReactionPosition == 2) actions.like();''')
-else:
+                    shortsStage.toggleAutoNext();
+                    shortsAutoAdvanceArmed = true;
+                } else if (shortsReactionPosition == 1) actions.like();'''
+if src.count(oldprefix) != 1:
     raise SystemExit("MT2-037 FAIL CLOSED: first Shorts control mapping shape changed")
+src = src.replace(oldprefix,'''                if (shortsReactionPosition == 0) {
+                    actions.noInterest();
+                } else if (shortsReactionPosition == 1) {
+                    shortsStage.toggleAutoNext();
+                    shortsAutoAdvanceArmed = true;
+                } else if (shortsReactionPosition == 2) actions.like();''')
+# The new mapping fragment starts with the previously inserted index-zero and
+# one/two handlers. They are superseded by the full fragment above.
+src = src.replace('''                } else if (shortsReactionPosition == 0) actions.noInterest();
+                else if (shortsReactionPosition == 1) shortsStage.toggleAutoNext();
+                else if (shortsReactionPosition == 2) actions.like();''', '''''')
 shell.write_text(src,encoding="utf-8")
 
 one(gradle,"versionCode 12036","versionCode 12037")
