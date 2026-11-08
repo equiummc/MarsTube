@@ -223,7 +223,10 @@ if source.count("rightButtons.get(0)") != 2:
 stage.write_text(source.replace("rightButtons.get(0)","rightButtons.get(1)"),encoding="utf-8")
 # Final shell post-029: right rail has 9 actions, no dislike. One-to-one.
 src=shell.read_text(encoding="utf-8")
-old='''                } else if (shortsReactionPosition == 1) actions.like();
+old='''                if (shortsReactionPosition == 0) {
+                    shortsStage.toggleAutoNext();
+                    shortsAutoAdvanceArmed = true;
+                } else if (shortsReactionPosition == 1) actions.like();
                 else if (shortsReactionPosition == 2) {
                     shortsCommentsDetached = false;
                     actions.comments();
@@ -233,9 +236,12 @@ old='''                } else if (shortsReactionPosition == 1) actions.like();
                 else if (shortsReactionPosition == 6) actions.speed();
                 else if (shortsReactionPosition == 7) actions.search();
                 else if (shortsReactionPosition == 8) actions.noInterest();'''
-new='''                } else if (shortsReactionPosition == 0) actions.noInterest();
-                else if (shortsReactionPosition == 1) shortsStage.toggleAutoNext();
-                else if (shortsReactionPosition == 2) actions.like();
+new='''                if (shortsReactionPosition == 0) {
+                    actions.noInterest();
+                } else if (shortsReactionPosition == 1) {
+                    shortsStage.toggleAutoNext();
+                    shortsAutoAdvanceArmed = true;
+                } else if (shortsReactionPosition == 2) actions.like();
                 else if (shortsReactionPosition == 3) {
                     shortsCommentsDetached = false;
                     actions.comments();
@@ -244,32 +250,9 @@ new='''                } else if (shortsReactionPosition == 0) actions.noInteres
                 else if (shortsReactionPosition == 6) actions.captions();
                 else if (shortsReactionPosition == 7) actions.speed();
                 else if (shortsReactionPosition == 8) actions.search();'''
-# Existing 0-index auto handler is in the opening if; replace the entire
-# control arm instead of risking two handlers for index zero.
 if src.count(old) != 1:
     raise SystemExit("MT2-037 FAIL CLOSED: Shorts control mapping changed")
-src=src.replace(old,new)
-# The enclosing 'if (shortsReactionPosition == 0)' MUST be removed to avoid
-# two conflicting branch-zero actions. Exact source form checked.
-# Keep the repeat-mode state machine armed when switching the icon at index 1.
-oldprefix='''                if (shortsReactionPosition == 0) {
-                    shortsStage.toggleAutoNext();
-                    shortsAutoAdvanceArmed = true;
-                } else if (shortsReactionPosition == 1) actions.like();'''
-if src.count(oldprefix) != 1:
-    raise SystemExit("MT2-037 FAIL CLOSED: first Shorts control mapping shape changed")
-src = src.replace(oldprefix,'''                if (shortsReactionPosition == 0) {
-                    actions.noInterest();
-                } else if (shortsReactionPosition == 1) {
-                    shortsStage.toggleAutoNext();
-                    shortsAutoAdvanceArmed = true;
-                } else if (shortsReactionPosition == 2) actions.like();''')
-# The new mapping fragment starts with the previously inserted index-zero and
-# one/two handlers. They are superseded by the full fragment above.
-src = src.replace('''                } else if (shortsReactionPosition == 0) actions.noInterest();
-                else if (shortsReactionPosition == 1) shortsStage.toggleAutoNext();
-                else if (shortsReactionPosition == 2) actions.like();''', '''''')
-shell.write_text(src,encoding="utf-8")
+shell.write_text(src.replace(old,new),encoding="utf-8")
 
 one(gradle,"versionCode 12036","versionCode 12037")
 one(gradle,'versionName "0.0.36"','versionName "0.0.37"')
