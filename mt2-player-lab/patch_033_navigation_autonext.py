@@ -63,8 +63,8 @@ replace_exact(stage,
     'new SimpleDateFormat("HH:mm", Locale.GERMANY)',
     'new SimpleDateFormat("HH:mm\\nEEE, dd.MM.yyyy", Locale.GERMANY)')
 replace_exact(stage,
-    "                ViewGroup.LayoutParams.MATCH_PARENT, dp(33));",
-    "                ViewGroup.LayoutParams.MATCH_PARENT, dp(48));")
+    "        controls.addView(clock, new LinearLayout.LayoutParams(-1, dp(27)));",
+    "        controls.addView(clock, new LinearLayout.LayoutParams(-1, dp(48)));")
 
 gradle = root / "smarttubetv/build.gradle"
 replace_exact(gradle, "versionCode 12032", "versionCode 12033")
