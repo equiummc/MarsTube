@@ -6,6 +6,8 @@ on:
       - feature/mt2-033-navigation-autonext-20261108
     paths:
       - 'mt2-player-lab/patch_033_navigation_autonext.py'
+      - 'mt2-player-lab/patch_033_player_panels.py'
+      - 'mt2-player-lab/MarsTvPlayerPanels033.java'
       - 'tools/build-marstube-production-033.sh'
       - 'mt2-player-lab/production-version-033.json'
       - 'tools/build-marstube-production-033.sh'
@@ -40,7 +42,7 @@ jobs:
       - name: Compile, run Shorts/SABR tests and sign 0.0.33 with original key
         run: |
           set -euo pipefail
-          python3 -m py_compile mt2-player-lab/patch_033_navigation_autonext.py
+          python3 -m py_compile mt2-player-lab/patch_033_navigation_autonext.py mt2-player-lab/patch_033_player_panels.py
           bash tools/build-marstube-production-033.sh
       - name: Check package identity, version, original signing and file size
         run: |
