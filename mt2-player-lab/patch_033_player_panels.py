@@ -41,7 +41,11 @@ menu_dst.write_bytes(menu_src.read_bytes())
 once(shell,
     "        default void positionShortsVideo(boolean shorts) { }",
     "        default void positionShortsVideo(boolean shorts) { }\n"
-    "        default void positionPanelVideo(boolean docked) { }")
+    "        default void positionPanelVideo(boolean docked) { }\n"
+    "        default boolean subscribed() { return false; }\n"
+    "        default void subscribe() { }\n"
+    "        default void audio() { }\n"
+    "        default boolean hasAudioAlternatives() { return false; }")
 once(shell,
     "    private final MarsTvShortsStage shortsStage;",
     "    private final MarsTvShortsStage shortsStage;\n"
@@ -101,7 +105,12 @@ once(shell,
 # Activity callbacks (rating, channel, save, comments, captions, quality, etc.).
 section(shell, "    private void executeControl() {",
         "    private void activateRail() {",
-"""    private void executeControl() {
+"""    private void openPlayerPanel(String kind) {
+        playerPanels.setCapabilities(actions.subscribed(), actions.hasAudioAlternatives());
+        playerPanels.open(kind, actions.currentVideo());
+    }
+
+    private void executeControl() {
         switch (controlPosition) {
             case CONTROL_LIKE:
                 actions.like();
@@ -110,7 +119,7 @@ section(shell, "    private void executeControl() {",
                 actions.dislike();
                 break;
             case CONTROL_PREVIOUS:
-                playerPanels.open("Kanal", actions.currentVideo());
+                openPlayerPanel("Kanal");
                 break;
             case CONTROL_REWIND:
                 seek(-10_000L);
@@ -122,19 +131,19 @@ section(shell, "    private void executeControl() {",
                 seek(10_000L);
                 break;
             case CONTROL_NEXT:
-                playerPanels.open("Merken", actions.currentVideo());
+                openPlayerPanel("Merken");
                 break;
             case CONTROL_CC:
-                playerPanels.open("Einstellungen", actions.currentVideo());
+                openPlayerPanel("Einstellungen");
                 break;
             case CONTROL_INFO:
-                playerPanels.open("Kommentare", actions.currentVideo());
+                openPlayerPanel("Kommentare");
                 break;
             case CONTROL_HD:
-                playerPanels.open("Einstellungen", actions.currentVideo());
+                openPlayerPanel("Einstellungen");
                 break;
             case CONTROL_FULLSCREEN:
-                playerPanels.open("Mehr", actions.currentVideo());
+                openPlayerPanel("Mehr");
                 break;
             default:
                 break;
@@ -144,6 +153,8 @@ section(shell, "    private void executeControl() {",
     private void performPanelAction(String id) {
         switch (id) {
             case "channel": actions.channel(); break;
+            case "subscribe": actions.subscribe(); break;
+            case "audio": actions.audio(); break;
             case "comments": actions.comments(); break;
             case "save": actions.save(); break;
             case "like": actions.like(); break;
@@ -206,6 +217,17 @@ once(activity,
     "    @androidx.annotation.Nullable private MarsTvShell mMarsTvShell;",
     "    @androidx.annotation.Nullable private MarsTvShell mMarsTvShell;\n"
     "    private int mMarsTvPanelPreviousResizeMode = -1;")
+once(activity,
+    "                    @Override public void channel() { openCurrentChannel(); }",
+    """                    @Override public void channel() { openCurrentChannel(); }
+                    @Override public boolean subscribed() {
+                        return getButtonState(R.id.action_subscribe) == BUTTON_ON;
+                    }
+                    @Override public void subscribe() { onSubscribeTapped(); }
+                    @Override public void audio() { showAudioTrackSheet(); }
+                    @Override public boolean hasAudioAlternatives() {
+                        return audioTrackChoices().size() > 1;
+                    }""")
 once(activity,
     "                    @Override public void positionShortsVideo(boolean enabled) {",
     """                    @Override public void positionPanelVideo(boolean enabled) {
