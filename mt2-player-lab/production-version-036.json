@@ -1,0 +1,27 @@
+{
+  "versionName": "0.0.36",
+  "versionCode": 12036,
+  "packageName": "de.equiummc.marstube2",
+  "phase": "Gesamtpaket A+B+C – Fire TV Cube",
+  "scope_de": [
+    "A: Player-Untermenüs mit Kanal, Kommentaren, Merken, Qualität, Untertiteln, Audiotracks und Tempo",
+    "B: Kompaktere TV-Startseite und sechs Shorts-Vorschauen, Abo-Kanalauswahl, Mediathek-Kacheln, Uhrzeit und Datum",
+    "C: Fortlaufendes Shorts-Nachladen im Hintergrund als Metadaten, begrenzter 180er Speicher",
+    "C: Wiederholen oder automatisches Weiter, ohne generische Video-Empfehlungen als Shorts",
+    "C: Nicht interessiert – lokal dauerhaft ausgeblendete Videos, optional YouTube-Feedback bei angemeldetem Konto und verfügbarem Token",
+    "C: Native Hochkantvorschau direkt; 16:9 zu 9:16 als kurze GPU-Vorhangöffnung erst ab erstem Frame",
+    "C: Normale Video-Feeds behalten die vorhandene Pagination beim Scrollen",
+    "Identische MarsTube-App und Signatur; Update ohne Neuinstallation oder Datenlöschung"
+  ],
+  "acceptance": "CI + manuelle Fire-TV-Abnahme A/B/C, CI-only keine automatische Veröffentlichung",
+  "changelog_de": [
+    "A: Player-Untermenüs mit Kanal, Kommentaren, Merken, Qualität, Untertiteln, Audiotracks und Tempo",
+    "B: Kompaktere TV-Startseite und sechs Shorts-Vorschauen, Abo-Kanalauswahl, Mediathek-Kacheln, Uhrzeit und Datum",
+    "C: Fortlaufendes Shorts-Nachladen im Hintergrund als Metadaten, begrenzter 180er Speicher",
+    "C: Wiederholen oder automatisches Weiter, ohne generische Video-Empfehlungen als Shorts",
+    "C: Nicht interessiert – lokal dauerhaft ausgeblendete Videos, optional YouTube-Feedback bei angemeldetem Konto und verfügbarem Token",
+    "C: Native Hochkantvorschau direkt; 16:9 zu 9:16 als kurze GPU-Vorhangöffnung erst ab erstem Frame",
+    "C: Normale Video-Feeds behalten die vorhandene Pagination beim Scrollen",
+    "Identische MarsTube-App und Signatur; Update ohne Neuinstallation oder Datenlöschung"
+  ]
+}
