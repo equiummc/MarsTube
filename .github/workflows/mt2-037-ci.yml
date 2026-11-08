@@ -1,0 +1,112 @@
+name: MT2-037 per-profile 100k reject CI
+
+on:
+  push:
+    branches:
+      - feature/mt2-037-profile-negativelist-20261108
+    paths:
+      - 'mt2-player-lab/patch_033_navigation_autonext.py'
+      - 'mt2-player-lab/patch_033_player_panels.py'
+      - 'mt2-player-lab/patch_033_floating_overlay.py'
+      - 'mt2-player-lab/MarsTvPlayerPanels033.java'
+      - 'mt2-player-lab/MarsTvPlayerPanels034.java'
+      - 'mt2-player-lab/patch_034_A_player_menu.py'
+      - 'mt2-player-lab/patch_035_B_overviews.py'
+      - 'mt2-player-lab/MarsTvBrowseB035.java'
+      - 'mt2-player-lab/patch_036_C_shorts.py'
+      - 'mt2-player-lab/MarsShortsSession036.java'
+      - 'mt2-player-lab/MarsShortsDiscovery036.java'
+      - 'mt2-player-lab/MarsShortsSessionTest036.java'
+      - 'mt2-player-lab/MarsTvInterest036.java'
+      - 'mt2-player-lab/MarsTvCurtainPolicy036.java'
+      - 'mt2-player-lab/MarsTvCurtainPolicy036Test.java'
+      - 'mt2-player-lab/patch_037_profile_reject.py'
+      - 'mt2-player-lab/MarsTvInterest037.java'
+      - 'mt2-player-lab/MarsTvInterestPolicy037.java'
+      - 'mt2-player-lab/MarsTvInterestPolicy037Test.java'
+      - 'tools/Install-MarsTube-037-FireTV.ps1'
+      - 'tools/build-marstube-production-037.sh'
+      - 'mt2-player-lab/production-version-037.json'
+      - '.github/workflows/mt2-037-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: mt2-037-profile-reject
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  signed_release_test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      MARS_SIGNING_KEYSTORE_B64: ${{ secrets.MARS_SIGNING_KEYSTORE_B64 }}
+      MARS_SIGNING_STORE_PASS: ${{ secrets.MARS_SIGNING_STORE_PASS }}
+      MARS_SIGNING_KEY_PASS: ${{ secrets.MARS_SIGNING_KEY_PASS }}
+      MARS_SIGNING_KEY_ALIAS: ${{ secrets.MARS_SIGNING_KEY_ALIAS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Compile, run Shorts/SABR tests and sign 0.0.37 with original key
+        run: |
+          set -euo pipefail
+          python3 -m py_compile mt2-player-lab/patch_033_navigation_autonext.py mt2-player-lab/patch_033_player_panels.py mt2-player-lab/patch_033_floating_overlay.py mt2-player-lab/patch_034_A_player_menu.py mt2-player-lab/patch_035_B_overviews.py mt2-player-lab/patch_036_C_shorts.py mt2-player-lab/patch_037_profile_reject.py
+          bash tools/build-marstube-production-037.sh
+          cp tools/Install-MarsTube-037-FireTV.ps1 dist/
+      - name: Check package identity, version, original signing and file size
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum -c SHA256SUMS)
+          test -s dist/MarsTube-0.0.37.apk
+          test -s dist/Install-MarsTube-037-FireTV.ps1
+          grep -Fq "name='de.equiummc.marstube2'" dist/badging.txt
+          grep -Fq "versionCode='12037'" dist/badging.txt
+          grep -Fq "versionName='0.0.37'" dist/badging.txt
+          grep -Fq 'certificate SHA-256 digest:' dist/signature.txt
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          apk=Path("dist/MarsTube-0.0.37.apk")
+          with zipfile.ZipFile(apk) as z:
+              libs = [(i.filename,i.compress_size) for i in z.infolist() if i.filename.startswith("lib/")]
+              assert any("/armeabi-v7a/" in n for n,_ in libs), "Missing ARM32"
+              assert any("/arm64-v8a/" in n for n,_ in libs), "Missing ARM64"
+              print("SIGNED APK size MiB:",round(apk.stat().st_size/1024/1024,2))
+              print("Native libs MiB:",round(sum(size for _,size in libs)/1024/1024,2))
+          PY
+      - name: Keep test-only signed package for traceability (never publish a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarsTube-0.0.37-profile-ci-only
+          path: |
+            dist/MarsTube-0.0.37.apk
+            dist/SHA256SUMS
+            dist/Install-MarsTube-037-FireTV.ps1
+          retention-days: 14
+          if-no-files-found: error
+
+  ps7_syntax:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell 7 installer without running or installing it
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'tools/Install-MarsTube-037-FireTV.ps1'),
+            [ref]$tokens, [ref]$errors)
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'PS7-Syntax fehlerhaft'
+          }
+          Write-Host 'PS7-Syntax OK; keine Geraeteaktion.'

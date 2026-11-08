@@ -1,0 +1,35 @@
+{
+  "versionName": "0.0.37",
+  "versionCode": 12037,
+  "packageName": "de.equiummc.marstube2",
+  "phase": "MarsTube A+B+C + profilbezogene Video-Ablehnung",
+  "scope_de": [
+    "A: Player-Untermenüs mit Kanal, Kommentaren, Merken, Qualität, Untertiteln, Audiotracks und Tempo",
+    "B: Kompaktere TV-Startseite und sechs Shorts-Vorschauen, Abo-Kanalauswahl, Mediathek-Kacheln, Uhrzeit und Datum",
+    "C: Fortlaufendes Shorts-Nachladen im Hintergrund als Metadaten, begrenzter 180er Speicher",
+    "C: Wiederholen oder automatisches Weiter, ohne generische Video-Empfehlungen als Shorts",
+    "C: Nicht interessiert – lokal dauerhaft ausgeblendete Videos, optional YouTube-Feedback bei angemeldetem Konto und verfügbarem Token",
+    "C: Native Hochkantvorschau direkt; 16:9 zu 9:16 als kurze GPU-Vorhangöffnung erst ab erstem Frame",
+    "C: Normale Video-Feeds behalten die vorhandene Pagination beim Scrollen",
+    "Identische MarsTube-App und Signatur; Update ohne Neuinstallation oder Datenlöschung",
+    "Jedes angemeldete YouTube-Profil hat bis zu 100.000 separat abgelehnte Video-IDs (SQLite; anonym getrennt)",
+    "Ein X blendet normale Videos und Shorts sofort aus; Shorts-X als erste Aktion unter Uhr",
+    "Alte Negativliste der 0.0.36 wird einmalig ohne Datenlöschung dem beim Upgrade aktiven Profil zugeordnet",
+    "SQLite lädt nur die gerade sichtbaren Video-IDs, nicht alle 100.000 in den Speicher"
+  ],
+  "acceptance": "GitHub CI / anschließend Fire-TV-Test, keine automatische Installation oder Veröffentlichung",
+  "changelog_de": [
+    "A: Player-Untermenüs mit Kanal, Kommentaren, Merken, Qualität, Untertiteln, Audiotracks und Tempo",
+    "B: Kompaktere TV-Startseite und sechs Shorts-Vorschauen, Abo-Kanalauswahl, Mediathek-Kacheln, Uhrzeit und Datum",
+    "C: Fortlaufendes Shorts-Nachladen im Hintergrund als Metadaten, begrenzter 180er Speicher",
+    "C: Wiederholen oder automatisches Weiter, ohne generische Video-Empfehlungen als Shorts",
+    "C: Nicht interessiert – lokal dauerhaft ausgeblendete Videos, optional YouTube-Feedback bei angemeldetem Konto und verfügbarem Token",
+    "C: Native Hochkantvorschau direkt; 16:9 zu 9:16 als kurze GPU-Vorhangöffnung erst ab erstem Frame",
+    "C: Normale Video-Feeds behalten die vorhandene Pagination beim Scrollen",
+    "Identische MarsTube-App und Signatur; Update ohne Neuinstallation oder Datenlöschung",
+    "Jedes angemeldete YouTube-Profil hat bis zu 100.000 separat abgelehnte Video-IDs (SQLite; anonym getrennt)",
+    "Ein X blendet normale Videos und Shorts sofort aus; Shorts-X als erste Aktion unter Uhr",
+    "Alte Negativliste der 0.0.36 wird einmalig ohne Datenlöschung dem beim Upgrade aktiven Profil zugeordnet",
+    "SQLite lädt nur die gerade sichtbaren Video-IDs, nicht alle 100.000 in den Speicher"
+  ]
+}
