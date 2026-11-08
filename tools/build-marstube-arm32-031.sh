@@ -53,13 +53,13 @@ p=Path(sys.argv[1])
 s=p.read_text(encoding="utf-8")
 changes = (
     ("abiFilters 'armeabi-v7a', 'arm64-v8a'", "abiFilters 'armeabi-v7a'"),
-    ("include 'armeabi-v7a', 'arm64-v8a', 'x86'", "include 'armeabi-v7a'"),
 )
 for before, after in changes:
     if s.count(before)!=1:
         raise SystemExit("ABI layout changed; ARM32 release refused")
     s=s.replace(before,after)
 assert 'versionCode 12031' in s and 'versionName "0.0.31"' in s
+assert 'enable = false // single sideloadable universal APK, no ABI splits' in s
 p.write_text(s,encoding="utf-8")
 print("MT2-031: ARM32-only 32-bit native libraries")
 PY
