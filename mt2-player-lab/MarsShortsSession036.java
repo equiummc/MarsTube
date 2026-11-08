@@ -132,7 +132,11 @@ public final class MarsShortsSession {
 
     public static synchronized int remaining() {
         int index = currentIndex();
-        return index < 0 ? 0 : Math.max(0, ITEMS.size() - index - 1);
+        if (index < 0) return 0;
+        int remaining = 0;
+        for (int i = index + 1; i < ITEMS.size(); i++)
+            if (!excludedIds.contains(ITEMS.get(i).videoId)) remaining++;
+        return remaining;
     }
 
     /**
