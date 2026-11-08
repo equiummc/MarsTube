@@ -96,6 +96,19 @@ printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
   "$RUNNER_TEMP/mars-signing/release.jks" "$MARS_SIGNING_STORE_PASS" "$MARS_SIGNING_KEY_ALIAS" "$MARS_SIGNING_KEY_PASS" \
   > "$root/keystore.properties"
 chmod 600 "$root/keystore.properties"
+# GitHub-hosted Gradle release redirect can return HTTP 504. Use Gradle's own
+# official downloads host, keeping the upstream SHA-256 wrapper verification.
+python3 - "$root/gradle/wrapper/gradle-wrapper.properties" <<'PY'
+from pathlib import Path
+import sys
+p=Path(sys.argv[1])
+s=p.read_text(encoding="utf-8")
+old=r"distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.1-bin.zip"
+new=r"distributionUrl=https\://downloads.gradle.org/distributions/gradle-9.6.1-bin.zip"
+assert s.count(old)==1, "Unexpected Gradle wrapper distribution"
+assert "distributionSha256Sum=9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14" in s
+p.write_text(s.replace(old,new),encoding="utf-8")
+PY
 (cd "$root" && ./gradlew --no-daemon --max-workers=1 -Dorg.gradle.jvmargs=-Xmx4096m :sabr-media3:testDebugUnitTest :smarttubetv:assembleStmobileRelease --stacktrace)
 mkdir -p dist
 mapfile -t apks < <(find "$root/smarttubetv/build/outputs/apk" -type f -path '*stmobile*/release/*' -name '*.apk' | sort)
