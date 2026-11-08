@@ -54,7 +54,7 @@ once(nav,
     '            new Entry("Live", 9),\n'
     '            new Entry("Musik", 10),')
 once(theme,
-    '            case 8: return R.drawable.mars_tv_ic_nav_shorts;',
+    '            case 8: return R.drawable.mars_nav_shorts_025;',
     '            case 8: return R.drawable.mars_tv_ic_nav_shorts;\n'
     '            case 9: return com.liskovsoft.smartyoutubetv2.common.R.drawable.icon_live;\n'
     '            case 10: return com.liskovsoft.smartyoutubetv2.common.R.drawable.icon_music;')
