@@ -230,12 +230,39 @@ foreach ($kind in $testOrder) {
     }
     Write-Host ("{0}: MarsTube 0.0.31 installiert." -f $kind) -ForegroundColor Green
     Write-Host 'Teste jetzt mit der Fernbedienung: App starten, ein normales Video, ein Short, ZURUECK-Taste.'
-    [void](Read-Host 'Nach dem kurzen Test Enter druecken, um den RAM erneut auszulesen')
+    $stopped=$false
+    if ($kind -eq 'Thomson') {
+        Write-Host 'RAM-Schutztest Thomson: Nach dem Start 12 kurze RAM-Abfragen per ADB.'
+        Write-Host 'Unter 150 MB MemAvailable wird NUR MarsTube vorsorglich beendet, nicht der Fernseher.'
+        [void](Read-Host 'Jetzt MarsTube/Video auf dem Thomson starten, dann Enter fuer die RAM-Ueberwachung')
+        for ($sample=1; $sample -le 12; $sample++) {
+            $available=Get-MemoryKB $info.Serial
+            if ($null -eq $available) {
+                Write-Warning 'Thomson-RAM kann nicht mehr ausgelesen werden. Monitoring abgebrochen.'
+                $report.Add('Thomson | RAM-Ueberwachung: ADB-Messung fehlgeschlagen')
+                break
+            }
+            Write-Host ("Thomson RAM #{0}: {1}" -f $sample,(Format-Memory $available))
+            if ($available -lt 153600) {
+                Write-Warning 'Kritischer Speicherdruck erkannt: MarsTube wird vorsorglich beendet.'
+                & $adb -s $info.Serial shell am force-stop $Pkg
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Warning 'Das automatische Stoppen von MarsTube konnte nicht bestaetigt werden.'
+                }
+                $stopped=$true
+                $report.Add('Thomson | RAM-Schutz ausgeloest: MemAvailable unter 150 MB, App-Stopp versucht')
+                break
+            }
+            if ($sample -lt 12) {Start-Sleep -Seconds 5}
+        }
+    } else {
+        [void](Read-Host 'Nach dem kurzen Test Enter druecken, um den RAM erneut auszulesen')
+    }
     $ramAfter=Get-MemoryKB $info.Serial
     Write-Host "Android MemAvailable nach dem Test: $(Format-Memory $ramAfter)"
-    $report.Add("$kind | installiert 0.0.31 ARM32 | ABI $($info.ABI) | RAM vorher: $(Format-Memory $ramBefore) | RAM nachher: $(Format-Memory $ramAfter)")
+    $report.Add("$kind | installiert 0.0.31 ARM32 | ABI $($info.ABI) | RAM vorher: $(Format-Memory $ramBefore) | RAM nachher: $(Format-Memory $ramAfter) | Schutzstopp $stopped")
     if ($kind -eq 'Thomson' -and $null -ne $ramAfter -and $ramAfter -lt 153600) {
-        Write-Warning 'Thomson hat nach dem Test weniger als 150 MB verfuegbaren RAM. Test jetzt beenden; keine Belastungstests.'
+        Write-Warning 'Thomson hat nach dem Test weniger als 150 MB verfuegbaren RAM. Bitte keinen weiteren Belastungstest starten.'
     }
 }
 $reportPath=Join-Path $ReportFolder ('MT2-031-TV-Architektur-Test-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.txt')
