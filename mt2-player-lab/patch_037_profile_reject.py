@@ -200,6 +200,43 @@ one(b,
 
     private void onVideoClicked(Video video) {''')
 
+# Normal player recommendation carousel also shares the same profile-scoped
+# filter; otherwise a rejected normal video could stay in the six previews.
+one(shell,
+    '''        int limit = MarsTvPlayerPrefs.getCarouselPreviewCount(activity);
+        List<Video> clean = new ArrayList<>();
+        if (videos != null) {
+            for (Video video : videos) {''',
+    '''        int limit = MarsTvPlayerPrefs.getCarouselPreviewCount(activity);
+        List<Video> clean = new ArrayList<>();
+        List<Video> allowed = com.newtube.mobile.ui.common.MarsTvInterest037
+                .instance(activity).filter(videos);
+        if (allowed != null) {
+            for (Video video : allowed) {''')
+one(shell,
+    '''    public void hideUi() {
+        cancelHold();''',
+    '''    /** Remove a rejected card immediately; no decoder/player restart. */
+    public void rejectRecommendation(String videoId) {
+        if (released || videoId == null) return;
+        boolean removed = adapter.items.removeIf(v ->
+                v != null && videoId.equals(v.videoId));
+        if (removed) {
+            cardPosition = Math.min(cardPosition, Math.max(0, adapter.items.size() - 1));
+            adapter.notifyDataSetChanged();
+            render();
+        }
+    }
+
+    public void hideUi() {
+        cancelHold();''')
+one(p,
+    '''        interest.sendSignedInFeedback(rejected);
+        if (com.newtube.mobile.ui.common.MarsShortsSession.isActiveFor(rejected)) {''',
+    '''        interest.sendSignedInFeedback(rejected);
+        if (mMarsTvShell != null) mMarsTvShell.rejectRecommendation(rejected.videoId);
+        if (com.newtube.mobile.ui.common.MarsShortsSession.isActiveFor(rejected)) {''')
+
 # The first right-side Shorts action is the X, then Next/Repeat.
 # Icon and D-pad indexes must be changed TOGETHER; drift fails this build.
 auto = '''        addSlimAction(controls, com.liskovsoft.smartyoutubetv2.tv.R.drawable.ic_player_repeat,
