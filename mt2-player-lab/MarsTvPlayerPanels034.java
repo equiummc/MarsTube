@@ -47,6 +47,7 @@ public final class MarsTvPlayerPanels034 {
     private final ScrollView scroller;
     private final TextView heading;
     private final TextView subheading;
+    private final TextView channelBadge;
     private final Action onAction;
     private final Runnable onStateChanged;
     private final List<Option> options = new ArrayList<>();
@@ -92,8 +93,8 @@ public final class MarsTvPlayerPanels034 {
         this.onAction = onAction;
         sheet = new FrameLayout(activity);
         sheet.setBackground(new GradientDrawable(
-                GradientDrawable.Orientation.LEFT_RIGHT,
-                new int[]{0xF2092039, 0xFB061527}));
+                GradientDrawable.Orientation.TL_BR,
+                new int[]{0xF4102B4B, 0xFA071D35, 0xFD061224}));
         sheet.setFocusable(false);
         final int screenWidth = activity.getResources().getDisplayMetrics().widthPixels;
         FrameLayout.LayoutParams sheetLp = new FrameLayout.LayoutParams(
@@ -107,13 +108,39 @@ public final class MarsTvPlayerPanels034 {
         sheet.addView(content, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
+        View blueTop = new View(activity);
+        blueTop.setBackground(new GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[]{0xFF147CCB, 0xFF55DAF8, 0x0025B8E6}));
+        LinearLayout.LayoutParams blueTopLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(3));
+        blueTopLp.bottomMargin = dp(14);
+        content.addView(blueTop, blueTopLp);
+
+        LinearLayout headingRow = new LinearLayout(activity);
+        headingRow.setOrientation(LinearLayout.HORIZONTAL);
+        headingRow.setGravity(Gravity.CENTER_VERTICAL);
+        content.addView(headingRow, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(49)));
+        channelBadge = new TextView(activity);
+        channelBadge.setText("M");
+        channelBadge.setTextColor(WHITE);
+        channelBadge.setTextSize(18f);
+        channelBadge.setTypeface(null, android.graphics.Typeface.BOLD);
+        channelBadge.setGravity(Gravity.CENTER);
+        GradientDrawable badgeBg = fill(0xFF174F84, 0xFF38BBEF, dp(22));
+        badgeBg.setStroke(dp(1), 0xFF38BBEF);
+        channelBadge.setBackground(badgeBg);
+        LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(dp(40), dp(40));
+        badgeLp.rightMargin = dp(12);
+        headingRow.addView(channelBadge, badgeLp);
         heading = new TextView(activity);
         heading.setTextSize(25f);
         heading.setTextColor(WHITE);
         heading.setTypeface(null, android.graphics.Typeface.BOLD);
         heading.setGravity(Gravity.CENTER_VERTICAL);
-        content.addView(heading, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, dp(42)));
+        headingRow.addView(heading, new LinearLayout.LayoutParams(
+                0, dp(42), 1f));
         subheading = new TextView(activity);
         subheading.setTextSize(13f);
         subheading.setTextColor(MUTED);
@@ -142,7 +169,7 @@ public final class MarsTvPlayerPanels034 {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         TextView footer = new TextView(activity);
-        footer.setText("↑ ↓ Auswahl    OK Bestätigen    ← Zurück");
+        footer.setText("↑ ↓ Auswahl     OK Öffnen     ← Zurück");
         footer.setTextSize(11f);
         footer.setTextColor(MUTED);
         footer.setGravity(Gravity.CENTER_VERTICAL);
@@ -187,7 +214,10 @@ public final class MarsTvPlayerPanels034 {
         page = kind;
         options.clear();
         selected = 0;
-        heading.setText(kind);
+        heading.setText(backStack.isEmpty() ? kind : "‹  " + kind);
+        channelBadge.setText("Kanal".equals(kind)
+                ? channelName.substring(0, Math.min(1, channelName.length())).toUpperCase(java.util.Locale.GERMANY)
+                : "M");
         subheading.setText("Kanal".equals(kind) ? channelName : videoTitle);
         switch (kind) {
             case "Kanal":
@@ -245,6 +275,11 @@ public final class MarsTvPlayerPanels034 {
             if (item.action.startsWith("page:")) title = title + "   ›";
             button.setText(title + (TextUtils.isEmpty(item.detail) ? "" : "\n" + item.detail));
             button.setTextSize(item.detail.isEmpty() ? 17f : 16f);
+            int icon = iconFor(item.action);
+            if (icon != 0) {
+                button.setCompoundDrawablesWithIntrinsicBounds(icon, 0, 0, 0);
+                button.setCompoundDrawablePadding(dp(13));
+            }
             button.setMaxLines(2);
             button.setGravity(Gravity.CENTER_VERTICAL);
             button.setPadding(dp(18), dp(6), dp(14), dp(6));
@@ -267,11 +302,33 @@ public final class MarsTvPlayerPanels034 {
         onStateChanged.run();
     }
 
+    private int iconFor(String action) {
+        if (action.equals("channel") || action.equals("page:Kanal"))
+            return android.R.drawable.ic_menu_myplaces;
+        if (action.equals("subscribe")) return android.R.drawable.btn_star_big_off;
+        if (action.equals("comments") || action.equals("page:Kommentare"))
+            return android.R.drawable.ic_menu_edit;
+        if (action.equals("save") || action.equals("page:Merken"))
+            return android.R.drawable.ic_menu_save;
+        if (action.equals("page:Einstellungen") || action.equals("page:Qualität")
+                || action.equals("caption_style"))
+            return android.R.drawable.ic_menu_manage;
+        if (action.equals("page:Untertitel"))
+            return android.R.drawable.ic_menu_sort_by_size;
+        if (action.equals("page:Audiotrack"))
+            return android.R.drawable.ic_lock_silent_mode_off;
+        if (action.equals("page:Tempo")) return android.R.drawable.ic_media_ff;
+        if (action.equals("info")) return android.R.drawable.ic_menu_info_details;
+        return 0;
+    }
+
     private void refreshSelection() {
         for (int i = 0; i < buttons.size(); i++) {
             TextView button = buttons.get(i);
             boolean active = i == selected;
             button.setTextColor(active ? DARK : WHITE);
+            button.setCompoundDrawableTintList(android.content.res.ColorStateList
+                    .valueOf(active ? DARK : 0xFF8EDBFF));
             button.setBackground(fill(active ? 0xFFF1F8FF : 0xD31A2F48,
                     active ? BLUE : 0x004A78A7, dp(12)));
         }
