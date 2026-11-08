@@ -207,7 +207,7 @@ auto = '''        addSlimAction(controls, com.liskovsoft.smartyoutubetv2.tv.R.dr
                 () -> { toggleAutoNext(); onAutoChange.run(); });'''
 reject = '''        addSlimAction(controls, android.R.drawable.ic_menu_close_clear_cancel,
                 "Empfehlungsoptionen – Kein Interesse", "", onNoInterest);'''
-once(stage,auto,reject+"\n"+auto)
+one(stage,auto,reject+"\n"+auto)
 one(stage,
     reject+'''
         likeCountLabel = rightLabels.get(1);''',
