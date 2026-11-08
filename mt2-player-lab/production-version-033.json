@@ -3,10 +3,12 @@
   "versionCode": 12033,
   "packageName": "de.equiummc.marstube2",
   "changelog_de": [
-    "Shorts: Weiter und Wiederholen steuern nun den tatsächlichen Media3-Wiederholmodus",
-    "Shorts: Bei Videoende fordert Weiter über Discovery neue Einträge nach, auch am Listenende",
-    "Player-Navigation: Zurück oder Rechts aus dem seitlichen Menü stellt den vorherigen Fokusbereich wieder her",
-    "Player: Uhrzeit und lokales deutsches Datum zusätzlich anzeigen",
-    "Technische Zwischenstufe des größeren UI-Updates; Player-Kacheln und Untermenüs noch nicht umgestaltet"
+    "Shorts Discovery 0.0.32: automatisch neue Einträge nachladen, Weiter und Wiederholen auf den tatsächlichen Playerzustand abstimmen",
+    "TV-Player: rechte Kanal-, Kommentar-, Merken-, Einstellungs- und Mehr-Untermenüs mit Fernbedienung bedienen",
+    "Ein einzelner Media3-Player läuft in verkleinerter linker Videovorschau weiter; kein zweiter Decoder",
+    "Kanalseite, Abonnieren, Playlist, Kommentarbereich, Qualitätsstufen, Untertitel, Tempo und alternative Audiotracks über vorhandene Aktionen",
+    "Player-Menü merkt den vorherigen Fokus; schmales Startseitenlabel und deutsches Datum im Player",
+    "Schmaler blauer Fortschrittsbereich, schwebende Bedienknöpfe, dezenter Verlauf und kompakteres Player-Vorschaukarussell",
+    "Vorabversion nur für kontrollierte Fire-TV-Abnahme, keine automatische Freigabe"
   ]
 }
