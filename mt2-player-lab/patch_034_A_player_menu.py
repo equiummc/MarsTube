@@ -47,7 +47,8 @@ one(shell, "        default void positionPanelVideo(boolean docked) { }",
             return java.util.Collections.emptyList();
         }
         default void playerMenuChoose(String page, int choice, String videoId) { }
-        default void captionStyle() { }""")
+        default void captionStyle() { }
+        default void watchLater() { }""")
 one(shell,
     """        playerPanels = new MarsTvPlayerPanels033(activity, root,
                 this::render, this::performPanelAction);""",
@@ -77,7 +78,8 @@ one(shell,
         }""")
 one(shell, '            case "audio": actions.audio(); break;',
     '            case "audio": actions.audio(); break;\n'
-    '            case "caption_style": actions.captionStyle(); break;')
+    '            case "caption_style": actions.captionStyle(); break;\n'
+    '            case "watch_later": actions.watchLater(); break;')
 one(shell,
     """        if (shortsMode && playerPanels.isOpen()) playerPanels.close();
         boolean dock = !pip && !shortsMode && playerPanels.isOpen();""",
@@ -144,7 +146,8 @@ one(activity,
                     }
                     @Override public void captionStyle() {
                         SubtitleSettingsPresenter.instance(MobilePlaybackActivity.this).show();
-                    }""")
+                    }
+                    @Override public void watchLater() { marsTvAddToWatchLater(); }""")
 one(activity,
     "    private void marsTvOpenShortsComments() {",
     """    private void marsTvOpenPlayerComments() {
@@ -192,6 +195,17 @@ one(activity, "    private void showQualitySheet() {",
         return java.util.Collections.emptyList();
     }
 
+    /** The same official-service Watch Later path used by the existing video menu. */
+    private void marsTvAddToWatchLater() {
+        Video target = getVideo();
+        if (target == null || !target.hasVideo()) return;
+        if (WatchActionFeedback.blockIfSignedOut(this, R.string.msg_sign_in_to_save)) return;
+        com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager
+                .instance().addToWatchLaterPlaylist(target);
+        com.liskovsoft.smartyoutubetv2.common.app.presenters.BrowsePresenter
+                .instance(this).onPlaylistEdited();
+    }
+
     private java.util.List<FormatItem> marsTvCaptionTracks() {
         java.util.List<FormatItem> manual = new ArrayList<>();
         java.util.List<FormatItem> automatic = new ArrayList<>();
@@ -231,6 +245,16 @@ one(activity, "    private void showQualitySheet() {",
                         marsTvQualityRungs().entrySet()) {
                     result.add((!auto && rung.getValue().isSelected() ? "✓  " : "")
                             + rung.getKey());
+                }
+                break;
+            }
+            case "Benachrichtigungen": {
+                Video current = getVideo();
+                if (current != null && current.notificationStates != null) {
+                    for (com.liskovsoft.mediaserviceinterfaces.data.NotificationState state :
+                            current.notificationStates) {
+                        result.add((state.isSelected() ? "✓  " : "") + state.getTitle());
+                    }
                 }
                 break;
             }
@@ -281,6 +305,20 @@ one(activity, "    private void showQualitySheet() {",
                         data.setTempVideoFormat(picked);
                     else data.setFormat(picked);
                 }
+                break;
+            }
+            case "Benachrichtigungen": {
+                if (video.notificationStates == null
+                        || index >= video.notificationStates.size()) return;
+                com.liskovsoft.mediaserviceinterfaces.data.NotificationState state =
+                        video.notificationStates.get(index);
+                com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager
+                        .instance().setNotificationState(state, error ->
+                                runOnUiThread(() -> android.widget.Toast.makeText(
+                                        this, "Benachrichtigungen: " + error.getLocalizedMessage(),
+                                        android.widget.Toast.LENGTH_LONG).show()));
+                video.isSubscribed = true;
+                setButtonState(R.id.action_subscribe, BUTTON_ON);
                 break;
             }
             case "Audiotrack": {
