@@ -45,26 +45,9 @@ replace_exact(shell,
     "                if (focus == Focus.RAIL) {\n                    focus = actions.isShortsPlayback() ? Focus.VIDEO\n"
     "                            : adapter.getItemCount() > 0 ? Focus.CARDS : Focus.CONTROLS;",
     "                if (focus == Focus.RAIL) {\n                    focus = restoredRailFocus();")
-# Actual loop mode must correspond to selected UI mode; otherwise ExoPlayer's
-# REPEAT_MODE_ONE can recycle the same Short without ever reaching STATE_ENDED.
-replace_exact(shell,
-    "        ExoPlayer exo = player.current();\n        long duration = exo == null ? 0 : exo.getDuration();",
-    "        ExoPlayer exo = player.current();\n"
-    "        if (actions.isShortsPlayback() && exo != null) {\n"
-    "            int repeat = shortsStage.isAutoNext()\n"
-    "                    ? androidx.media3.common.Player.REPEAT_MODE_OFF\n"
-    "                    : androidx.media3.common.Player.REPEAT_MODE_ONE;\n"
-    "            if (exo.getRepeatMode() != repeat) exo.setRepeatMode(repeat);\n"
-    "        }\n"
-    "        long duration = exo == null ? 0 : exo.getDuration();")
-replace_exact(shell,
-    "                if (shortsStage.isAutoNext()\n"
-    "                        && com.newtube.mobile.ui.common.MarsShortsSession.hasNext()) {\n"
-    "                    actions.next();\n                }",
-    "                if (shortsStage.isAutoNext()) {\n"
-    "                    // At queue end, next() now requests Discovery (MT2-032).\n"
-    "                    // Never let generic video recommendations take over.\n"
-    "                    actions.next();\n                }")
+# The MT2-026/027 source already switches the ExoPlayer repeat mode and
+# MT2-032 already calls scoped NEXT at queue end. Do not duplicate that logic.
+# This patch intentionally preserves those working fixes.
 # Clock changes affect the player chrome only. Browse headers and visual redesign
 # must be separately audited before modifying existing focus/rail components.
 replace_exact(shell,
