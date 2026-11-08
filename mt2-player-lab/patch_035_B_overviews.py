@@ -137,6 +137,29 @@ one(browse,
         }
         paintCachedSnapshot(sectionId, switched);""")
 one(browse,
+    """            boolean switched = mCurrentSectionId != section.getId();
+            mCurrentSectionId = section.getId();
+            paintCachedSnapshot(section.getId(), switched);""",
+    """            boolean switched = mCurrentSectionId != section.getId();
+            mCurrentSectionId = section.getId();
+            if (mMarsTvB035 != null) {
+                mMarsTvB035.onSection(mCurrentSectionId);
+                updateGridSpanCount(computeSpanCount());
+            }
+            paintCachedSnapshot(section.getId(), switched);""")
+one(browse,
+    """    private void showYouPanel() {
+        mYouShowing = true;""",
+    """    private void showYouPanel() {
+        mYouShowing = true;
+        if (mMarsTvB035 != null) mMarsTvB035.setLibraryVisible(true);""")
+one(browse,
+    """    private void hideYouPanel() {
+        mYouShowing = false;""",
+    """    private void hideYouPanel() {
+        mYouShowing = false;
+        if (mMarsTvB035 != null) mMarsTvB035.setLibraryVisible(false);""")
+one(browse,
     """        mLastPaginationTriggerCount = -1;
         mLastNearEndTriggerCount = -1;
         mContentGrid.animate().cancel();""",
