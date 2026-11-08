@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $package = 'de.equiummc.marstube2'
 $expectedCode = 12036
+$expectedCert = 'f80f712f9dbbd16c692e5d5eaff7598db73a660c82911bfd3ff0d0215c8f84e9'
 if (-not $UpdateBestaetigt) { throw 'Kein Update ohne -UpdateBestaetigt.' }
 if (-not (Test-Path -LiteralPath $Zip -PathType Leaf)) { throw "ZIP fehlt: $Zip" }
 if ($FireTV -notmatch '^(?:\d{1,3}\.){3}\d{1,3}:5555$') { throw "Unerwartetes Geraeteziel: $FireTV" }
@@ -38,12 +39,10 @@ $build = $tools |
     Select-Object -First 1
 if (-not $build) { throw 'Android SDK Build Tools mit aapt/apksigner fehlen.' }
 $aapt = Join-Path $build.FullName 'aapt.exe'
-$jar = Join-Path $build.FullName 'lib\apksigner.jar'
-$j = Get-Command 'java.exe' -ErrorAction SilentlyContinue
-$java = if ($j) { $j.Source } elseif ($env:JAVA_HOME) {
-    Join-Path $env:JAVA_HOME 'bin\java.exe'
-} else { $null }
-if (-not $java -or -not (Test-Path $java)) { throw 'Java fuer Signaturvergleich fehlt.' }
+$apksigner = Join-Path $build.FullName 'apksigner.bat'
+if (-not (Test-Path -LiteralPath $apksigner -PathType Leaf)) {
+    throw 'apksigner.bat fehlt in den vorhandenen Android-Build-Tools.'
+}
 
 function Invoke-Bounded {
     param([string]$Exe,[string[]]$Arguments,[int]$TimeoutSeconds=30)
@@ -72,9 +71,16 @@ function Invoke-Bounded {
 }
 function Get-Certificate {
     param([string]$Apk)
-    $out = Invoke-Bounded -Exe $java -Arguments @('-jar',$jar,'verify','--print-certs',$Apk)
-    $match = [regex]::Match($out,'(?i)Signer #1 certificate SHA-256 digest:\s*([0-9a-f]{64})')
-    if (-not $match.Success) { throw "Kein gueltiges APK-Zertifikat fuer $Apk." }
+    # Same apksigner.bat invocation that already worked in the 0.0.33 Fire-TV installer.
+    # Java -jar output can differ on a Windows SDK; never accept an unverified APK.
+    $output = ((& $apksigner verify --print-certs $Apk 2>&1) | Out-String)
+    if ($LASTEXITCODE -ne 0) {
+        throw "APK-Signaturpruefung fehlgeschlagen (Exitcode $LASTEXITCODE). Keine Installation."
+    }
+    $match = [regex]::Match($output,'(?im)certificate\s+SHA-256\s+digest\s*:\s*([a-f0-9]{64})')
+    if (-not $match.Success) {
+        throw "Zertifikat nicht eindeutig aus apksigner auslesbar. Keine Installation."
+    }
     return $match.Groups[1].Value.ToLowerInvariant()
 }
 function Invoke-FireTV {
@@ -105,18 +111,21 @@ try {
         throw 'Falsches Paket oder falsche Version. Abbruch.'
     }
     $newCert = Get-Certificate $apk
+    if ($newCert -ne $expectedCert) {
+        throw 'APK ist nicht mit dem bekannten MarsTube-Zertifikat signiert. Keine Installation.'
+    }
     Write-Host 'MarsTube 0.0.36: SHA256, Paket, Versionsnummer und Signatur geprueft.'
 
     [void](Invoke-Bounded -Exe $adb -Arguments @('connect',$FireTV) -TimeoutSeconds 15)
-    $maker = (Invoke-FireTV @('shell','getprop','ro.product.manufacturer')).Trim()
-    $model = (Invoke-FireTV @('shell','getprop','ro.product.model')).Trim()
+    $maker = (Invoke-FireTV -Arguments @('shell','getprop','ro.product.manufacturer')).Trim()
+    $model = (Invoke-FireTV -Arguments @('shell','getprop','ro.product.model')).Trim()
     if ($maker -notmatch '(?i)Amazon' -or $model -notmatch '(?i)AFTR|Fire') {
         throw "Geraet ist nicht der vereinbarte Fire TV: $maker $model"
     }
-    $pathOutput = Invoke-FireTV @('shell','pm','path',$package)
+    $pathOutput = Invoke-FireTV -Arguments @('shell','pm','path',$package)
     $matchPath = [regex]::Match($pathOutput,'(?m)^package:(\S*base\.apk)\s*$')
     if (-not $matchPath.Success) { throw 'MarsTube ist nicht installiert. Kein Neuinstallieren.' }
-    $before = Invoke-FireTV @('shell','dumpsys','package',$package)
+    $before = Invoke-FireTV -Arguments @('shell','dumpsys','package',$package)
     $current = [regex]::Match($before,'versionCode=(\d+)')
     if (-not $current.Success -or [int]$current.Groups[1].Value -ge $expectedCode) {
         throw 'Bestehende Versionsnummer nicht eindeutig kleiner als 12036.'
@@ -133,7 +142,7 @@ try {
     Write-Host 'Bestehende Signatur ist identisch; installiere ausschliesslich Update.'
     $installed = Invoke-FireTV -Arguments @('install','-r',$apk) -TimeoutSeconds 150
     if ($installed -notmatch '\bSuccess\b') { throw "Installation nicht bestaetigt: $installed" }
-    $after = Invoke-FireTV @('shell','dumpsys','package',$package)
+    $after = Invoke-FireTV -Arguments @('shell','dumpsys','package',$package)
     $check = [regex]::Match($after,'versionCode=(\d+)')
     if (-not $check.Success -or [int]$check.Groups[1].Value -ne $expectedCode) {
         throw 'ADB meldete Erfolg, Zielversion ist aber nicht eindeutig 12036.'
