@@ -1,0 +1,13 @@
+{
+  "versionName": "0.0.34",
+  "versionCode": 12034,
+  "packageName": "de.equiummc.marstube2",
+  "changelog_de": [
+    "Shorts Discovery und automatische Weiter-Wiedergabe auf Basis von 0.0.32",
+    "Player-Menü merkt vorherigen Fokus; Zurück schließt linke Rail wieder",
+    "Uhrzeit und deutsches Datum im Player",
+    "Hauptvideo: schlankes blaues Fortschrittsband statt großem Rahmen; Bedienknöpfe schweben über Verlauf",
+    "Kompakteres Vorschau-Karussell mit sechs Kacheln",
+    "Technische TV-Teststufe: Untermenüs und weitere Browse-Seiten folgen nach Abnahme"
+  ]
+}
