@@ -129,13 +129,17 @@ once(stage,
     }""")
 begin='''            } else if (focus == Focus.SHORTS_REACTIONS) {
                 if (shortsReactionPosition == 0) {'''
-end='''            } else if (focus == Focus.SHORTS_AUTO) {'''
 s=shell.read_text(encoding="utf-8")
 if s.count(begin)!=1:
     raise SystemExit(f"MT2-037: Shorts key-map anchor changed (count={s.count(begin)})")
 a=s.index(begin)
-# SHORTS_AUTO occurs in several D-pad branches; only the next one matters.
-b=s.index(end,a+len(begin))
+# Find the next *peer* focus branch, not a specific branch removed in v029.
+import re
+match=re.search(r"(?m)^            \} else (?:if \(focus == Focus\.[A-Z_]+\) )?\{$",
+                s[a+len(begin):])
+if match is None:
+    raise SystemExit("MT2-037: Shorts activation block boundary missing")
+b=a+len(begin)+match.start()
 s=s[:a]+'''            } else if (focus == Focus.SHORTS_REACTIONS) {
                 // 0 = reject, 1 = Weiter/Wdh., 2 = Like, 3 = Kommentare.
                 // Both remote and row clicks use exactly one onClick mapping.
