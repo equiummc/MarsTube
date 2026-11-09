@@ -29,10 +29,22 @@ one("""        ndk {
     """        ndk {
             // MARS Fire TV test contract: ONLY 32-bit ARM, no bundled 64-bit libs.
             abiFilters 'armeabi-v7a'""")
-one("""            include 'armeabi-v7a', 'arm64-v8a', 'x86' // v7a main build, x86 for WSL, v8a for Pixel Tablet (no 32 bit support)
-            universalApk = true //generate an additional APK that contains all the ABIs""",
-    """            include 'armeabi-v7a' // 32-bit-only Fire TV release
-            universalApk = false // only ONE signed armeabi-v7a APK, no universal variant""")
+# Existing MarsTube patches may have already simplified ABI splits. Replace
+# precisely the *single* Gradle splits.abi block instead of relying on a
+# historical line of text from the pinned upstream version.
+import re
+abi_block = re.compile(r"(?ms)^    splits \\{\\n        abi \\{.*?^        \\}\\n    \\}")
+abi_replacement = """    splits {
+        abi {
+            enable = true
+            reset()
+            include 'armeabi-v7a'
+            universalApk = false // single signed ARM32 APK, no universal variant
+        }
+    }"""
+text, abi_edits = abi_block.subn(abi_replacement, text)
+if abi_edits != 1:
+    raise SystemExit(f"MT2-039 FAIL CLOSED: expected one Gradle splits.abi block, found {abi_edits}")
 one("versionCode 12038", "versionCode 12039")
 one('versionName "0.0.38"', 'versionName "0.0.39"')
 
