@@ -32,19 +32,27 @@ one("""        ndk {
 # Existing MarsTube patches may have already simplified ABI splits. Replace
 # precisely the *single* Gradle splits.abi block instead of relying on a
 # historical line of text from the pinned upstream version.
-import re
-abi_block = re.compile(r"(?ms)^    splits \\{\\n        abi \\{.*?^        \\}\\n    \\}")
-abi_replacement = """    splits {
+start_marker = "    splits {\\n"
+end_marker = "    signingConfigs {\\n"
+if text.count(start_marker) != 1 or text.count(end_marker) != 1:
+    raise SystemExit("MT2-039 FAIL CLOSED: expected one Android splits and signing block")
+a = text.index(start_marker)
+b = text.index(end_marker, a)
+abi_current = text[a:b]
+if b <= a or "abi {" not in abi_current or "reset()" not in abi_current:
+    raise SystemExit("MT2-039 FAIL CLOSED: ABI splits structure changed unexpectedly")
+text = (text[:a] +
+"""    splits {
         abi {
             enable = true
             reset()
             include 'armeabi-v7a'
             universalApk = false // single signed ARM32 APK, no universal variant
         }
-    }"""
-text, abi_edits = abi_block.subn(abi_replacement, text)
-if abi_edits != 1:
-    raise SystemExit(f"MT2-039 FAIL CLOSED: expected one Gradle splits.abi block, found {abi_edits}")
+    }
+
+""" + text[b:])
+
 one("versionCode 12038", "versionCode 12039")
 one('versionName "0.0.38"', 'versionName "0.0.39"')
 
