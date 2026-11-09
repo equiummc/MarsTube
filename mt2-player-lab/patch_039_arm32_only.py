@@ -44,10 +44,9 @@ if b <= a or "abi {" not in abi_current or "reset()" not in abi_current:
 text = (text[:a] +
 """    splits {
         abi {
-            enable = true
-            reset()
-            include 'armeabi-v7a'
-            universalApk = false // single signed ARM32 APK, no universal variant
+            // Modern AGP prohibits ndk.abiFilters together with enabled ABI splits.
+            // Disable splits; ndk.abiFilters above packages ARM32 only in one APK.
+            enable = false
         }
     }
 
@@ -60,8 +59,8 @@ if "abiFilters 'arm64-v8a'" in text or "include 'arm64-v8a'" in text:
     raise SystemExit("MT2-039: unexpected remaining ARM64 ABI declaration")
 if 'applicationId "de.equiummc.marstube2"' not in text:
     raise SystemExit("MT2-039: permanent signed package ID missing")
-if "universalApk = false" not in text:
-    raise SystemExit("MT2-039: ABI-only packaging not configured")
+if "enable = false" not in text:
+    raise SystemExit("MT2-039: ABI splits were not disabled")
 
 gradle.write_text(text, encoding="utf-8")
 print("MT2-039: 32-bit armeabi-v7a ONLY, versionCode 12039, same permanent Android package")
