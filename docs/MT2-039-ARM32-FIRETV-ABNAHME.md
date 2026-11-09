@@ -9,8 +9,9 @@ Anforderung nach einer weiteren App.
 
 ## Was geändert wurde
 - Gradle-App-Modul vor der APK-Erstellung auf **ndk abiFilters 'armeabi-v7a'**
-  gesetzt und ABI-Splits auf **genau ein armeabi-v7a** eingeschränkt,
-  universalApk=false.
+  gesetzt; **ABI-Splits deaktiviert**. Android Gradle Plugin verbietet die
+  gleichzeitige Aktivierung von ABI-Splits und ndk-ABI-Filtern. Es wird nur
+  eine APK mit genau einer nativen Architektur (ARM32) gebaut.
 - Neue Build-Version 0.0.39/code 12039, damit ein **Update über die
   bisherige 0.0.38 ebenso wie über 0.0.36** sicher möglich ist.
 - **Unverändert**: applicationId `de.equiummc.marstube2`,
