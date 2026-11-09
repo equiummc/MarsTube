@@ -32,8 +32,8 @@ one("""        ndk {
 # Existing MarsTube patches may have already simplified ABI splits. Replace
 # precisely the *single* Gradle splits.abi block instead of relying on a
 # historical line of text from the pinned upstream version.
-start_marker = "    splits {\\n"
-end_marker = "    signingConfigs {\\n"
+start_marker = "    splits {\n"
+end_marker = "    signingConfigs {\n"
 if text.count(start_marker) != 1 or text.count(end_marker) != 1:
     raise SystemExit("MT2-039 FAIL CLOSED: expected one Android splits and signing block")
 a = text.index(start_marker)
