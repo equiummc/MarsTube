@@ -1,0 +1,23 @@
+{
+  "versionName": "0.0.37",
+  "versionCode": 12037,
+  "packageName": "de.equiummc.marstube2",
+  "phase": "Nachtest: TV-Profile, Live/Musik und Shorts-Ablehnen",
+  "scope_de": [
+    "Fernbedienbare YouTube-Kontoauswahl aus tatsächlich gespeicherten Konten und Kanalidentitäten",
+    "Live und Musik als direkte Rubriken in linker Hauptnavigation auf allen TV-Seiten",
+    "Shorts: Nicht interessiert (X) als erste rechte Aktion mit einheitlichem Fernbedienungs-/Klickpfad",
+    "Lokale Negativliste dauerhaft von 1.000 auf 50.000 Video-IDs per SQLite-Datenbank erweitert",
+    "Automatische einmalige Übernahme der bisherigen ausgeblendeten IDs ohne Löschen der Altdatei",
+    "Vollständige A+B+C-Funktionen der 0.0.36 bleiben Bestandteil derselben MarsTube-App"
+  ],
+  "acceptance": "Build, Signatur und Fire-TV-Praxistests erforderlich; keine automatische Veröffentlichung",
+  "changelog_de": [
+    "Fernbedienbare YouTube-Kontoauswahl aus tatsächlich gespeicherten Konten und Kanalidentitäten",
+    "Live und Musik als direkte Rubriken in linker Hauptnavigation auf allen TV-Seiten",
+    "Shorts: Nicht interessiert (X) als erste rechte Aktion mit einheitlichem Fernbedienungs-/Klickpfad",
+    "Lokale Negativliste dauerhaft von 1.000 auf 50.000 Video-IDs per SQLite-Datenbank erweitert",
+    "Automatische einmalige Übernahme der bisherigen ausgeblendeten IDs ohne Löschen der Altdatei",
+    "Vollständige A+B+C-Funktionen der 0.0.36 bleiben Bestandteil derselben MarsTube-App"
+  ]
+}
