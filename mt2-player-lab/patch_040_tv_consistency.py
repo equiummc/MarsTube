@@ -34,6 +34,7 @@ for name in ['MarsTvGrid040','MarsTvGridPolicy040','MarsKnightRider040']:
 tests = root/'smarttubetv/src/test/java/com/newtube/mobile/ui/browse'
 tests.mkdir(parents=True,exist_ok=True)
 shutil.copyfile(here/'MarsTvGridPolicy040Test.java',tests/'MarsTvGridPolicy040Test.java')
+shutil.copyfile(here/'MarsTvGrid040Test.java',tests/'MarsTvGrid040Test.java')
 shutil.copyfile(here/'MarsSidebarOrder040.java',sidebar.parent/'MarsSidebarOrder040.java')
 # Run the pure sidebar migration regression in the existing app unit-test task.
 shutil.copyfile(here/'MarsSidebarOrder040Test.java',tests/'MarsSidebarOrder040Test.java')
@@ -54,6 +55,7 @@ one(browse,'                this::marsTvLibraryB035);','''                this::
         lp.topToTop = R.id.mobile_content_swipe;
         host.addView(mMarsLoading040,lp);
         mContentSwipe.setEnabled(false);''')
+one(ui/'browse/MarsTvBrowseB035.java','baseTopPad + dp(8),','baseTopPad + dp(60),')
 one(browse,'    private void setSkeletonVisible(boolean visible) {','''    private void setSkeletonVisible(boolean visible) {
         if (mMarsLoading040 != null) {
             mFeedSkeleton.setVisibility(View.GONE);

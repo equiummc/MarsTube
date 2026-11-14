@@ -66,7 +66,7 @@ grep -Fq 'applicationId "de.equiummc.marstube2"' "$root/smarttubetv/build.gradle
 grep -Fq 'new MarsTvShortsStage' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java"
 grep -Fq 'mMarsTvUniversalBack.setEnabled(false)' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/common/MobileActivity.java"
 grep -Fq 'marsTvGoToSettingsRoot' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MobileSettingsActivity.java"
-grep -Fq 'Bei Ladeproblemen QualitÃ¤t reduzieren' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MarsTvSettingsPages.java"
+grep -Fq 'Bei Ladeproblemen Qualität reduzieren' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/settings/MarsTvSettingsPages.java"
 grep -Fq 'no-system-pip' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MobilePlaybackActivity.java"
 grep -Fq 'SHORTS_PREVIEWS' "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShell.java"
 test -s "$root/smarttubetv/src/stmobile/java/com/newtube/mobile/ui/playback/MarsTvShortsStage.java"

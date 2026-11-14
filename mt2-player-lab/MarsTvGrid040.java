@@ -68,8 +68,8 @@ public final class MarsTvGrid040 {
         tp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         tp.startToStart = shorts ? ConstraintLayout.LayoutParams.UNSET : ConstraintLayout.LayoutParams.PARENT_ID;
         tp.startToEnd = shorts ? R.id.video_thumbnail_frame : ConstraintLayout.LayoutParams.UNSET;
-        tp.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
-        tp.endToStart = ConstraintLayout.LayoutParams.UNSET;
+        tp.endToEnd = shorts ? ConstraintLayout.LayoutParams.PARENT_ID : ConstraintLayout.LayoutParams.UNSET;
+        tp.endToStart = shorts ? ConstraintLayout.LayoutParams.UNSET : R.id.video_overflow;
         tp.topToTop = shorts ? R.id.video_thumbnail_frame : ConstraintLayout.LayoutParams.UNSET;
         tp.topToBottom = shorts ? ConstraintLayout.LayoutParams.UNSET : R.id.video_thumbnail_frame;
         tp.leftMargin = shorts ? gap*2 : gap;
@@ -86,10 +86,12 @@ public final class MarsTvGrid040 {
         mp.startToEnd = mp.endToStart = ConstraintLayout.LayoutParams.UNSET;
         mp.topToTop = ConstraintLayout.LayoutParams.UNSET;
         mp.topToBottom = R.id.video_title;
+        mp.bottomToBottom = ConstraintLayout.LayoutParams.UNSET;
         mp.leftMargin = mp.rightMargin = 0;
         meta.setLayoutParams(mp);
         meta.setTextSize(11);
         meta.setMaxLines(shorts ? 3 : 1);
         card.findViewById(R.id.video_channel_avatar).setVisibility(View.GONE);
+        card.findViewById(R.id.video_overflow).setVisibility(shorts ? View.GONE : View.VISIBLE);
     }
 }
