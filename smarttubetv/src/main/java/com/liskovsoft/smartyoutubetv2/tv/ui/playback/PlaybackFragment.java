@@ -22,6 +22,7 @@ import androidx.leanback.media.PlayerAdapter;
 import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.ClassPresenterSelector;
 import androidx.leanback.widget.HeaderItem;
+import androidx.leanback.widget.HorizontalGridView;
 import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.ListRowPresenter;
 import androidx.leanback.widget.ObjectAdapter;
@@ -69,6 +70,7 @@ import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.adapter.VideoGroupObjectAdapter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.CustomListRowPresenter;
+import com.liskovsoft.smartyoutubetv2.tv.presenter.PlayerSuggestionCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.ShortsCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.VideoCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.base.OnItemLongPressedListener;
@@ -710,6 +712,34 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
             protected void onBindRowViewHolder(RowPresenter.ViewHolder holder, Object item) {
                 super.onBindRowViewHolder(holder, item);
 
+                // The horizontal player suggestion rail must never leak left/right focus
+                // into the transport seekbar at its first or last suggestion.
+                if (holder instanceof ListRowPresenter.ViewHolder) {
+                    HorizontalGridView rail = ((ListRowPresenter.ViewHolder) holder).getGridView();
+                    int safeSidePx = Math.round(getResources().getDisplayMetrics().widthPixels * 0.07f);
+                    rail.setPadding(safeSidePx, rail.getPaddingTop(),
+                            safeSidePx, rail.getPaddingBottom());
+                    rail.setClipToPadding(false);
+                    rail.setOnKeyInterceptListener(event -> {
+                        if (event.getAction() != KeyEvent.ACTION_DOWN ||
+                                getVideo() == null || getVideo().belongsToShortsGroup()) {
+                            return false;
+                        }
+                        int key = event.getKeyCode();
+                        if (key != KeyEvent.KEYCODE_DPAD_LEFT &&
+                                key != KeyEvent.KEYCODE_DPAD_RIGHT) {
+                            return false;
+                        }
+                        int index = rail.getSelectedPosition();
+                        int count = rail.getAdapter() == null ? 0 : rail.getAdapter().getItemCount();
+                        // The existing checkScrollEnd() already requests next pages
+                        // as the user approaches the right edge of this same row.
+                        return count > 0 && index >= 0 &&
+                                ((key == KeyEvent.KEYCODE_DPAD_LEFT && index == 0) ||
+                                 (key == KeyEvent.KEYCODE_DPAD_RIGHT && index >= count - 1));
+                    });
+                }
+
                 focusPendingSuggestedItem(holder);
             }
 
@@ -727,7 +757,7 @@ public class PlaybackFragment extends SeekModePlaybackFragment implements Playba
         };
         mRowPresenter.enableChildRoundedCorners(getMainUIData().isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS));
 
-        mCardPresenter = new VideoCardPresenter();
+        mCardPresenter = new PlayerSuggestionCardPresenter();
         mShortsPresenter = new ShortsCardPresenter();
     }
 
