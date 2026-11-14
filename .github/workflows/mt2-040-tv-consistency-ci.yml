@@ -1,0 +1,95 @@
+name: MT2-040 32-bit ARM Fire TV CI
+
+on:
+  push:
+    branches:
+      - feature/mt2-040-tv-grid-profiles-20261114
+  workflow_dispatch:
+
+concurrency:
+  group: mt2-040-ARM32-only
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  signed_release_test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      MARS_SIGNING_KEYSTORE_B64: ${{ secrets.MARS_SIGNING_KEYSTORE_B64 }}
+      MARS_SIGNING_STORE_PASS: ${{ secrets.MARS_SIGNING_STORE_PASS }}
+      MARS_SIGNING_KEY_PASS: ${{ secrets.MARS_SIGNING_KEY_PASS }}
+      MARS_SIGNING_KEY_ALIAS: ${{ secrets.MARS_SIGNING_KEY_ALIAS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Compile, run Shorts/SABR tests and sign 0.0.40 with original key
+        run: |
+          set -euo pipefail
+          python3 -m py_compile mt2-player-lab/patch_033_navigation_autonext.py mt2-player-lab/patch_033_player_panels.py mt2-player-lab/patch_033_floating_overlay.py mt2-player-lab/patch_034_A_player_menu.py mt2-player-lab/patch_035_B_overviews.py mt2-player-lab/patch_036_C_shorts.py mt2-player-lab/patch_037_profile_reject.py mt2-player-lab/patch_038_profiles_live_music.py mt2-player-lab/patch_039_arm32_only.py mt2-player-lab/patch_040_tv_consistency.py
+          bash tools/build-marstube-production-040-arm32.sh
+          cp tools/Install-MarsTube-040-FireTV.ps1 dist/
+      - name: Check package identity, version, original signing and file size
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum -c SHA256SUMS)
+          test -s dist/MarsTube-0.0.40.apk
+          test -s dist/Install-MarsTube-040-FireTV.ps1
+          grep -Fq "name='de.equiummc.marstube2'" dist/badging.txt
+          grep -Fq "versionCode='12040'" dist/badging.txt
+          grep -Fq "versionName='0.0.40'" dist/badging.txt
+          grep -Fq 'certificate SHA-256 digest: f80f712f9dbbd16c692e5d5eaff7598db73a660c82911bfd3ff0d0215c8f84e9' dist/signature.txt
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          apk=Path("dist/MarsTube-0.0.40.apk")
+          with zipfile.ZipFile(apk) as z:
+              libs = [(i.filename,i.compress_size) for i in z.infolist() if i.filename.startswith("lib/")]
+              assert libs and all(n.startswith("lib/armeabi-v7a/") for n,_ in libs), "Only ARM32 native libraries allowed"
+              assert apk.stat().st_size < 65 * 1024 * 1024, "ARM32 APK unexpectedly big: check ABI selection"
+              print("ARM32 architecture verified; no 64-bit / x86 libraries")
+              print("SIGNED APK size MiB:",round(apk.stat().st_size/1024/1024,2))
+              print("Native libs MiB:",round(sum(size for _,size in libs)/1024/1024,2))
+          PY
+      - name: Keep test-only signed package for traceability (never publish a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarsTube-0.0.40-arm32-ci-only
+          path: |
+            dist/MarsTube-0.0.40.apk
+            dist/SHA256SUMS
+            dist/Install-MarsTube-040-FireTV.ps1
+            dist/badging.txt
+            dist/signature.txt
+            dist/permissions.txt
+            newtube-reference/smarttubetv/build/test-results/**/*.xml
+            newtube-reference/sabr-media3/build/test-results/**/*.xml
+            newtube-reference/common/build/test-results/**/*.xml
+          retention-days: 14
+          if-no-files-found: error
+
+  ps7_syntax:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell 7 installer without running or installing it
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'tools/Install-MarsTube-040-FireTV.ps1'),
+            [ref]$tokens, [ref]$errors)
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'PS7-Syntax fehlerhaft'
+          }
+          Write-Host 'PS7-Syntax OK; keine Geraeteaktion.'

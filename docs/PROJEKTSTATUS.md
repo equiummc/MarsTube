@@ -1,5 +1,22 @@
 # MarsTube – laufender Projektstatus und Agentenübergabe
 
+## 14.11.2026 – MT2-040 / Issue #72 (in Prüfung)
+
+- Eigener Branch `feature/mt2-040-tv-grid-profiles-20261114`, Basis `98bdb5fa`.
+- Produktionspatch 040: gemeinsamer TV-3×2-Standard inklusive Musik/Live/Abos,
+  Shorts 2×2 mit Text rechts, blaue Ladeanimation, direkte echte Profilauswahl,
+  Menütausch mit gezielter persistenter Migration, TV-Hintergrundpause.
+- Dateien, Architekturbegründung, Backend-Grenze und Prüfplan:
+  [MT2-040-ABNAHME.md](MT2-040-ABNAHME.md).
+- AFTR/raven über ADB bestätigt, installiert 0.0.39/12039. Alte APK gesichert,
+  Originalsignatur verifiziert. Keine Installation vor erfolgreichen Checks.
+- Lokaler vollständiger Patchdurchlauf 001–039 erfolgreich. Zwei bestehende
+  Linux-Protobuf-Hardcodierungen für PS7/Windows korrigiert.
+- Lokale Gradle-Prüfung läuft; GitHub CI, neue APK-Verifikation und physische
+  Tests noch offen. Automatische Unterkanal-Auflistung ist backendseitig begrenzt.
+
+---
+
 ## 07.11.2026 – MT2-025, echtes TV-UI mit Original-M
 
 - **Branch:** `feature/mt2-025-tv-ui-shorts-20261107`, aufbauend auf signierter 0.0.24.

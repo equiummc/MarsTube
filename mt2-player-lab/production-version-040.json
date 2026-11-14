@@ -1,0 +1,14 @@
+{
+  "versionName": "0.0.40",
+  "versionCode": 12040,
+  "packageName": "de.equiummc.marstube2",
+  "changelog_de": [
+    "TV: einheitlicher 3×2-Standard für Startseite, Verlauf, Live, Musik und Abos",
+    "Shorts: vier große Hochkantvorschauen mit Text rechts",
+    "Blaue Knight-Rider-Lichtspur während Inhaltsladevorgängen",
+    "Direkte Auswahl echter verfügbarer YouTube-Anmeldeidentitäten",
+    "Shorts auf Menüposition 4, M-Startseite auf Position 5; gezielte persistente Migration",
+    "TV: versteckte Wiedergabe ohne sichtbaren Player/Miniplayer pausieren",
+    "ARM32, gleiche App-ID und Signatur; Profil-Negativlisten und Playerfunktionen erhalten"
+  ]
+}
